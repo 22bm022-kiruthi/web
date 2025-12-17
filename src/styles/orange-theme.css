@@ -1,0 +1,252 @@
+/* Orange Data Mining Theme Styles */
+
+:root {
+  /* Orange Data Mining Colors */
+  --orange-data: #FF9800;
+  --orange-processing: #4CAF50;
+  --orange-analysis: #9C27B0;
+  --orange-visualization: #2196F3;
+  --orange-utility: #607D8B;
+  
+  /* Background */
+  --orange-canvas-bg: #f5f5f5;
+  --orange-widget-bg: #ffffff;
+  --orange-widget-border: #e0e0e0;
+  
+  /* Hover states */
+  --orange-hover-border: #FF9800;
+  --orange-selected-ring: #FF9800;
+}
+
+/* Canvas background grid */
+.orange-canvas {
+  background-color: var(--orange-canvas-bg);
+  background-image: 
+    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Orange-style widget */
+.orange-widget {
+  width: 80px !important;
+  height: 80px !important;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  transition: all 0.2s ease;
+}
+
+.orange-widget:hover {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.orange-widget.connecting {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Widget icon sizing */
+.orange-widget-icon {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+/* Widget label */
+.orange-widget-label {
+  display: none;
+}
+
+/* Category colors for widgets */
+.orange-widget[data-category="data"] {
+  border: none;
+  background: transparent;
+}
+
+.orange-widget[data-category="data"]:hover {
+  box-shadow: none;
+  background: transparent;
+}
+
+.orange-widget[data-category="data"] .orange-widget-icon {
+  color: var(--orange-data);
+}
+
+.orange-widget[data-category="processing"] {
+  border: none;
+  background: transparent;
+}
+
+.orange-widget[data-category="processing"]:hover {
+  box-shadow: none;
+  background: transparent;
+}
+
+.orange-widget[data-category="processing"] .orange-widget-icon {
+  color: var(--orange-processing);
+}
+
+.orange-widget[data-category="analysis"] {
+  border: none;
+  background: transparent;
+}
+
+.orange-widget[data-category="analysis"]:hover {
+  box-shadow: none;
+  background: transparent;
+}
+
+.orange-widget[data-category="analysis"] .orange-widget-icon {
+  color: var(--orange-analysis);
+}
+
+.orange-widget[data-category="visualization"] {
+  border: none;
+  background: transparent;
+}
+
+.orange-widget[data-category="visualization"]:hover {
+  box-shadow: none;
+  background: transparent;
+}
+
+.orange-widget[data-category="visualization"] .orange-widget-icon {
+  color: var(--orange-visualization);
+}
+
+/* Connection lines - Orange style */
+.orange-connection-line {
+  stroke: #90A4AE;
+  stroke-width: 2;
+  fill: none;
+  transition: stroke 0.2s ease;
+}
+
+.orange-connection-line:hover {
+  stroke: #FF9800;
+  stroke-width: 3;
+}
+
+.orange-connection-line.active {
+  stroke: #2196F3;
+  stroke-width: 2.5;
+}
+
+/* Connection ports (dots on widgets) */
+.orange-port {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid var(--orange-widget-border);
+  position: absolute;
+  transition: all 0.2s ease;
+  cursor: crosshair;
+}
+
+.orange-port:hover {
+  transform: scale(1.3);
+  border-color: var(--orange-hover-border);
+  background: var(--orange-hover-border);
+  box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.2);
+}
+
+/* Port positions */
+.orange-port-top {
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.orange-port-right {
+  right: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.orange-port-bottom {
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.orange-port-left {
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Control buttons (smaller and cleaner) */
+.orange-control-btn {
+  width: 24px !important;
+  height: 24px !important;
+  padding: 0;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.orange-control-btn:hover {
+  background: #FF9800;
+  border-color: #FF9800;
+  transform: scale(1.15);
+  box-shadow: 0 3px 6px rgba(255, 152, 0, 0.3);
+}
+
+.orange-control-btn:hover svg {
+  color: white;
+}
+
+.orange-control-btn svg {
+  width: 13px !important;
+  height: 13px !important;
+  color: #666;
+  transition: color 0.2s ease;
+}
+
+/* Remove dashed circle - clean solid border only */
+.widget-dashed-ring {
+  display: none;
+}
+
+/* Dark theme adjustments */
+.dark .orange-widget {
+  background: #2d2d2d;
+  border-color: #424242;
+}
+
+.dark .orange-widget-label {
+  color: #e0e0e0;
+}
+
+.dark .orange-canvas {
+  background-color: #1e1e1e;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
+
+.dark .orange-control-btn {
+  background: #424242;
+  border-color: #616161;
+}
+
+.dark .orange-control-btn:hover {
+  background: #505050;
+  border-color: #FF9800;
+}
+
+.dark .orange-port {
+  background: #2d2d2d;
+  border-color: #616161;
+}

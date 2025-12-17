@@ -11,7 +11,7 @@ export interface WidgetColors {
 }
 
 export const WIDGET_COLORS: Record<string, WidgetColors> = {
-  // DATA SOURCES - Blue
+  // ALL WIDGETS - Light Blue
   'supabase': {
     main: '#2196F3',
     light: '#BBDEFB',
@@ -19,45 +19,57 @@ export const WIDGET_COLORS: Record<string, WidgetColors> = {
     accent: '#2196F3'
   },
   'file-upload': {
-    main: '#FF9800',
-    light: '#FFE4CC',
-    bg: '#FFF8F0',
-    accent: '#FF9800'
+    main: '#2196F3',
+    light: '#BBDEFB',
+    bg: '#E3F2FD',
+    accent: '#2196F3'
   },
   
-  // PROCESSING - Green
+  // PROCESSING - Light Blue
   'noise-filter': {
-    main: '#4CAF50',
-    light: '#C8E6C9',
-    bg: '#E8F5E9',
-    accent: '#4CAF50'
+    main: '#2196F3',
+    light: '#BBDEFB',
+    bg: '#E3F2FD',
+    accent: '#2196F3'
   },
   'baseline-correction': {
-    main: '#4CAF50',
-    light: '#C8E6C9',
-    bg: '#E8F5E9',
-    accent: '#4CAF50'
+    main: '#2196F3',
+    light: '#BBDEFB',
+    bg: '#E3F2FD',
+    accent: '#2196F3'
   },
   'smoothing': {
-    main: '#4CAF50',
-    light: '#C8E6C9',
-    bg: '#E8F5E9',
-    accent: '#4CAF50'
+    main: '#2196F3',
+    light: '#BBDEFB',
+    bg: '#E3F2FD',
+    accent: '#2196F3'
   },
   'normalization': {
-    main: '#4CAF50',
-    light: '#C8E6C9',
-    bg: '#E8F5E9',
-    accent: '#4CAF50'
+    main: '#2196F3',
+    light: '#BBDEFB',
+    bg: '#E3F2FD',
+    accent: '#2196F3'
+  },
+  'pca-analysis': {
+    main: '#2196F3',
+    light: '#BBDEFB',
+    bg: '#E3F2FD',
+    accent: '#2196F3'
+  },
+  'kmeans-analysis': {
+    main: '#1e88e5',
+    light: '#BBDEFB',
+    bg: '#E3F2FD',
+    accent: '#1e88e5'
   },
   'blank-remover': {
-    main: '#4CAF50',
-    light: '#C8E6C9',
-    bg: '#E8F5E9',
-    accent: '#4CAF50'
+    main: '#2196F3',
+    light: '#BBDEFB',
+    bg: '#E3F2FD',
+    accent: '#2196F3'
   },
   
-  // VISUALIZATION - Blue
+  // VISUALIZATION - Light Blue
   'line-chart': {
     main: '#2196F3',
     light: '#BBDEFB',
@@ -89,38 +101,38 @@ export const WIDGET_COLORS: Record<string, WidgetColors> = {
     accent: '#2196F3'
   },
   
-  // ANALYSIS - Purple
+  // ANALYSIS - Light Blue
   'custom-code': {
-    main: '#9C27B0',
-    light: '#E1BEE7',
-    bg: '#F3E5F5',
-    accent: '#9C27B0'
+    main: '#2196F3',
+    light: '#BBDEFB',
+    bg: '#E3F2FD',
+    accent: '#2196F3'
   },
   'mean-average': {
-    main: '#9C27B0',
-    light: '#E1BEE7',
-    bg: '#F3E5F5',
-    accent: '#9C27B0'
+    main: '#2196F3',
+    light: '#BBDEFB',
+    bg: '#E3F2FD',
+    accent: '#2196F3'
   },
   'peak-detection': {
-    main: '#9C27B0',
-    light: '#E1BEE7',
-    bg: '#F3E5F5',
-    accent: '#9C27B0'
+    main: '#2196F3',
+    light: '#BBDEFB',
+    bg: '#E3F2FD',
+    accent: '#2196F3'
   },
   
-  // SPECIAL - Cyan
+  // SPECIAL - Light Blue
   'spectral-segmentation': {
-    main: '#00BCD4',
-    light: '#B2EBF2',
-    bg: '#E0F7FA',
-    accent: '#00BCD4'
+    main: '#2196F3',
+    light: '#BBDEFB',
+    bg: '#E3F2FD',
+    accent: '#2196F3'
   },
   'future-extraction': {
-    main: '#00BCD4',
-    light: '#B2EBF2',
-    bg: '#E0F7FA',
-    accent: '#00BCD4'
+    main: '#2196F3',
+    light: '#BBDEFB',
+    bg: '#E3F2FD',
+    accent: '#2196F3'
   }
 };
 
@@ -143,7 +155,7 @@ export function getWidgetColors(widgetType: string): WidgetColors {
 export const WIDGET_LABELS: Record<string, string> = {
   'supabase': 'Datasets',
   'file-upload': 'File',
-  'noise-filter': 'Preprocess',
+  'noise-filter': 'Noise Filter',
   'baseline-correction': 'Baseline',
   'smoothing': 'Smooth',
   'normalization': 'Normalize',
@@ -154,7 +166,9 @@ export const WIDGET_LABELS: Record<string, string> = {
   'box-plot': 'Box Plot',
   'data-table': 'Data Table',
   'custom-code': 'Python Script',
-  'mean-average': 'Aggregate',
+  'mean-average': 'Mean Average',
+  'pca-analysis': 'PCA',
+  'kmeans-analysis': 'KMeans',
   'peak-detection': 'Peaks',
   'spectral-segmentation': 'Segment',
   'future-extraction': 'Extract'
@@ -162,4 +176,20 @@ export const WIDGET_LABELS: Record<string, string> = {
 
 export function getWidgetLabel(widgetType: string): string {
   return WIDGET_LABELS[widgetType] || widgetType;
+}
+
+/**
+ * Get category for a widget type (for Orange theme styling)
+ */
+export function getWidgetCategory(widgetType: string): 'data' | 'processing' | 'analysis' | 'visualization' | 'utility' {
+  const dataTypes = ['supabase', 'file-upload'];
+  const processingTypes = ['noise-filter', 'baseline-correction', 'smoothing', 'normalization', 'blank-remover', 'pca-analysis', 'kmeans-analysis'];
+  const analysisTypes = ['custom-code', 'mean-average', 'peak-detection'];
+  const visualizationTypes = ['line-chart', 'scatter-plot', 'bar-chart', 'box-plot', 'data-table'];
+  
+  if (dataTypes.includes(widgetType)) return 'data';
+  if (processingTypes.includes(widgetType)) return 'processing';
+  if (analysisTypes.includes(widgetType)) return 'analysis';
+  if (visualizationTypes.includes(widgetType)) return 'visualization';
+  return 'utility';
 }

@@ -3,7 +3,7 @@
 # This keeps the server running and auto-restarts on crash
 # ===================================================================
 
-$Host.UI.RawUI.WindowTitle = "Backend Server - Port 5001"
+$Host.UI.RawUI.WindowTitle = "Backend Server - Port 5003"
 $Host.UI.RawUI.BackgroundColor = "Black"
 $Host.UI.RawUI.ForegroundColor = "Green"
 Clear-Host
@@ -13,7 +13,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "   Backend Server - AUTO RESTART MODE" -ForegroundColor Yellow
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Server: http://127.0.0.1:5001" -ForegroundColor White
+Write-Host "Server: http://127.0.0.1:5003" -ForegroundColor White
 Write-Host ""
 Write-Host "IMPORTANT: Keep this window OPEN!" -ForegroundColor Red
 Write-Host "Press Ctrl+C to stop the server." -ForegroundColor Yellow
@@ -37,6 +37,8 @@ while ($true) {
         Write-Host ">>> Starting node server.js..." -ForegroundColor Green
         Write-Host ""
         
+        # Ensure PORT is set explicitly for consistency
+        $env:PORT = 5003
         # Run the server
         node server.js
         

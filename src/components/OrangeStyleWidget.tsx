@@ -10,6 +10,9 @@ interface OrangeStyleWidgetProps {
   lightColor: string; // e.g., '#FFE4CC'
   bgColor: string; // e.g., '#FFF8F0'
   children?: React.ReactNode; // Controls section
+  alwaysShowControls?: boolean; // If true, controls are always visible (not hidden until hover)
+  iconRef?: React.Ref<HTMLDivElement>;
+  portElements?: React.ReactNode;
 }
 
 /**
@@ -28,7 +31,10 @@ const OrangeStyleWidget: React.FC<OrangeStyleWidgetProps> = ({
   mainColor,
   lightColor,
   bgColor,
-  children
+  children,
+  alwaysShowControls = false,
+  iconRef,
+  portElements
 }) => {
   const statusColors = {
     blue: 'text-blue-600 bg-blue-50',
@@ -39,38 +45,41 @@ const OrangeStyleWidget: React.FC<OrangeStyleWidgetProps> = ({
 
   return (
     <div
-      className="flex flex-col items-center justify-center w-full h-full cursor-default p-3 bg-white"
-      onClick={(e) => e.stopPropagation()}
+      className="flex flex-col items-center justify-center w-full h-full cursor-default p-3 pointer-events-none"
     >
       {/* Main icon circle - Orange Data Mining style (clean, no dashed border) */}
+      {/* Keep pointer-events-none so connection overlay can work */}
       <div className="flex flex-col items-center gap-2 mb-2">
         {/* Single solid circle with icon - cleaner Orange style */}
         <div 
-          className="rounded-full flex items-center justify-center"
+          ref={iconRef}
+          className="relative rounded-full flex items-center justify-center"
           style={{
-            width: 56,
-            height: 56,
+            width: 70,
+            height: 70,
             background: mainColor,
-            boxShadow: `0 2px 6px ${mainColor}30`
+            boxShadow: `0 2px 8px ${mainColor}40`
           }}
         >
-          <Icon className="h-5 w-5 text-white" strokeWidth={2.5} />
+          <Icon className="h-7 w-7 text-white" strokeWidth={2.5} />
+          {portElements}
         </div>
         
-        {/* Label below icon - Orange style */}
-        <div className="text-center">
-          <div className="text-[11px] font-semibold text-gray-800">{label}</div>
-          {statusText && (
-            <div className={`text-[9px] mt-0.5 ${statusColors[statusColor]}`}>
-              {statusText}
-            </div>
-          )}
-        </div>
+        {/* Label below icon - Orange style (only show if label exists) */}
+        {label && (
+          <div className="text-center">
+            <div className="text-[11px] font-semibold text-gray-800">{label}</div>
+          </div>
+        )}
       </div>
 
-      {/* Compact controls - hidden until hover */}
+      {/* Compact controls - conditional visibility based on alwaysShowControls prop */}
       {children && (
-        <div className="w-full flex flex-col gap-1.5 opacity-0 hover:opacity-100 transition-opacity duration-200">
+        <div className={`w-full flex flex-col gap-1.5 transition-opacity duration-200 ${
+          alwaysShowControls 
+            ? 'opacity-100 pointer-events-auto' 
+            : 'opacity-0 hover:opacity-100 pointer-events-none hover:pointer-events-auto'
+        }`}>
           {children}
         </div>
       )}

@@ -27,36 +27,36 @@ const ConnectionLine: React.FC<ConnectionLineProps> = ({
 
   const pathData = `M ${from.x} ${from.y} C ${controlPoint1.x} ${controlPoint1.y}, ${controlPoint2.x} ${controlPoint2.y}, ${to.x} ${to.y}`;
 
-  // Orange Data Mining style - simple gray lines
-  const lineColor = theme === 'dark' ? '#78716C' : '#A8A29E'; // Stone gray
+  // Orange Data Mining style - simple gray lines (increased visibility)
+  const lineColor = theme === 'dark' ? '#9CA3AF' : '#6B7280'; // Darker gray for better visibility
   const previewColor = theme === 'dark' ? '#60A5FA' : '#3B82F6';
   const markerId = `arrow-${isPreview ? 'preview' : 'normal'}-${theme}`;
 
   return (
     <g className="connection-line-group">
-      {/* Main connection line - Orange style: solid, thin, gray */}
+      {/* Main connection line - Orange style: solid, thicker, more visible */}
       <path
         d={pathData}
         fill="none"
         stroke={isPreview ? previewColor : lineColor}
-        strokeWidth={isPreview ? 2.5 : 2}
+        strokeWidth={isPreview ? 4.5 : 4}
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeDasharray={isPreview ? "5,5" : "none"}
         className={`transition-all duration-200 ${
-          isPreview ? 'opacity-70' : 'opacity-60 hover:opacity-80'
+          isPreview ? 'opacity-85' : 'opacity-80 hover:opacity-100'
         }`}
         style={{
-          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))'
+          filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.2))'
         }}
       />
 
-      {/* Animated data flow indicator - small circle moving along path */}
+      {/* Animated data flow indicator - highly visible circle moving along path */}
       {!isPreview && (
         <circle 
-          r={2.5} 
-          fill={theme === 'dark' ? '#FFF' : '#FF9800'}
-          className="opacity-60"
+          r={5.5} 
+          fill={theme === 'dark' ? '#FFF' : '#2196F3'}
+          style={{ filter: 'drop-shadow(0 0 3px rgba(33, 150, 243, 0.8))' }}
         >
           <animateMotion 
             dur="4s" 

@@ -7,7 +7,7 @@
 ## 🔴 Error You're Seeing:
 ```
 [vite] http proxy error: /api/supabase/fetch
-Error: connect ECONNREFUSED 127.0.0.1:5001
+Error: connect ECONNREFUSED 127.0.0.1:5003
 ```
 
 **This means: Backend server is NOT running!**
@@ -23,7 +23,7 @@ Error: connect ECONNREFUSED 127.0.0.1:5001
 3. A CMD window will open showing:
    ```
    Starting Backend Server
-   Server will run on: http://127.0.0.1:5001
+   Server will run on: http://127.0.0.1:5003
    ```
 4. **KEEP THIS WINDOW OPEN!**
 5. Go back to your browser and refresh (F5)
@@ -46,7 +46,7 @@ Open PowerShell in the project root and run:
 
 ```powershell
 cd backend
-node server.js
+$env:PORT=5003; node server.js
 ```
 
 **KEEP THE TERMINAL OPEN!** (Don't close it or press Ctrl+C)
@@ -57,21 +57,21 @@ node server.js
 
 ### Option A: Open this URL in browser
 ```
-http://127.0.0.1:5001/api/health
+http://127.0.0.1:5003/api/health
 ```
 
 Should show: `{"status":"ok"}`
 
 ### Option B: PowerShell Command
 ```powershell
-Invoke-RestMethod -Uri "http://127.0.0.1:5001/api/health"
+Invoke-RestMethod -Uri "http://127.0.0.1:5003/api/health"
 ```
 
 Should output: `status: ok`
 
 ### Option C: Check Port 5001
 ```powershell
-netstat -ano | findstr :5001
+netstat -ano | findstr :5003
 ```
 
 Should show TCP listener (not just UDP)
@@ -80,7 +80,7 @@ Should show TCP listener (not just UDP)
 
 ## 🛠️ Troubleshooting
 
-### Problem: Port 5001 is already in use
+### Problem: Port 5003 is already in use
 
 **Symptoms:**
 - Server says "Address already in use"
@@ -88,19 +88,19 @@ Should show TCP listener (not just UDP)
 
 **Solution:**
 ```powershell
-# Find process using port 5001
-netstat -ano | findstr :5001
+# Find process using port 5003
+netstat -ano | findstr :5003
 
 # Kill the conflicting process (replace PID with actual number)
 taskkill /PID <PID_NUMBER> /F
 
 # Or use this automated script:
-$processId = (Get-NetUDPEndpoint -LocalPort 5001 -ErrorAction SilentlyContinue).OwningProcess
+$processId = (Get-NetUDPEndpoint -LocalPort 5003 -ErrorAction SilentlyContinue).OwningProcess
 if ($processId) { Stop-Process -Id $processId -Force }
 
 # Then start the server again
 cd backend
-node server.js
+$env:PORT=5003; node server.js
 ```
 
 ---
@@ -125,7 +125,7 @@ node -c routes/supabase.js
 npm install
 
 # Start with verbose logging
-$env:DEBUG="*"
+$env:DEBUG="*"; $env:PORT=5003
 node server.js
 ```
 
@@ -136,7 +136,7 @@ node server.js
 **Checklist:**
 - [ ] Backend server window is open and running
 - [ ] No error messages in backend window
-- [ ] Health check URL works: http://127.0.0.1:5001/api/health
+- [ ] Health check URL works: http://127.0.0.1:5003/api/health
 - [ ] Browser has been refreshed (F5)
 - [ ] Vite dev server is running (http://localhost:5173)
 
@@ -160,7 +160,7 @@ node server.js
    **Terminal 1 (Backend):**
    ```powershell
    cd backend
-   node server.js
+   $env:PORT=5003; node server.js
    ```
    ✅ Keep this running
 
@@ -183,7 +183,7 @@ node server.js
 
 | Service | Port | URL | Status Check |
 |---------|------|-----|--------------|
-| Backend API | 5001 | http://127.0.0.1:5001 | /api/health |
+| Backend API | 5003 | http://127.0.0.1:5003 | /api/health |
 | Frontend (Vite) | 5173 | http://localhost:5173 | Open in browser |
 | Supabase | N/A | https://zatafiglyptbujqzsohc.supabase.co | External |
 
@@ -195,7 +195,7 @@ node server.js
 2. **Check Antivirus** - May be blocking port 5001
 3. **Try Different Port** - Edit `backend/server.js`:
    ```javascript
-   const PORT = process.env.PORT || 5002; // Change to 5002
+   const PORT = process.env.PORT || 5004; // Change to 5004
    ```
 4. **Check Node.js Version** - Requires Node.js v14 or higher:
    ```powershell
@@ -215,7 +215,7 @@ node server.js
 **The error you saw will NEVER happen again if you:**
 1. Start backend server BEFORE using the app
 2. Keep the backend server window OPEN
-3. Check http://127.0.0.1:5001/api/health before using app
+3. Check http://127.0.0.1:5003/api/health before using app
 
 ---
 

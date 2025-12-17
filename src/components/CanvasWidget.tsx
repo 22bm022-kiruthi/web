@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useDrag } from 'react-dnd';
 import {
-  Upload,
+  Upload, 
   BarChart3,
   ScatterChart as Scatter3D,
   Box,
@@ -13,19 +14,23 @@ import {
   GripVertical,
   Code,
   Table,
+  Search,
 } from 'lucide-react';
-import { Widget } from '../types';
-import WidgetSelectorModal from './WidgetSelectorModal';
 import widgetRegistry from '../utils/widgetRegistry';
 import DataTableModal from './DataTableModal';
 import MeanAverageModal from './MeanAverageModal';
 import LineChartModal from './LineChModal';
 import ScatterPlotModal from './ScatterPlotModal';
 import BoxPlotModal from './BoxPlotModal';
+import WidgetSelectorModal from './WidgetSelectorModal';
 import BarChartModal from './BarChartModal';
+import PCAResultsModal from './PCAResultsModal';
+import HierarchicalWidget from './HierarchicalWidget';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ScatterChart, Scatter, CartesianGrid, Legend, ZAxis } from 'recharts';
 import { useTheme } from '../contexts/ThemeContext';
 import OrangeStyleWidget from './OrangeStyleWidget';
-import { getWidgetColors, getWidgetLabel } from '../config/orangeColors';
+import { getWidgetColors, getWidgetLabel, getWidgetCategory } from '../config/orangeColors';
+import ParametersModal from './ParametersModal';
 
 const iconMap: Record<string, React.ComponentType<any>> = {
   'file-upload': Upload,
@@ -42,6 +47,9 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   'smoothing': Filter,
   'normalization': Filter,
   'custom-code': Code,
+  'pca-analysis': Search,
+  'hierarchical-clustering': Search,
+  'kmeans-analysis': Scatter3D,
 };
 
 interface CanvasWidgetProps {
@@ -73,30 +81,270 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
   onUpdatePosition,
   onDelete,
   onOpenConfig,
-  onStartConnection,
-  onEndConnection,
-  uploadStatus = null,
   onUpdateWidget,
-  onCreateLinkedNode,
-  isHighlighted = false,
-  highlightAngle = null,
+  onStartConnection,
+  highlightAngle,
+  onEndConnection,
+  isHighlighted,
   onRemoveConnections,
+  onRemoveConnection,
+  isConnectedTo,
+  uploadStatus,
+  onCreateLinkedNode,
   onAddWidget,
 }) => {
-  // avoid unused variable lint when highlightAngle not used in this file
-  void highlightAngle;
-  // mark isConnecting as used to avoid unused variable lint
-  void isConnecting;
-  const { theme } = useTheme();
-  const [showControls, setShowControls] = useState(false);
-  // Note: context controls are toggled via the main hover controls (setShowControls)
-  // local connectingTarget removed; connection lifecycle is managed by Canvas
-  const [showTableModal, setShowTableModal] = useState(false);
-  const [showSelector, setShowSelector] = useState(false);
-  const [showContextMenu, setShowContextMenu] = useState(false);
+  const [standardize, setStandardize] = useState<boolean>(widget.data?.pcaParams?.standardize ?? true);
+  const [pcaRunning, setPcaRunning] = useState<boolean>(false);
+  const [showControls, setShowControls] = useState<boolean>(false);
+  const [showContextMenu, setShowContextMenu] = useState<boolean>(false);
   const [contextPos, setContextPos] = useState<{ x: number; y: number } | null>(null);
   const [editingLabel, setEditingLabel] = useState<string | null>(null);
-  const [iconLoadFailed, setIconLoadFailed] = useState(false);
+  const [showParameters, setShowParameters] = useState<boolean>(false);
+  const [showTableModal, setShowTableModal] = useState<boolean>(false);
+
+  // Debug when showTableModal changes
+  useEffect(() => {
+    console.log('[CanvasWidget] showTableModal changed to:', showTableModal, 'for widget:', widget.id, 'type:', widget.type);
+    if (showTableModal && widget.type === 'data-table') {
+      console.log('[CanvasWidget] Data table modal OPENED for widget:', widget.id);
+      console.trace('[CanvasWidget] Stack trace for modal opening:');
+    }
+  }, [showTableModal, widget.id, widget.type]);
+
+  // NOTE: automatic open events are ignored for data-table widgets; users must click "Open" to view
+  const [showTableInline, setShowTableInline] = useState<boolean>(false);
+  const [nComponents, setNComponents] = useState<number>(widget.data?.pcaParams?.nComponents || 2);
+  const [showSelector, setShowSelector] = useState<boolean>(false);
+  const [iconLoadFailed, setIconLoadFailed] = useState<boolean>(false);
+
+  const [showInlineResults, setShowInlineResults] = useState<boolean>(false);
+  const [kmeansRunning, setKmeansRunning] = useState<boolean>(false);
+  const [localAugmentedTable, setLocalAugmentedTable] = useState<any[] | null>(null);
+  const [localKmeansResults, setLocalKmeansResults] = useState<any | null>(null);
+  // runResultBanner removed: we show only the inline graph after Run
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const iconRef = useRef<HTMLDivElement | null>(null);
+  const [iconCenter, setIconCenter] = useState<{ left: number; top: number } | null>(null);
+  const [inlinePos, setInlinePos] = useState<{ left: number; top: number }>({ left: 100, top: 100 });
+  const [inlineRelPos, setInlineRelPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
+  const [inlineSuppressOpen, setInlineSuppressOpen] = useState<boolean>(false);
+  const [inlineDragging, setInlineDragging] = useState<boolean>(false);
+  const inlineDragOffset = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const justClosedRef = useRef<boolean>(false);
+  // Guard to prevent immediate reopen/close races when the modal mounts
+  const tableModalLockRef = useRef<boolean>(false);
+
+  const openTableModal = () => {
+    try {
+      // Defer setting visible to the next macrotask so the click that triggered
+      // this opener doesn't immediately bubble to the backdrop and close it.
+      setTimeout(() => {
+        console.log('[CanvasWidget] openTableModal: setting showTableModal to true for widget:', widget.id);
+        setShowTableModal(true);
+        tableModalLockRef.current = true;
+        // Longer lock to prevent accidental immediate closes
+        setTimeout(() => { 
+          tableModalLockRef.current = false; 
+          console.log('[CanvasWidget] Modal lock released for widget:', widget.id);
+        }, 1000);
+      }, 0);
+    } catch (e) { /* swallow */ }
+  };
+
+  const guardedCloseTableModal = (opts?: { setJustClosed?: boolean }) => {
+    try {
+      if (tableModalLockRef.current) {
+        console.log('[CanvasWidget] guardedCloseTableModal: suppressed close due to lock for widget:', widget.id);
+        return;
+      }
+      console.log('[CanvasWidget] guardedCloseTableModal: closing modal for widget:', widget.id);
+      setShowTableModal(false);
+      setLocalAugmentedTable(null);
+      if (opts && opts.setJustClosed) {
+        try { justClosedRef.current = true; setTimeout(() => { justClosedRef.current = false; }, 500); } catch (e) { /* ignore */ }
+      }
+    } catch (e) { /* swallow */ }
+  };
+  const [showKmeansResultList, setShowKmeansResultList] = useState<boolean>(false);
+
+  // Sync nComponents from widget data when it changes externally, but
+  // avoid clobbering local edits: only update when the stored value
+  // differs from the current local state.
+  useEffect(() => {
+    const stored = widget.data?.pcaParams?.nComponents;
+    if (stored !== undefined && stored !== nComponents) {
+      console.log('[PCA] Syncing nComponents from widget data (was', nComponents, '->', stored, ')');
+      setNComponents(stored);
+    }
+  }, [widget.data?.pcaParams?.nComponents, nComponents]);
+
+  // When opening inline results, compute position based on widget DOM node
+  useEffect(() => {
+    if (showInlineResults) {
+      console.log('[InlineResults] computing inlinePos, rootRef:', !!rootRef.current);
+      const panelWidth = 520;
+      const panelHeight = 300;
+      let left = 100, top = 100;
+      if (rootRef.current) {
+        const rect = rootRef.current.getBoundingClientRect();
+        // Default: below widget, left-aligned
+        left = Math.round(rect.left);
+        top = Math.round(rect.bottom + 12);
+        // Clamp right edge
+        if (left + panelWidth > window.innerWidth - 10) {
+          left = window.innerWidth - panelWidth - 10;
+        }
+        // Clamp left edge
+        if (left < 10) left = 10;
+        // If not enough space below, try above
+        if (top + panelHeight > window.innerHeight - 10) {
+          const above = Math.round(rect.top - panelHeight - 12);
+          if (above > 10) top = above;
+          else top = window.innerHeight - panelHeight - 10;
+        }
+        // Clamp top edge
+        if (top < 10) top = 10;
+      } else {
+        // Fallback: center-ish
+        left = Math.max(10, Math.round(window.innerWidth / 2 - panelWidth / 2));
+        top = Math.max(10, Math.round(window.innerHeight / 4));
+      }
+      setInlinePos({ left, top });
+      console.log('[InlineResults] inlinePos set to', { left, top });
+    } else {
+      console.log('[InlineResults] showInlineResults false');
+    }
+  }, [showInlineResults]);
+
+  // Inline panel drag handlers: allow mouse-drag to move the inline results panel
+  useEffect(() => {
+    function onMove(e: MouseEvent) {
+      if (!inlineDragging) return;
+      const dx = (e.movementX || 0);
+      const dy = (e.movementY || 0);
+      setInlineRelPos((prev) => ({ left: prev.left + dx, top: Math.max(8, prev.top + dy) }));
+      setInlinePos((prev) => ({ left: Math.max(8, prev.left + dx), top: Math.max(8, prev.top + dy) }));
+    }
+    function onUp() {
+      console.log('[InlinePanel] drag end');
+      setInlineDragging(false);
+    }
+    if (inlineDragging) {
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [inlineDragging]);
+
+  // Compute inline panel position immediately (useful to avoid race conditions)
+  const positionInlineBelowWidget = () => {
+    try {
+      // Compact inline panel is small (approx 260x120) — use matching sizes for positioning
+      const panelWidth = 260;
+      const panelHeight = 140;
+      if (!rootRef.current) return;
+      const rect = rootRef.current.getBoundingClientRect();
+      // Prefer placing directly below the widget, centered horizontally relative to the widget
+      const panelOffset = 0; // no gap between widget and panel
+
+      // Compute absolute candidate position: center panel under widget
+      let absLeft = Math.round(rect.left + (rect.width / 2) - (panelWidth / 2));
+      let absTop = Math.round(rect.bottom + panelOffset);
+
+      // If left would overflow right edge, shift left but prefer staying near widget
+      if (absLeft + panelWidth > window.innerWidth - 10) {
+        absLeft = Math.min(Math.round(rect.left), Math.max(10, window.innerWidth - panelWidth - 10));
+      }
+      if (absLeft < 10) absLeft = Math.max(10, Math.round(rect.left));
+
+      // If not enough space below, try placing above; otherwise clamp to viewport
+      if (absTop + panelHeight > window.innerHeight - 10) {
+        const above = Math.round(rect.top - panelHeight - 12);
+        if (above > 10) absTop = above;
+        else absTop = Math.max(10, window.innerHeight - panelHeight - 10);
+      }
+
+      // Ensure the widget DOM node can contain absolutely positioned children
+      try { if (rootRef.current && window.getComputedStyle(rootRef.current).position === 'static') { rootRef.current.style.position = 'relative'; } } catch (e) { /* ignore */ }
+
+      // Recompute relative position so portal-aware rendering stays near widget
+      relLeft = Math.max(0, absLeft - Math.round(rect.left));
+      relTop = Math.max(0, absTop - Math.round(rect.top));
+      setInlineRelPos({ left: relLeft, top: relTop });
+      // Also set viewport-based inlinePos for fallback uses
+      const left = Math.max(10, Math.min(absLeft, window.innerWidth - panelWidth - 10));
+      const top = Math.max(10, Math.min(absTop, window.innerHeight - panelHeight - 10));
+      setInlinePos({ left, top });
+      console.log('[InlineResults] positioned below widget to (rel,abs)', { rel: { left: relLeft, top: relTop }, abs: { left, top } });
+    } catch (e) {
+      console.warn('[InlineResults] positionInlineBelowWidget failed', e);
+    }
+  };
+
+  // Ensure compact kmeans result list is positioned when shown
+  useEffect(() => {
+    if (showKmeansResultList) {
+      // compute immediately and also after a short timeout to handle layout shifts
+      try { positionInlineBelowWidget(); } catch (e) { /* ignore */ }
+      const t = setTimeout(() => { try { positionInlineBelowWidget(); } catch (e) { /* ignore */ } }, 80);
+
+      const onWinChange = () => { try { positionInlineBelowWidget(); } catch (e) { /* ignore */ } };
+      window.addEventListener('resize', onWinChange);
+      window.addEventListener('scroll', onWinChange, true);
+      return () => {
+        clearTimeout(t);
+        window.removeEventListener('resize', onWinChange);
+        window.removeEventListener('scroll', onWinChange, true);
+      };
+    }
+  }, [showKmeansResultList, widget.id, widget.position?.x, widget.position?.y]);
+
+  // Debug: log when inline results visibility changes or when widget.pcaResults updates
+  useEffect(() => {
+    console.log('[PCA] Debug - showInlineResults:', showInlineResults, 'pcaResults present:', !!widget.data?.pcaResults);
+  }, [showInlineResults, widget.data?.pcaResults]);
+
+  // Compute icon center in viewport coordinates for input widgets so overlay can snap exactly
+  useEffect(() => {
+    const update = () => {
+      try {
+        const el = iconRef.current;
+        if (el) {
+          const r = el.getBoundingClientRect();
+          const ic = { left: Math.round(r.left + r.width / 2), top: Math.round(r.top + r.height / 2) };
+          setIconCenter(ic);
+          try {
+            // Persist icon center into widget data so the parent Canvas can align connection ports
+            if (onUpdateWidget) {
+              const existing = (widget.data && (widget.data as any).iconCenter) || null;
+              if (!existing || existing.left !== ic.left || existing.top !== ic.top) {
+                onUpdateWidget({ data: { iconCenter: ic } });
+              }
+            }
+          } catch (err) {
+            // swallow
+          }
+        } else {
+          setIconCenter(null);
+        }
+      } catch (err) {
+        setIconCenter(null);
+      }
+    };
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true);
+    const obs = new MutationObserver(update);
+    obs.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+      obs.disconnect();
+    };
+  }, [iconRef.current, widget.id]);
 
   useEffect(() => {
     const onGlobalClick = () => {
@@ -111,28 +359,134 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
     };
     window.addEventListener('click', onGlobalClick);
     window.addEventListener('keydown', onKey);
+    // Listen for requests to open this widget's Parameters modal from other UI pieces
+    const paramsHandler = (ev: any) => {
+      try {
+        const id = ev?.detail?.widgetId;
+        console.debug('[CanvasWidget] paramsHandler received event for', id, 'this widget:', widget.id);
+        if (id && id === widget.id) {
+          console.debug('[CanvasWidget] paramsHandler opening parameters for', widget.id);
+          setShowParameters(true);
+        }
+      } catch (err) { console.error('[CanvasWidget] paramsHandler error', err); }
+    };
+    window.addEventListener('openWidgetParameters', paramsHandler as EventListener);
+    // Listen for explicit request to open the Data Table modal for this widget
+    const openTableHandler = (ev: any) => {
+      try {
+        const id = ev?.detail?.widgetId;
+        if (id && id === widget.id && widget.type === 'data-table') {
+          console.debug('[CanvasWidget] openDataTable event ignored - only manual opening allowed');
+          // Automatic opening disabled - user must manually click "Open" to view data
+          // setShowTableModal(true);
+        }
+      } catch (err) { /* ignore */ }
+    };
+    window.addEventListener('openDataTable', openTableHandler as EventListener);
     return () => {
       window.removeEventListener('click', onGlobalClick);
       window.removeEventListener('keydown', onKey);
+      window.removeEventListener('openWidgetParameters', paramsHandler as EventListener);
+      window.removeEventListener('openDataTable', openTableHandler as EventListener);
     };
   }, []);
 
+  // Log showParameters changes for debugging visibility issues
+  React.useEffect(() => {
+    console.debug('[CanvasWidget] showParameters changed for', widget.id, '->', showParameters);
+  }, [showParameters, widget.id]);
+
   // Helper to try multiple backend endpoints (relative -> 127.0.0.1:5003 -> localhost:5003)
   const fetchToBackend = async (path: string, options?: RequestInit) => {
+    // Try the relative path first so Vite dev server proxy (if configured) can forward the request.
+    // Fallback candidates include IPv4 localhost and hostname. Increase timeout slightly for local services.
+    const perCandidateTimeout = 5000; // ms
+    // Try the relative path first (Vite proxy). If that fails try explicit backend hosts.
     const candidates = [path, `http://127.0.0.1:5003${path}`, `http://localhost:5003${path}`];
     let lastError: any = null;
     for (const url of candidates) {
+      // use AbortController to avoid long hanging fetches
+      const controller = new AbortController();
+      const to = setTimeout(() => controller.abort(), perCandidateTimeout);
       try {
-        const resp = await fetch(url, options);
+        console.debug('[CanvasWidget] fetchToBackend trying', url);
+        // Warn about mixed-content: browser will block http requests from https pages
+        try {
+          if (typeof window !== 'undefined' && window.location && window.location.protocol === 'https:' && url.startsWith('http:')) {
+            console.warn('[CanvasWidget] fetchToBackend candidate is insecure (http) while page is https — mixed-content may block the request:', url);
+          }
+        } catch (e) { /* ignore */ }
+        const resp = await fetch(url, { ...(options || {}), signal: controller.signal });
+        clearTimeout(to);
+        // If the proxy returned an error (5xx) it may be because the dev-server couldn't connect to the backend
+        // Some dev-server/proxy middlewares return an HTML/text error page containing the underlying error (e.g. ECONNREFUSED).
+        // In that case, attempt the next candidate (direct backend host) rather than immediately returning the error response.
+        if (!resp.ok && resp.status >= 500) {
+          try {
+            const txt = await resp.text();
+            const lower = (txt || '').toLowerCase();
+            if (lower.includes('econnrefused') || lower.includes('connection refused') || lower.includes('connect econnrefused') || lower.includes('cannot connect')) {
+              console.debug('[CanvasWidget] fetchToBackend detected proxy connection-refused response, trying next candidate');
+              // try next candidate
+              continue;
+            }
+            // not a connection-refused case — return the response text as-is by creating a new Response
+            return new Response(txt, { status: resp.status, statusText: resp.statusText, headers: resp.headers });
+          } catch (e) {
+            // if we cannot read text, return the original response
+            return resp;
+          }
+        }
         return resp; // return whatever the server returned (caller will parse JSON)
-      } catch (err) {
+      } catch (err: any) {
+        clearTimeout(to);
         lastError = err;
+        // Detailed logging to aid debugging in the browser console
+        if (err && err.name === 'AbortError') {
+          console.debug('[CanvasWidget] fetchToBackend timed out for', url, `(timeout ${perCandidateTimeout}ms)`);
+        } else if (err && err.name === 'TypeError' && String(err).includes('Failed to fetch')) {
+          console.debug('[CanvasWidget] fetchToBackend network failure (likely backend down or CORS/mixed-content):', url, err.message || err);
+        } else {
+          console.debug('[CanvasWidget] fetchToBackend candidate failed:', url, err && (err.message || String(err)));
+        }
         // try next candidate
-        console.debug('[CanvasWidget] fetchToBackend candidate failed:', url, err);
       }
     }
-    // all attempts failed
-    throw lastError || new Error('Failed to reach backend');
+    // all attempts failed — provide a helpful error
+    const message = lastError?.message || String(lastError) || 'Failed to reach backend';
+    // If we failed to reach any backend candidate, and the frontend has Vite-supplied
+    // Supabase credentials (public anon key), try a direct Supabase REST call as a fallback
+    try {
+      const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').toString();
+      const supabaseAnon = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').toString();
+      if (supabaseUrl && supabaseAnon && path.startsWith('/api/supabase')) {
+        console.debug('[CanvasWidget] proxy/backends unreachable — attempting direct Supabase REST fallback');
+        // path is like: /api/supabase/fetch?table=raman_data&limit=200
+        const qsIndex = path.indexOf('?');
+        const query = qsIndex >= 0 ? path.slice(qsIndex + 1) : '';
+        const params = new URLSearchParams(query);
+        const table = params.get('table') || 'raman_data';
+        // Build supabase REST URL
+        const restUrl = `${supabaseUrl.replace(/\/$/, '')}/rest/v1/${encodeURIComponent(table)}${query ? ('?' + query) : ''}`;
+        const headers: Record<string, string> = {
+          apikey: supabaseAnon,
+          Authorization: `Bearer ${supabaseAnon}`,
+          Accept: 'application/json'
+        };
+        const resp = await fetch(restUrl, { method: options?.method || 'GET', headers });
+        if (!resp.ok) {
+          const txt = await resp.text();
+          console.error('[CanvasWidget] direct Supabase REST fallback failed:', resp.status, txt);
+          throw new Error(`Supabase REST returned ${resp.status}`);
+        }
+        console.debug('[CanvasWidget] direct Supabase REST fallback succeeded');
+        return resp;
+      }
+    } catch (fbErr) {
+      console.debug('[CanvasWidget] Supabase REST fallback failed or not available:', fbErr && fbErr.message ? fbErr.message : fbErr);
+    }
+
+    throw new Error(message);
   };
 
   // --- Mean Average Widget State ---
@@ -172,8 +526,10 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
   const [showLineChartModal, setShowLineChartModal] = useState(false);
   const [modalPreviewData, setModalPreviewData] = useState<Record<string, any>[] | null>(null);
   const [showScatterModal, setShowScatterModal] = useState(false);
+  const [showKmeansGraphModal, setShowKmeansGraphModal] = useState(false);
   const [showBoxPlotModal, setShowBoxPlotModal] = useState(false);
   const [showBarChartModal, setShowBarChartModal] = useState(false);
+  const [showPCAResults, setShowPCAResults] = useState(false);
   const [isSupabaseHover, setIsSupabaseHover] = useState(false);
   // referenced to avoid unused-variable lint when hover state is not consumed yet
   void isSupabaseHover;
@@ -218,16 +574,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
     setSelectedCols([]);
   }, [mode, data.length, columns.join(',')]);
 
-  // Auto-open Data Table modal when this data-table widget receives data (transition from empty->non-empty)
-  useEffect(() => {
-    if (widget.type !== 'data-table') return;
-    const hasData = (widget.data?.tableData && widget.data.tableData.length > 0) || (widget.data?.parsedData && widget.data.parsedData.length > 0);
-    if (hasData) {
-      setShowTableModal(true);
-    }
-    // Only depend on widget.data to trigger when rows arrive
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [widget.data]);
+  // Removed auto-open behavior - data table only opens when user manually clicks "Open"
 
   const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
     type: 'canvas-widget',
@@ -247,28 +594,45 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
   const [sbTableName, setSbTableName] = useState<string>(widget.data?.supabaseTable || 'raman_data');
   const [sbSampleFilter, setSbSampleFilter] = useState<string>(widget.data?.sampleFilter || '');
   const [sbFetching, setSbFetching] = useState(false);
+  const [sbHasData, setSbHasData] = useState<boolean>(!!(widget.data?.tableData && widget.data.tableData.length > 0));
 
   // Manual fetch function for Supabase widget (uses server-side credentials from backend/.env)
   const fetchSupabaseData = async () => {
+    console.log('🔵 [FETCH] fetchSupabaseData called!', { isSupabase, widgetId: widget.id, sbTableName });
     if (!isSupabase) return;
     setSbFetching(true);
     try {
       onUpdateWidget?.({ data: { ...(widget.data || {}), fetchStatus: 'fetching', fetchError: null, supabaseTable: sbTableName, sampleFilter: sbSampleFilter } });
-      
+      // Skip a separate health-check and rely on the main backend request below
+      // (fetchToBackend has candidate retries and per-candidate timeouts and will produce helpful logs).
+
       // Build query with optional sample name filter (use fetchToBackend helper)
       let path = `/api/supabase/fetch?table=${encodeURIComponent(sbTableName)}&limit=200`;
       if (sbSampleFilter && sbSampleFilter.trim()) {
         path += `&filter=Sample name.eq.${encodeURIComponent(sbSampleFilter.trim())}`;
       }
 
-      const res = await fetchToBackend(path, { method: 'GET' });
-      if (!res.ok) {
-        const txt = await res.text();
-        onUpdateWidget?.({ data: { ...(widget.data || {}), fetchStatus: 'error', fetchError: txt } });
+      console.log('🔵 [FETCH] About to call fetchToBackend with path:', path);
+      let res;
+      try {
+        res = await fetchToBackend(path, { method: 'GET' });
+        console.log('🔵 [FETCH] fetchToBackend returned, status:', res.status, 'ok:', res.ok);
+      } catch (fetchErr: any) {
+        console.error('🔵 [FETCH ERROR] fetchToBackend failed:', fetchErr && fetchErr.message ? fetchErr.message : String(fetchErr));
+        onUpdateWidget?.({ data: { ...(widget.data || {}), fetchStatus: 'error', fetchError: String(fetchErr && fetchErr.message ? fetchErr.message : fetchErr) } });
+        setSbFetching(false);
         return;
       }
-      const body = await res.json();
+      if (!res.ok) {
+        const txt = await res.text().catch(() => `Status ${res.status}`);
+        console.warn('🔵 [FETCH ERROR] backend returned error status for fetch:', res.status, txt?.slice ? txt.slice(0, 200) : txt);
+        onUpdateWidget?.({ data: { ...(widget.data || {}), fetchStatus: 'error', fetchError: txt } });
+        setSbFetching(false);
+        return;
+      }
+      const body = await res.json().catch(() => ({}));
       let rows = body?.data || body || [];
+      console.log('🔵 [FETCH SUCCESS] Got', rows.length, 'rows from backend');
       
       // CLIENT-SIDE FILTER: If backend filter didn't work, filter here
       if (sbSampleFilter && sbSampleFilter.trim()) {
@@ -300,13 +664,56 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
         return { shift: Number.isFinite(x) ? x : null, intensity: Number.isFinite(y) ? y : null, __raw: r };
       }).filter((d: any) => d.shift !== null && d.intensity !== null);
       
+      console.log('🔵 [FETCH] Calling onUpdateWidget to store', rows.length, 'rows in widget.data.tableData');
       onUpdateWidget?.({ data: { ...(widget.data || {}), tableData: rows, tableDataProcessed: mapped, fetchStatus: 'success', supabaseTable: sbTableName } });
+      console.log('🔵 [FETCH] onUpdateWidget called, setting sbHasData to true');
+      try { setSbHasData(!!(rows && rows.length > 0)); } catch (e) { /* swallow */ }
+      
+      // After successful fetch, trigger auto-forwarding to connected downstream widgets
+      if (rows && rows.length > 0) {
+        console.debug('[Supabase] fetch successful, triggering data forward for', widget.id, 'with', rows.length, 'rows');
+        // Small delay to ensure widget data is updated before triggering forward
+        setTimeout(() => {
+          try {
+            // Dispatch a custom event to trigger the App's auto-forward logic
+            window.dispatchEvent(new CustomEvent('triggerDataForward', { detail: { sourceWidgetId: widget.id } }));
+          } catch (e) { /* ignore */ }
+        }, 100);
+      }
     } catch (err: any) {
       onUpdateWidget?.({ data: { ...(widget.data || {}), fetchStatus: 'error', fetchError: String(err) } });
     } finally {
       setSbFetching(false);
     }
   };
+
+  // Listen for programmatic fetch requests (e.g. when a connection is created)
+  useEffect(() => {
+    const handler = (ev: any) => {
+      try {
+        const id = ev?.detail?.widgetId;
+        if (id && id === widget.id) {
+          // Only trigger if this is a supabase widget
+          if (!isSupabase) return;
+          // Avoid starting a new fetch if we're already fetching or already have data
+          if (sbFetching) {
+            console.debug('[CanvasWidget] fetchSupabase ignored: already fetching for', widget.id);
+            return;
+          }
+          if (sbHasData) {
+            console.debug('[CanvasWidget] fetchSupabase ignored: supabase already has data for', widget.id);
+            return;
+          }
+          console.debug('[CanvasWidget] fetchSupabase event received for', widget.id);
+          fetchSupabaseData();
+        }
+      } catch (err) {
+        console.error('[CanvasWidget] fetchSupabase handler error', err);
+      }
+    };
+    window.addEventListener('fetchSupabase', handler as EventListener);
+    return () => window.removeEventListener('fetchSupabase', handler as EventListener);
+  }, [widget.id, isSupabase, sbTableName]);
 
   // Connection handlers are provided by Canvas via props (onStartConnection/onEndConnection)
 
@@ -323,34 +730,275 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       const hasData = (widget.data?.tableData && widget.data.tableData.length > 0) || 
                       (widget.data?.parsedData && widget.data.parsedData.length > 0);
       
+      // Always get the latest data regardless of timing issues
+      // Prefer explicit `tableData`, then `tableDataProcessed` (from processing steps), then `parsedData` (file uploads)
+      const displayData = widget.data?.tableData || widget.data?.tableDataProcessed || widget.data?.parsedData || [];
+
+      console.log('[CanvasWidget] data-table renderWidgetContent debug:', {
+        widgetId: widget.id,
+        hasData,
+        displayDataLength: displayData.length,
+        tableDataExists: !!widget.data?.tableData,
+        tableDataLength: widget.data?.tableData?.length || 0,
+        tableDataProcessedExists: !!widget.data?.tableDataProcessed,
+        tableDataProcessedLength: widget.data?.tableDataProcessed?.length || 0,
+        parsedDataExists: !!widget.data?.parsedData,
+        parsedDataLength: widget.data?.parsedData?.length || 0,
+        showTableInline: showTableInline
+      });
+      
       const colors = getWidgetColors('data-table');
       
+      // Render two connection port elements inside the icon for precise alignment
+      const dataTablePorts = (
+        <>
+          <div
+            role="button"
+            aria-label="Start connection from left port"
+            className="absolute rounded-full bg-white border-2 pointer-events-auto"
+            onPointerDown={(e) => {
+              try { e.stopPropagation(); e.preventDefault(); const tgt = e.currentTarget as HTMLElement; const r = tgt.getBoundingClientRect(); onStartConnection && onStartConnection({ clientX: Math.round(r.left + r.width / 2), clientY: Math.round(r.top + r.height / 2), portCenter: true }); } catch (err) { /* swallow */ }
+            }}
+            style={{ width: 8, height: 8, left: 14, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }}
+          />
+          <div
+            role="button"
+            aria-label="Start connection from right port"
+            className="absolute rounded-full bg-white border-2 pointer-events-auto"
+            onPointerDown={(e) => {
+              try { e.stopPropagation(); e.preventDefault(); const tgt = e.currentTarget as HTMLElement; const r = tgt.getBoundingClientRect(); onStartConnection && onStartConnection({ clientX: Math.round(r.left + r.width / 2), clientY: Math.round(r.top + r.height / 2), portCenter: true }); } catch (err) { /* swallow */ }
+            }}
+            style={{ width: 8, height: 8, right: 14, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }}
+          />
+        </>
+      );
+
       return (
         <OrangeStyleWidget
           icon={Table}
           label={getWidgetLabel('data-table')}
-          statusText={hasData ? 'Data loaded' : 'No data'}
+          iconRef={iconRef}
+          portElements={dataTablePorts}
+          statusText={hasData ? `${(widget.data?.tableData || widget.data?.parsedData || []).length} rows` : 'No Data'}
           statusColor={hasData ? 'green' : 'gray'}
           mainColor={colors.main}
           lightColor={colors.light}
           bgColor={colors.bg}
         >
-          {/* Controls section - shown on hover */}
-          <div className="mt-2 flex flex-col items-center gap-2">
-            <button 
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                setShowTableModal(true); 
-              }} 
-              className="px-3 py-1.5 text-xs font-medium rounded transition-colors"
-              style={{
-                backgroundColor: colors.light,
-                color: colors.main,
-              }}
-            >
-              Open table
-            </button>
-          </div>
+          {/* Controls section - always visible when data exists */}
+          {hasData && (
+            <div className="mt-2 flex flex-col items-center gap-2">
+              <button 
+                onClick={(e) => { 
+                  console.log('🔴 [DATA TABLE] BUTTON CLICKED!!! widget:', widget.id, 'showTableModal:', showTableModal);
+                  e.stopPropagation(); 
+                  e.preventDefault();
+                  if (showTableModal) {
+                    console.log('[CanvasWidget] Open button clicked while modal open — closing modal for:', widget.id);
+                    guardedCloseTableModal({ setJustClosed: true });
+                  } else {
+                    console.log('[CanvasWidget] Open table button clicked, opening modal for:', widget.id);
+                    openTableModal();
+                  }
+                }}
+                onMouseDown={(e) => {
+                  console.log('🔴 [DATA TABLE] MOUSEDOWN on button');
+                  e.stopPropagation();
+                  e.preventDefault();
+                }} 
+                style={{
+                  backgroundColor: '#3B82F6',
+                  color: '#FFFFFF',
+                  padding: '8px 16px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  borderRadius: '6px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#2563EB';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#3B82F6';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                {showTableModal ? 'Hide table' : 'Open table'}
+              </button>
+            </div>
+          )}
+          {/* Centered table modal with guarded opener/closer - portalled to canvas */}
+          {showTableModal && (() => {
+            const canvasEl = document.querySelector('.orange-canvas') as HTMLElement | null;
+            console.log('[CanvasWidget] Rendering data table modal, showTableModal:', showTableModal, 'canvas found:', !!canvasEl, 'widget:', widget.id);
+            if (!canvasEl) {
+              console.warn('[CanvasWidget] canvas container (.orange-canvas) not found for data-table modal, falling back to body');
+            } else {
+              console.log('[CanvasWidget] Portal target canvas dimensions:', { width: canvasEl.offsetWidth, height: canvasEl.offsetHeight });
+            }
+            const portalTarget = canvasEl || document.body;
+            
+            const modalContent = (
+              <div
+                className="table-overlay-backdrop"
+                style={{
+                  position: 'absolute',
+                  top: '0px',
+                  left: '0px',
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                  zIndex: 999999,
+                  display: 'block'
+                }}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (e.target === e.currentTarget) {
+                    console.log('Backdrop clicked - closing table modal');
+                    guardedCloseTableModal({ setJustClosed: true });
+                  }
+                }}>
+                <div 
+                  className="table-content-container"
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '12px',
+                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)',
+                    padding: '28px',
+                    width: '90vw',
+                    maxWidth: '1200px',
+                    maxHeight: '85vh',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                  onClick={(e) => e.stopPropagation()}>
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    marginBottom: '24px',
+                    borderBottom: '2px solid #E5E7EB',
+                    paddingBottom: '16px'
+                  }}>
+                    <h2 style={{
+                      fontSize: '24px',
+                      fontWeight: 'bold',
+                      color: '#1F2937',
+                      margin: 0
+                    }}>
+                      Data Table ({displayData.length} rows)
+                    </h2>
+                    <button 
+                      onClick={() => {
+                        console.log('Close button clicked - closing table modal');
+                        guardedCloseTableModal({ setJustClosed: true });
+                      }}
+                      style={{
+                        backgroundColor: '#EF4444',
+                        border: 'none',
+                        color: '#FFFFFF',
+                        fontSize: '20px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        padding: '8px 12px',
+                        borderRadius: '50%',
+                        lineHeight: '1',
+                        transition: 'all 0.2s',
+                        width: '40px',
+                        height: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#DC2626';
+                        e.currentTarget.style.transform = 'scale(1.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = '#EF4444';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                      title="Close table"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  {displayData.length > 0 ? (
+                  <div style={{ 
+                    flex: 1, 
+                    overflow: 'auto', 
+                    border: '2px solid #E5E7EB', 
+                    borderRadius: '8px',
+                    backgroundColor: '#FAFAFA'
+                  }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead style={{ position: 'sticky', top: 0, backgroundColor: '#F9FAFB' }}>
+                        <tr>
+                          {Object.keys(displayData[0] || {}).map((header, idx) => (
+                            <th key={idx} style={{
+                              border: '1px solid #D1D5DB',
+                              padding: '12px 16px',
+                              textAlign: 'left',
+                              fontWeight: '600',
+                              color: '#374151',
+                              backgroundColor: '#F9FAFB',
+                              fontSize: '14px'
+                            }}>
+                              {header}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {displayData.map((row, rowIdx) => (
+                          <tr key={rowIdx} style={{
+                            backgroundColor: rowIdx % 2 === 0 ? '#FFFFFF' : '#F9FAFB'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#EBF8FF';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = rowIdx % 2 === 0 ? '#FFFFFF' : '#F9FAFB';
+                          }}>
+                            {Object.values(row).map((cell, cellIdx) => (
+                              <td key={cellIdx} style={{
+                                border: '1px solid #D1D5DB',
+                                padding: '8px 16px',
+                                color: '#374151',
+                                fontSize: '14px'
+                              }}>
+                                {typeof cell === 'object' ? JSON.stringify(cell) : String(cell)}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  ) : (
+                    <div style={{ textAlign: 'center', color: '#6B7280', padding: '48px 0' }}>
+                      <p style={{ fontSize: '20px', marginBottom: '8px' }}>No data available</p>
+                      <p style={{ color: '#9CA3AF' }}>Connect this widget to a Supabase or File Upload widget to display data</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+            
+            return createPortal(modalContent, portalTarget);
+          })()}
         </OrangeStyleWidget>
       );
     }
@@ -359,10 +1007,35 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       const colors = getWidgetColors('file-upload');
       const hasData = widget.data?.parsedData && widget.data.parsedData.length > 0;
       
+      const fileUploadPorts = (
+        <>
+          <div
+            role="button"
+            aria-label="Start connection from left port"
+            className="absolute rounded-full bg-white border-2 pointer-events-auto"
+            onPointerDown={(e) => {
+              try { e.stopPropagation(); e.preventDefault(); const tgt = e.currentTarget as HTMLElement; const r = tgt.getBoundingClientRect(); onStartConnection && onStartConnection({ clientX: Math.round(r.left + r.width / 2), clientY: Math.round(r.top + r.height / 2), portCenter: true }); } catch (err) { /* swallow */ }
+            }}
+            style={{ width: 8, height: 8, left: 14, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }}
+          />
+          <div
+            role="button"
+            aria-label="Start connection from right port"
+            className="absolute rounded-full bg-white border-2 pointer-events-auto"
+            onPointerDown={(e) => {
+              try { e.stopPropagation(); e.preventDefault(); const tgt = e.currentTarget as HTMLElement; const r = tgt.getBoundingClientRect(); onStartConnection && onStartConnection({ clientX: Math.round(r.left + r.width / 2), clientY: Math.round(r.top + r.height / 2) }); } catch (err) { /* swallow */ }
+            }}
+            style={{ width: 8, height: 8, right: 14, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }}
+          />
+        </>
+      );
+
       return (
         <OrangeStyleWidget
           icon={Upload}
           label="File Upload"
+          iconRef={iconRef}
+          portElements={fileUploadPorts}
           statusText={hasData ? 'File loaded' : uploadingLocal ? 'Uploading...' : 'No file'}
           statusColor={hasData ? 'green' : uploadingLocal ? 'orange' : 'gray'}
           mainColor={colors.main}
@@ -631,44 +1304,120 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
         console.log('[Normalization View] ============ END ============');
       };
 
+      const colors = getWidgetColors('normalization');
+
+      return (
+        <>
+          <OrangeStyleWidget
+            icon={Calculator}
+            label="Normalize"
+            statusText={hasNormalized ? 'Normalized' : ''}
+            statusColor={hasNormalized ? 'green' : 'gray'}
+            mainColor={colors.main}
+            lightColor={colors.light}
+            bgColor={colors.bg}
+          />
+
+          {/* Parameters Modal */}
+          <ParametersModal
+            isOpen={showParameters}
+            onClose={() => setShowParameters(false)}
+            title="Normalization Parameters"
+          >
+            <div className="space-y-4">
+              {/* Method Selector */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">Normalization Method</label>
+                <select 
+                  value={method} 
+                  onChange={(e) => setMethod(e.target.value as any)} 
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="minmax">Min-Max Normalization</option>
+                  <option value="zscore">Z-score Standardization</option>
+                </select>
+              </div>
+
+              {/* Min-Max Range Parameters */}
+              {method === 'minmax' && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Target Range</label>
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="number" 
+                      value={targetMin} 
+                      onChange={(e) => setTargetMin(Number(e.target.value))} 
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                      placeholder="Min"
+                    />
+                    <span className="text-gray-500 text-sm">to</span>
+                    <input 
+                      type="number" 
+                      value={targetMax} 
+                      onChange={(e) => setTargetMax(Number(e.target.value))} 
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                      placeholder="Max"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">Scale to this range</p>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div className="flex gap-2 pt-2">
+                <button 
+                  type="button" 
+                  onClick={(e) => { 
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[Normalization] Compute clicked');
+                    runNormalization(); 
+                  }} 
+                  className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 cursor-pointer"
+                  style={{ pointerEvents: 'auto' }}
+                >
+                  Compute
+                </button>
+                <button 
+                  type="button" 
+                  onClick={(e) => { 
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[Normalization] Apply & Close clicked');
+                    runNormalization(); 
+                    setShowParameters(false); 
+                  }} 
+                  className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 cursor-pointer"
+                  style={{ pointerEvents: 'auto' }}
+                >
+                  Apply & Close
+                </button>
+                <button 
+                  type="button" 
+                  onClick={(e) => { 
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[Normalization] Reset clicked');
+                    setMethod('minmax'); 
+                    setTargetMin(0); 
+                    setTargetMax(1); 
+                  }} 
+                  className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 cursor-pointer"
+                  style={{ pointerEvents: 'auto' }}
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          </ParametersModal>
+        </>
+      );
+    }
+
+    // Temporarily keep old rendering for reference
+    if (false && widget.type === 'normalization-old') {
       return (
         <div className="flex flex-col items-center justify-center w-full h-full cursor-default px-2" onClick={(e) => e.stopPropagation()}>
-          <div className="mb-2 flex items-center gap-2 text-sm">
-            <label className="text-xs">Method:</label>
-            <select value={method} onChange={(e) => setMethod(e.target.value as any)} className="px-2 py-1 border rounded text-xs">
-              <option value="minmax">Min-Max</option>
-              <option value="zscore">Z-score</option>
-            </select>
-          </div>
-
-          {method === 'minmax' && (
-            <div className="mb-2 flex items-center gap-2 text-xs">
-              <label className="text-xs">Range:</label>
-              <input type="number" value={targetMin} onChange={(e) => setTargetMin(Number(e.target.value))} className="w-16 px-2 py-1 border rounded text-xs" />
-              <span className="text-xs">→</span>
-              <input type="number" value={targetMax} onChange={(e) => setTargetMax(Number(e.target.value))} className="w-16 px-2 py-1 border rounded text-xs" />
-            </div>
-          )}
-
-          {/* Apply and View Data buttons */}
-          <div className="mb-2 flex gap-2">
-            <button 
-              type="button" 
-              onClick={() => runNormalization()} 
-              className="flex-1 px-3 py-2 bg-blue-600 text-white rounded text-xs font-semibold hover:bg-blue-700"
-              title="Apply normalization to the data"
-            >
-              Apply
-            </button>
-            <button 
-              type="button" 
-              onClick={() => openNormalizationPreview()} 
-              className="flex-1 px-3 py-2 bg-green-600 text-white rounded text-xs font-semibold hover:bg-green-700"
-              title="View normalized output in chart"
-            >
-              View Data
-            </button>
-          </div>
 
           {/* Outer connection circle */}
           <div className="rounded-full p-1 flex items-center justify-center" style={{ border: '2px dashed rgba(0,0,0,0.06)', borderRadius: 999 }}>
@@ -687,7 +1436,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           </div>
 
           <div className="mt-2 text-[12px] font-medium text-center">Normalization</div>
-          {overallRangeText && <div className="text-xs text-gray-500 mt-1">Overall: {overallRangeText}</div>}
+          {/* Overall range text removed to avoid unused/undefined variable in legacy block */}
         </div>
       );
     }
@@ -1121,177 +1870,211 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
         alert(`✅ Forecast Complete!\n\nMethod: ${method}\nGenerated: ${forecastRows.length} future points\n\nConnect to Line Chart to visualize!`);
       };
 
+      const colors = getWidgetColors('future-extraction');
+      const hasData = widget.data?.tableDataProcessed || widget.data?.tableDataForecast;
+
       return (
-        <div className="flex flex-col items-center justify-center w-full h-full cursor-default px-2" onClick={(e) => e.stopPropagation()}>
-          {/* Method selector */}
-          <div className="w-full px-2 mb-2 space-y-2">
-            <div className="flex items-center gap-2 text-xs">
-              <label className="text-xs font-semibold">Method:</label>
-              <select 
-                value={method} 
-                onChange={(e) => setMethod(e.target.value as any)} 
-                className="flex-1 px-2 py-1 border rounded text-xs"
-              >
-                <optgroup label="📈 Forecasting">
-                  <option value="naive">Naive (Last Value)</option>
-                  <option value="moving_average">Moving Average</option>
-                  <option value="linear">Linear Trend</option>
-                  <option value="exponential">Exponential Smoothing</option>
-                  <option value="pattern">Pattern Detection</option>
-                </optgroup>
-                <optgroup label="🔍 Feature Extraction">
-                  <option value="peak_detection">Peak Detection</option>
-                  <option value="statistical_features">Statistical Features</option>
-                  <option value="spectral_fingerprint">Spectral Fingerprinting</option>
-                </optgroup>
-              </select>
-            </div>
+        <>
+          <OrangeStyleWidget
+            icon={LineChart}
+            label="Future Extraction"
+            statusText={hasData ? 'Extracted' : ''}
+            statusColor={hasData ? 'green' : 'gray'}
+            mainColor={colors.main}
+            lightColor={colors.light}
+            bgColor={colors.bg}
+          />
 
-            {/* Forecasting parameters */}
-            {['naive', 'moving_average', 'linear', 'exponential', 'pattern'].includes(method) && (
-              <>
-                {/* Horizon parameter */}
-                <div className="flex items-center gap-2 text-xs">
-                  <label className="text-xs">Horizon:</label>
-                  <input 
-                    type="number" 
-                    min={1} 
-                    max={50}
-                    value={horizon} 
-                    onChange={(e) => setHorizon(Number(e.target.value))} 
-                    className="w-20 px-2 py-1 border rounded text-xs" 
-                  />
-                  <span className="text-[10px] text-gray-500">steps</span>
-                </div>
+          {/* Parameters Modal */}
+          <ParametersModal
+            isOpen={showParameters}
+            onClose={() => setShowParameters(false)}
+            title="Future Extraction Parameters"
+          >
+            <div className="space-y-4">
+              {/* Method Selector */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">Method</label>
+                <select 
+                  value={method} 
+                  onChange={(e) => setMethod(e.target.value as any)} 
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <optgroup label="📈 Forecasting">
+                    <option value="naive">Naive (Last Value)</option>
+                    <option value="moving_average">Moving Average</option>
+                    <option value="linear">Linear Trend</option>
+                    <option value="exponential">Exponential Smoothing</option>
+                    <option value="pattern">Pattern Detection</option>
+                  </optgroup>
+                  <optgroup label="🔍 Feature Extraction">
+                    <option value="peak_detection">Peak Detection</option>
+                    <option value="statistical_features">Statistical Features</option>
+                    <option value="spectral_fingerprint">Spectral Fingerprinting</option>
+                  </optgroup>
+                </select>
+              </div>
 
-                {/* Lookback (for linear, exponential, pattern) */}
-                {(method === 'linear' || method === 'exponential' || method === 'pattern') && (
-                  <div className="flex items-center gap-2 text-xs">
-                    <label className="text-xs">Lookback:</label>
+              {/* Forecasting parameters */}
+              {['naive', 'moving_average', 'linear', 'exponential', 'pattern'].includes(method) && (
+                <>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Horizon</label>
                     <input 
                       type="number" 
-                      min={2} 
-                      max={100}
-                      value={lookback} 
-                      onChange={(e) => setLookback(Number(e.target.value))} 
-                      className="w-20 px-2 py-1 border rounded text-xs" 
+                      min={1} 
+                      max={50}
+                      value={horizon} 
+                      onChange={(e) => setHorizon(Number(e.target.value))} 
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                     />
-                    <span className="text-[10px] text-gray-500">points</span>
+                    <p className="text-xs text-gray-500">Number of future steps</p>
                   </div>
-                )}
 
-                {/* Alpha (for exponential smoothing) */}
-                {method === 'exponential' && (
-                  <div className="flex items-center gap-2 text-xs">
-                    <label className="text-xs">Alpha (α):</label>
+                  {(method === 'linear' || method === 'exponential' || method === 'pattern') && (
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium">Lookback</label>
+                      <input 
+                        type="number" 
+                        min={2} 
+                        max={100}
+                        value={lookback} 
+                        onChange={(e) => setLookback(Number(e.target.value))} 
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                      />
+                      <p className="text-xs text-gray-500">Historical data points</p>
+                    </div>
+                  )}
+
+                  {method === 'exponential' && (
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium">Alpha (α)</label>
+                      <input 
+                        type="number" 
+                        min={0.1} 
+                        max={1}
+                        step={0.1}
+                        value={alpha} 
+                        onChange={(e) => setAlpha(Number(e.target.value))} 
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                      />
+                      <p className="text-xs text-gray-500">Smoothing factor (0.1-1.0)</p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Feature Extraction parameters */}
+              {method === 'peak_detection' && (
+                <>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Threshold</label>
                     <input 
                       type="number" 
-                      min={0.1} 
+                      min={0}
                       max={1}
                       step={0.1}
-                      value={alpha} 
-                      onChange={(e) => setAlpha(Number(e.target.value))} 
-                      className="w-20 px-2 py-1 border rounded text-xs" 
+                      value={threshold} 
+                      onChange={(e) => setThreshold(Number(e.target.value))} 
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                     />
-                    <span className="text-[10px] text-gray-500">(0.1-1.0)</span>
+                    <p className="text-xs text-gray-500">Minimum peak intensity</p>
                   </div>
-                )}
-              </>
-            )}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Min Distance</label>
+                    <input 
+                      type="number" 
+                      min={1}
+                      max={20}
+                      value={minDistance} 
+                      onChange={(e) => setMinDistance(Number(e.target.value))} 
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                    />
+                    <p className="text-xs text-gray-500">Min points between peaks</p>
+                  </div>
+                </>
+              )}
 
-            {/* Feature Extraction parameters */}
-            {method === 'peak_detection' && (
-              <>
-                <div className="flex items-center gap-2 text-xs">
-                  <label className="text-xs">Threshold:</label>
-                  <input 
-                    type="number" 
-                    min={0}
-                    max={1}
-                    step={0.1}
-                    value={threshold} 
-                    onChange={(e) => setThreshold(Number(e.target.value))} 
-                    className="w-20 px-2 py-1 border rounded text-xs" 
-                  />
-                  <span className="text-[10px] text-gray-500">intensity</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <label className="text-xs">Min Distance:</label>
-                  <input 
-                    type="number" 
-                    min={1}
-                    max={20}
-                    value={minDistance} 
-                    onChange={(e) => setMinDistance(Number(e.target.value))} 
-                    className="w-20 px-2 py-1 border rounded text-xs" 
-                  />
-                  <span className="text-[10px] text-gray-500">points</span>
-                </div>
-              </>
-            )}
+              {method === 'spectral_fingerprint' && (
+                <>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Top Peaks</label>
+                    <input 
+                      type="number" 
+                      min={1}
+                      max={10}
+                      value={numPeaks} 
+                      onChange={(e) => setNumPeaks(Number(e.target.value))} 
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                    />
+                    <p className="text-xs text-gray-500">Number of peaks to extract</p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Min Distance</label>
+                    <input 
+                      type="number" 
+                      min={1}
+                      max={20}
+                      value={minDistance} 
+                      onChange={(e) => setMinDistance(Number(e.target.value))} 
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                    />
+                    <p className="text-xs text-gray-500">Min points between peaks</p>
+                  </div>
+                </>
+              )}
 
-            {method === 'spectral_fingerprint' && (
-              <>
-                <div className="flex items-center gap-2 text-xs">
-                  <label className="text-xs">Top Peaks:</label>
-                  <input 
-                    type="number" 
-                    min={1}
-                    max={10}
-                    value={numPeaks} 
-                    onChange={(e) => setNumPeaks(Number(e.target.value))} 
-                    className="w-20 px-2 py-1 border rounded text-xs" 
-                  />
-                  <span className="text-[10px] text-gray-500">peaks</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <label className="text-xs">Min Distance:</label>
-                  <input 
-                    type="number" 
-                    min={1}
-                    max={20}
-                    value={minDistance} 
-                    onChange={(e) => setMinDistance(Number(e.target.value))} 
-                    className="w-20 px-2 py-1 border rounded text-xs" 
-                  />
-                  <span className="text-[10px] text-gray-500">points</span>
-                </div>
-              </>
-            )}
-
-            {/* Apply button */}
-            <button 
-              type="button" 
-              onClick={() => runForecast()} 
-              className={`w-full px-3 py-2 text-white rounded text-xs font-semibold ${
-                ['peak_detection', 'statistical_features', 'spectral_fingerprint'].includes(method)
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-purple-600 hover:bg-purple-700'
-              }`}
-              title={['peak_detection', 'statistical_features', 'spectral_fingerprint'].includes(method) ? 'Extract features' : 'Generate forecast'}
-            >
-              {['peak_detection', 'statistical_features', 'spectral_fingerprint'].includes(method) ? 'Extract Features' : 'Generate Forecast'}
-            </button>
-          </div>
-
-          {/* Outer connection circle with icon */}
-          <div className="rounded-full p-1 flex items-center justify-center" style={{ border: '2px dashed rgba(0,0,0,0.06)', borderRadius: 999 }}>
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={(e) => { e.stopPropagation(); runForecast(); }}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); runForecast(); } }}
-              className="rounded-full p-1 flex items-center justify-center focus:outline-none"
-              style={{ borderRadius: 999 }}
-            >
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center icon-outer`} style={{ width: 64, height: 64 }}>
-                <LineChart className={`h-5 w-5 transition-transform duration-200 icon ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`} />
+              {/* Action buttons */}
+              <div className="flex gap-2 pt-2">
+                <button 
+                  type="button" 
+                  onClick={(e) => { 
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[PeakDetection] Compute clicked');
+                    runForecast(); 
+                  }} 
+                  className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 cursor-pointer"
+                  style={{ pointerEvents: 'auto' }}
+                >
+                  Compute
+                </button>
+                <button 
+                  type="button" 
+                  onClick={(e) => { 
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[PeakDetection] Apply & Close clicked');
+                    runForecast(); 
+                    setShowParameters(false); 
+                  }} 
+                  className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 cursor-pointer"
+                  style={{ pointerEvents: 'auto' }}
+                >
+                  Apply & Close
+                </button>
+                <button 
+                  type="button" 
+                  onClick={(e) => { 
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[PeakDetection] Reset clicked');
+                    setMethod('peak_detection'); 
+                    setHorizon(10); 
+                    setLookback(20); 
+                    setAlpha(0.3);
+                    setThreshold(0);
+                    setMinDistance(5);
+                    setNumPeaks(5);
+                  }} 
+                  className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 cursor-pointer"
+                >
+                  Reset
+                </button>
               </div>
             </div>
-          </div>
-
-          <div className="mt-2 text-[12px] font-medium text-center">Future Extraction</div>
-        </div>
+          </ParametersModal>
+        </>
       );
     }
     if (widget.type === 'spectral-segmentation') {
@@ -1385,116 +2168,561 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
         }
       };
 
-      const availableCols = widget.data?.tableData && widget.data.tableData.length > 0 ? Object.keys(widget.data.tableData[0]) : [];
-  // referenced to prevent unused variable lint in some builds
-  void availableCols;
+      const colors = getWidgetColors('spectral-segmentation');
+      const hasData = widget.data?.tableDataProcessed;
 
       return (
-        <div className="flex flex-col items-center w-full" onClick={(e) => e.stopPropagation()}>
-          {/* Outer connection circle with inner segmentation icon */}
-          <div className="rounded-full p-1 flex items-center justify-center" style={{ border: '2px dashed rgba(0,0,0,0.06)', borderRadius: 999 }}>
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={(e) => { e.stopPropagation(); runSegmentation(); }}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); runSegmentation(); } }}
-              className="rounded-full p-1 flex items-center justify-center focus:outline-none"
-              style={{ borderRadius: 999 }}
-            >
-              <div className={`w-14 h-14 rounded-full flex items-center justify-center icon-outer`} style={{ width: 56, height: 56 }}>
-                <Box className={`h-5 w-5 transition-transform duration-200 icon ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`} />
+        <>
+          <OrangeStyleWidget
+            icon={Box}
+            label="Segmentation"
+            statusText={hasData ? 'Segmented' : ''}
+            statusColor={hasData ? 'green' : 'gray'}
+            mainColor={colors.main}
+            lightColor={colors.light}
+            bgColor={colors.bg}
+          />
+
+          {/* Parameters Modal */}
+          <ParametersModal
+            isOpen={showParameters}
+            onClose={() => setShowParameters(false)}
+            title="Spectral Segmentation Parameters"
+          >
+            <div className="space-y-4">
+              {/* Method Selector */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">Method</label>
+                <select 
+                  value={method} 
+                  onChange={(e) => setMethod(e.target.value as any)} 
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="kmeans">K-means</option>
+                  <option value="threshold">Threshold</option>
+                </select>
+              </div>
+
+              {/* Threshold parameter */}
+              {method === 'threshold' && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Threshold Value</label>
+                  <input 
+                    type="number" 
+                    value={threshold} 
+                    onChange={(e) => setThreshold(Number(e.target.value))} 
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500">Threshold cutoff value</p>
+                </div>
+              )}
+
+              {/* K parameter */}
+              {method === 'kmeans' && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Number of Clusters (K)</label>
+                  <input 
+                    type="number" 
+                    min={2} 
+                    value={k} 
+                    onChange={(e) => setK(Number(e.target.value))} 
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500">Number of clusters (min: 2)</p>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div className="flex gap-2 pt-2">
+                <button 
+                  type="button" 
+                  onClick={(e) => { 
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[Segmentation] Compute clicked');
+                    runSegmentation(); 
+                  }} 
+                  className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 cursor-pointer"
+                  style={{ pointerEvents: 'auto' }}
+                >
+                  Compute
+                </button>
+                <button 
+                  type="button" 
+                  onClick={(e) => { 
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[Segmentation] Apply & Close clicked');
+                    runSegmentation(); 
+                    setShowParameters(false); 
+                  }} 
+                  className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 cursor-pointer"
+                  style={{ pointerEvents: 'auto' }}
+                >
+                  Apply & Close
+                </button>
+                <button 
+                  type="button" 
+                  onClick={(e) => { 
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[Segmentation] Reset clicked');
+                    setMethod('kmeans'); 
+                    setK(3); 
+                    setThreshold(0); 
+                  }} 
+                  className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 cursor-pointer"
+                >
+                  Reset
+                </button>
               </div>
             </div>
-          </div>
-
-          <div className="mt-2 text-[12px] font-medium text-center">Segmentation</div>
-
-          <div className="mt-2 w-full flex flex-col items-center gap-2 text-xs">
-            <div className="flex items-center gap-2">
-              <label className="text-xs">Method:</label>
-              <select value={method} onChange={(e) => setMethod(e.target.value as any)} className="px-2 py-1 border rounded text-xs">
-                <option value="kmeans">K-means</option>
-                <option value="threshold">Threshold</option>
-              </select>
-            </div>
-
-            {method === 'threshold' && (
-              <div className="flex items-center gap-2">
-                <label className="text-xs">Threshold:</label>
-                <input type="number" value={threshold} onChange={(e) => setThreshold(Number(e.target.value))} className="w-20 px-2 py-1 border rounded text-xs" />
-              </div>
-            )}
-
-            {method === 'kmeans' && (
-              <div className="flex items-center gap-2">
-                <label className="text-xs">K:</label>
-                <input type="number" min={2} value={k} onChange={(e) => setK(Number(e.target.value))} className="w-16 px-2 py-1 border rounded text-xs" />
-              </div>
-            )}
-          </div>
-        </div>
+          </ParametersModal>
+        </>
       );
     }
-    if (widget.type === 'supabase') {
-      // Orange Data Mining style: Simple icon in circle, clean label below
-      const tableData: Record<string, any>[] = widget.data?.tableData || [];
-      const hasData = tableData && tableData.length > 0;
+
+    // PCA Analysis widget rendering
+    if (widget.type === 'pca-analysis') {
+      const runPCA = async () => {
+        const tableData = widget.data?.tableData || widget.data?.parsedData || [];
+        if (!tableData || tableData.length === 0) {
+          alert('⚠️ No data available!\n\nPlease connect a data source (File Upload, Noise Filter, etc.) to this PCA widget.');
+          return;
+        }
+
+        setPcaRunning(true);
+        try {
+          const response = await fetch('/api/pca', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tableData,
+              params: {
+                n_components: nComponents,
+                standardize
+              }
+            })
+          });
+
+          if (!response.ok) {
+            // Try to parse JSON error body; if that fails, fall back to plain text.
+            let parsedErr: any = null;
+            try {
+              parsedErr = await response.json();
+            } catch (parseErr) {
+              try {
+                const txt = await response.text();
+                parsedErr = { error: txt || `HTTP ${response.status}` };
+              } catch (txtErr) {
+                parsedErr = { error: `HTTP ${response.status}` };
+              }
+            }
+            throw new Error(parsedErr?.error || 'PCA computation failed');
+          }
+
+          const pcaResults = await response.json();
+          
+          // Store results in widget data
+          onUpdateWidget && onUpdateWidget({
+            data: {
+              ...widget.data,
+              pcaParams: { nComponents, standardize },
+              pcaResults,
+              tableDataProcessed: pcaResults.transformed
+            }
+          });
+
+          // Do not auto-open results panel here — require explicit "View Results" click
+          console.log('[PCA] ✅ PCA computed successfully:', pcaResults);
+
+        } catch (err: any) {
+          console.error('[PCA] ❌ Error:', err);
+          alert(`PCA computation failed:\n\n${err.message}\n\nMake sure the PCA service is running on port 6005.`);
+        } finally {
+          setPcaRunning(false);
+        }
+      };
+
+      const applyPCASettings = () => {
+        // Store params on the widget for later pipeline use
+        console.log('[PCA] Applying settings - nComponents:', nComponents, 'standardize:', standardize);
+        onUpdateWidget && onUpdateWidget({
+          data: {
+            ...widget.data,
+            pcaParams: { nComponents, standardize }
+          }
+        });
+      };
+
+      const colors = getWidgetColors('pca-analysis');
+      const hasResults = widget.data?.pcaResults && widget.data.pcaResults.transformed;
+      console.log('[PCA Widget] hasResults:', hasResults, 'pcaResults:', widget.data?.pcaResults);
+
+      // Prepare small datasets for inline mini-charts
+      const pcaLocal = widget.data?.pcaResults || null;
+      const screeData = (pcaLocal?.explained_variance_ratio || []).map((v: any, i: number) => ({ name: `${i + 1}`, value: Number(v) }));
+      const scatterData = (pcaLocal?.transformed || []).map((row: any) => {
+        const vals = Object.values(row).map((x: any) => Number(x));
+        return { x: vals[0] ?? 0, y: vals[1] ?? 0 };
+      });
 
       return (
-        <div
-          className="flex flex-col items-center justify-center w-full h-full cursor-default p-3 bg-white"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Main icon circle - Orange Data Mining style */}
-          <div className="flex flex-col items-center gap-2 mb-3">
-            {/* Outer circle without connection ports */}
-            <div 
-              className="rounded-full flex items-center justify-center relative"
-              style={{
-                width: 90,
-                height: 90,
-                background: '#E3F2FD'
-              }}
+        <>
+          <div ref={rootRef} onClick={(e) => {
+            // Click on widget icon to open parameters
+            const target = e.target as HTMLElement;
+            if (!target.closest('button, input')) {
+              e.stopPropagation();
+              console.log('[PCA] Opening parameters modal');
+              setShowParameters(true);
+            }
+          }}>
+            <OrangeStyleWidget
+              icon={Search}
+              label={getWidgetLabel('pca-analysis')}
+              statusText={hasResults ? `${widget.data.pcaResults.transformed.length} samples` : ''}
+              statusColor={hasResults ? 'green' : 'gray'}
+              mainColor={colors.main}
+              lightColor={colors.light}
+              bgColor={colors.bg}
             >
-              {/* Dashed border circle */}
-              <div 
-                className="absolute inset-0 rounded-full"
-                style={{
-                  border: '2px dashed #BBDEFB'
-                }}
-              ></div>
-              
-              {/* Inner solid circle with icon */}
-              <div 
-                className="rounded-full flex items-center justify-center relative z-10"
-                style={{
-                  width: 65,
-                  height: 65,
-                  background: '#2196F3',
-                  boxShadow: '0 2px 8px rgba(33, 150, 243, 0.3)'
-                }}
-              >
-                <Database className="h-7 w-7 text-white" strokeWidth={2} />
+              {/* Controls section - shown on hover */}
+              <div className="mt-2 flex flex-col items-center gap-2">
+                <button 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    setShowParameters(true); 
+                  }} 
+                  className="px-3 py-1.5 text-xs font-medium rounded transition-colors text-white"
+                  style={{ backgroundColor: colors.main }}
+                >
+                  Configure PCA
+                </button>
+                {hasResults && (
+                  <button 
+                    onClick={(e) => { 
+                      e.stopPropagation();
+                      console.log('[PCA] View Results clicked, pcaResults:', widget.data?.pcaResults);
+                      setShowInlineResults(true); 
+                    }} 
+                    className="px-3 py-1.5 text-xs font-medium rounded transition-colors"
+                    style={{
+                      backgroundColor: colors.light,
+                      color: colors.main,
+                    }}
+                  >
+                    View Results
+                  </button>
+                )}
+                {hasResults && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log('[PCA] View Data clicked');
+                      setModalPreviewData(widget.data?.pcaResults?.transformed || widget.data?.tableDataProcessed || []);
+                      setShowLineChartModal(true);
+                    }}
+                    className="px-3 py-1.5 text-xs font-medium rounded transition-colors text-white"
+                    style={{ backgroundColor: colors.main }}
+                  >
+                    View Data
+                  </button>
+                )}
               </div>
-            </div>
-            
-            {/* Label below icon - Orange style */}
-            <div className="text-center">
-              <div className="text-xs font-semibold text-gray-800">Datasets</div>
-              {hasData && (
-                <div className="text-[10px] text-gray-500 mt-0.5">{tableData.length} instances</div>
-              )}
-              {!hasData && widget.data?.fetchStatus !== 'fetching' && (
-                <div className="text-[10px] text-gray-400 mt-0.5">No data</div>
-              )}
-              {widget.data?.fetchStatus === 'fetching' && (
-                <div className="text-[10px] text-blue-500 mt-0.5">Loading...</div>
-              )}
-            </div>
+            </OrangeStyleWidget>
           </div>
 
-          {/* Compact controls - hidden until hover for clean look */}
-          <div className="w-full flex flex-col gap-1.5 opacity-0 hover:opacity-100 transition-opacity duration-200">
+          {/* Parameters Modal */}
+          <ParametersModal
+            isOpen={showParameters}
+            onClose={() => setShowParameters(false)}
+            title="PCA Parameters"
+          >
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Number of Components: <span className="text-blue-600 font-bold">{nComponents}</span></label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const val = Math.max(1, nComponents - 1);
+                      console.log('[PCA] 🔢 Decreased to:', val);
+                      setNComponents(val);
+                      if (onUpdateWidget) {
+                        onUpdateWidget({
+                          data: {
+                            ...widget.data,
+                            pcaParams: { ...widget.data?.pcaParams, nComponents: val, standardize }
+                          }
+                        });
+                      }
+                    }}
+                    className="px-3 py-2 bg-red-500 text-white text-xl font-bold rounded hover:bg-red-600 cursor-pointer"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="number"
+                    min={1}
+                    max={10}
+                    value={nComponents}
+                    onChange={(e) => {
+                      const val = Math.max(1, Math.min(10, Number(e.target.value) || 1));
+                      console.log('[PCA] 🔢 Components changed to:', val);
+                      setNComponents(val);
+                      if (onUpdateWidget) {
+                        onUpdateWidget({
+                          data: {
+                            ...widget.data,
+                            pcaParams: { ...widget.data?.pcaParams, nComponents: val, standardize }
+                          }
+                        });
+                      }
+                    }}
+                    className="flex-1 px-3 py-2 border-2 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold text-center"
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const val = Math.min(10, nComponents + 1);
+                      console.log('[PCA] 🔢 Increased to:', val);
+                      setNComponents(val);
+                      if (onUpdateWidget) {
+                        onUpdateWidget({
+                          data: {
+                            ...widget.data,
+                            pcaParams: { ...widget.data?.pcaParams, nComponents: val, standardize }
+                          }
+                        });
+                      }
+                    }}
+                    className="px-3 py-2 bg-green-500 text-white text-xl font-bold rounded hover:bg-green-600 cursor-pointer"
+                  >
+                    +
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Use +/− buttons or type directly (1-10). Current: {nComponents}</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  id="pca-standardize"
+                  type="checkbox"
+                  checked={standardize}
+                  onChange={(e) => setStandardize(e.target.checked)}
+                />
+                <label htmlFor="pca-standardize" className="text-sm">Standardize features (Z-score) before PCA</label>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={(e) => { 
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[PCA] Run PCA clicked with nComponents:', nComponents);
+                    runPCA(); 
+                  }}
+                  disabled={pcaRunning}
+                  className={`px-3 py-1 text-white rounded text-sm cursor-pointer ${pcaRunning ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+                  style={{ pointerEvents: 'auto' }}
+                >
+                  {pcaRunning ? 'Running...' : 'Run PCA'}
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { 
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[PCA] Save Settings clicked');
+                    applyPCASettings();
+                    setShowParameters(false);
+                  }}
+                  className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 cursor-pointer"
+                  style={{ pointerEvents: 'auto' }}
+                >
+                  Apply & Close
+                </button>
+                {hasResults && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('[PCA] View Results (from params modal) clicked');
+                      console.log('[PCA] Results data:', widget.data?.pcaResults);
+                      setShowParameters(false); // Close parameters modal first
+                      setTimeout(() => {
+                        setShowInlineResults(true); // Then open inline results panel
+                      }, 100);
+                    }}
+                    className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 cursor-pointer"
+                    style={{ pointerEvents: 'auto' }}
+                  >
+                    View Results
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={(e) => { 
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[PCA] Reset clicked');
+                    setNComponents(2); 
+                    setStandardize(true); 
+                  }}
+                  className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 cursor-pointer"
+                  style={{ pointerEvents: 'auto' }}
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          </ParametersModal>
+
+          {/* Inline PCA Results panel (displayed directly under widget) */}
+          {showInlineResults && widget.data?.pcaResults && (
+            <div className="mt-4 w-full flex justify-center" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-white rounded-lg shadow-lg border p-4 w-[520px]">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-lg font-bold">PCA Results</h3>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        console.log('[PCA] Inline Close clicked');
+                        setShowInlineResults(false);
+                      }}
+                      className="px-2 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300 cursor-pointer"
+                    >
+                      Close
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        console.log('[PCA] Open Fullscreen clicked');
+                        setShowPCAResults(true);
+                      }}
+                      className="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer"
+                    >
+                      Open Fullscreen
+                    </button>
+                  </div>
+                </div>
+                <div className="flex flex-row gap-8">
+                  <div className="flex flex-col items-center p-2 bg-white rounded shadow" style={{ minWidth: 320 }}>
+                    <p className="text-sm mb-2">Scree (explained variance)</p>
+                    <div style={{ width: 320, height: 200 }}>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={screeData}>
+                          <XAxis dataKey="name" hide />
+                          <YAxis hide domain={[0, 'dataMax']} />
+                          <Tooltip formatter={(val: any) => `${(val * 100).toFixed(1)}%`} />
+                          <Bar dataKey="value" fill="#2563eb" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center p-2 bg-white rounded shadow" style={{ minWidth: 320 }}>
+                    <p className="text-sm mb-2">PC1 vs PC2 (scatter)</p>
+                    <div style={{ width: 320, height: 200 }}>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <ScatterChart>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="x" name="PC1" />
+                          <YAxis dataKey="y" name="PC2" />
+                          <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                          <Scatter data={scatterData} fill="#10b981" />
+                        </ScatterChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PCA Results Modal (fullscreen, optional) */}
+          <PCAResultsModal
+            isOpen={showPCAResults}
+            onClose={() => setShowPCAResults(false)}
+            pcaResults={widget.data?.pcaResults || null}
+          />
+        </>
+      );
+    }
+
+    if (widget.type === 'supabase') {
+      // Use OrangeStyleWidget for consistency with other widgets
+      const tableData: Record<string, any>[] = widget.data?.tableData || [];
+      // Only show "View Data" button if we actually have data in widget.data.tableData
+      const hasData = tableData && tableData.length > 0;
+      console.log('🔵 [SUPABASE RENDER] widget.data exists:', !!widget.data, 'tableData length:', tableData.length, 'hasData:', hasData);
+      const colors = getWidgetColors('supabase');
+
+      const supabasePorts = (
+        <>
+          <div
+            role="button"
+            aria-label="Start connection from left port"
+            className="absolute rounded-full pointer-events-auto"
+            onPointerDown={(e) => {
+              try {
+                e.stopPropagation();
+                e.preventDefault();
+                const tgt = e.currentTarget as HTMLElement;
+                const r = tgt.getBoundingClientRect();
+                const cx = Math.round(r.left + r.width / 2);
+                const cy = Math.round(r.top + r.height / 2);
+                onStartConnection && onStartConnection({ clientX: cx, clientY: cy, portCenter: true });
+              } catch (err) { /* swallow */ }
+            }}
+            style={{ width: 18, height: 18, left: 10, top: '50%', transform: 'translateY(-50%)', zIndex: 70 }}
+          >
+            <div className="absolute rounded-full bg-white border-2" style={{ width: 8, height: 8, left: 5, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }} />
+          </div>
+          <div
+            role="button"
+            aria-label="Start connection from right port"
+            className="absolute rounded-full pointer-events-auto"
+            onPointerDown={(e) => {
+              try {
+                e.stopPropagation();
+                e.preventDefault();
+                const tgt = e.currentTarget as HTMLElement;
+                const r = tgt.getBoundingClientRect();
+                const cx = Math.round(r.left + r.width / 2);
+                const cy = Math.round(r.top + r.height / 2);
+                onStartConnection && onStartConnection({ clientX: cx, clientY: cy, portCenter: true });
+              } catch (err) { /* swallow */ }
+            }}
+            style={{ width: 18, height: 18, right: 10, top: '50%', transform: 'translateY(-50%)', zIndex: 70 }}
+          >
+            <div className="absolute rounded-full bg-white border-2" style={{ width: 8, height: 8, right: 5, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }} />
+          </div>
+        </>
+      );
+
+      return (
+        <OrangeStyleWidget
+          icon={Database}
+          label="Supabase Source"
+          iconRef={iconRef}
+          portElements={supabasePorts}
+          statusText={hasData ? `${tableData.length} rows` : sbFetching ? 'Loading...' : 'No data'}
+          statusColor={hasData ? 'green' : sbFetching ? 'orange' : 'gray'}
+          mainColor={colors.main}
+          lightColor={colors.light}
+          bgColor={colors.bg}
+          alwaysShowControls={true}
+        >
+          <div className="mt-2 flex flex-col items-center gap-2">
+            {/* Show inputs when no data or when explicitly editing */}
             {!hasData && (
               <>
                 <input 
@@ -1509,30 +2737,61 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                   onChange={(e) => setSbSampleFilter(e.target.value)} 
                   placeholder="Sample" 
                 />
-                <button 
-                  className="w-full px-2 py-1.5 rounded bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors" 
-                  onClick={(e) => { e.stopPropagation(); fetchSupabaseData(); }} 
-                  disabled={sbFetching || !sbTableName}
-                >
-                  {sbFetching ? 'Loading...' : 'Load'}
-                </button>
+                <div className="w-full flex flex-col items-center gap-2">
+                  <button 
+                    className="w-full px-2 py-1.5 rounded text-white text-xs font-medium hover:bg-opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors" 
+                    style={{ backgroundColor: colors.main }}
+                    onClick={(e) => { e.stopPropagation(); fetchSupabaseData(); }} 
+                    disabled={sbFetching || !sbTableName}
+                  >
+                    {sbFetching ? 'Loading...' : 'Load'}
+                  </button>
+                  { (widget.data && (widget.data.fetchError || widget.data.fetchStatus === 'error')) && (
+                    <div className="w-full text-left mt-1">
+                      <div className="text-xs text-red-600">{String(widget.data.fetchError || 'Failed to fetch data')}</div>
+                      <div className="mt-1 flex gap-2">
+                        <button onClick={(e) => { e.stopPropagation(); fetchSupabaseData(); }} className="px-2 py-1 text-xs bg-blue-600 text-white rounded">Retry</button>
+                        <button onClick={(e) => { e.stopPropagation(); console.debug('[Supabase] debugDump requested'); window.dispatchEvent(new CustomEvent('debugDump')); }} className="px-2 py-1 text-xs bg-gray-200 rounded">Debug</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </>
             )}
-            
+
             {hasData && (
               <button 
-                className="w-full px-2 py-1.5 rounded bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition-colors" 
-                onClick={(e) => { 
-                  e.stopPropagation(); 
-                  setModalPreviewData(widget.data?.tableDataProcessed || []); 
-                  setShowLineChartModal(true); 
+                className="w-full px-2 py-1.5 rounded text-white text-xs font-medium hover:bg-opacity-90 transition-colors" 
+                style={{ backgroundColor: colors.main }}
+                onClick={(e) => {
+                  console.log('🔵 [SUPABASE] VIEW DATA BUTTON CLICKED!!! widget:', widget.id, 'rows:', widget.data?.tableData?.length);
+                  e.stopPropagation();
+                  e.preventDefault();
+                  // Trigger data forwarding to connected downstream widgets
+                  console.debug('[Supabase] View Data clicked, triggering data forward for', widget.id);
+                  try {
+                    window.dispatchEvent(new CustomEvent('triggerDataForward', { detail: { sourceWidgetId: widget.id } }));
+                  } catch (err) {
+                    console.warn('[Supabase] triggerDataForward failed', err);
+                  }
+                  // Note: Modal removed - connect Supabase to Data Table widget to view data
+                  console.log('[Supabase] Data forwarding triggered. Connect to Data Table widget to view data.');
+                }}
+                onMouseDown={(e) => {
+                  console.log('🔵 [SUPABASE] MOUSEDOWN on View Data button');
+                  e.stopPropagation();
+                  e.preventDefault();
                 }}
               >
-                Open table
+                View Data
               </button>
             )}
+            {/* show fetchError even when hasData=false above; if hasData true but fetchStatus error, still allow View Data */}
+            {(!hasData && widget.data && widget.data.fetchError) && (
+              <div className="text-xs text-red-600 mt-1">{String(widget.data.fetchError)}</div>
+            )}
           </div>
-        </div>
+        </OrangeStyleWidget>
       );
     }
     if (widget.type === 'mean-average') {
@@ -1541,7 +2800,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       return (
         <OrangeStyleWidget
           icon={Calculator}
-          label="Mean Average"
+          label={getWidgetLabel('mean-average')}
           mainColor={colors.main}
           lightColor={colors.light}
           bgColor={colors.bg}
@@ -1666,6 +2925,493 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
             </button>
           </div>
         </OrangeStyleWidget>
+      );
+    }
+    if (widget.type === 'kmeans-analysis') {
+      const runKMeans = async () => {
+        console.log('[KMeans] runKMeans start for widget', widget.id);
+        const tableData: any[] = widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || [];
+        if (!tableData || tableData.length === 0) {
+          alert('⚠️ No data available for KMeans. Connect a data source first.');
+          return;
+        }
+        const params = widget.data?.kmeansParams || { n_clusters: 3, max_iter: 300 };
+        // Local fallback KMeans implementation (runs in browser) in case backend/service is unreachable.
+        const computeLocalKMeans = (rows: any[], k: number, maxIter: number) => {
+          // Extract numeric columns
+          const sample = rows[0] || {};
+          const keys = Object.keys(sample);
+          const numericKeys = keys.filter((kname) => rows.some(r => !isNaN(Number(r[kname]))));
+          // Prefer Raman/shift and intensity-like names
+          const lower = numericKeys.map(k => k.toLowerCase());
+          const pick = (cands: string[]) => {
+            for (const c of cands) {
+              const idx = lower.findIndex(l => l.includes(c));
+              if (idx >= 0) return numericKeys[idx];
+            }
+            return numericKeys[0] || null;
+          };
+          const xKey = pick(['shift','wavenumber','raman','x']);
+          const yKey = pick(['intensity','counts','value','y']);
+          const featKeys = [xKey, yKey].filter(Boolean) as string[];
+          // Build feature matrix
+          const features: number[][] = rows.map(r => featKeys.map(k => { const v = Number(r[k]); return Number.isFinite(v) ? v : 0; }));
+          if (features.length === 0) return { labels: [], centroids: [], projection_2d: [] };
+
+          // initialize centroids as first k unique samples (or random)
+          const centroids: number[][] = [];
+          const used = new Set();
+          for (let i = 0; i < features.length && centroids.length < k; i++) {
+            const key = features[i].join(',');
+            if (!used.has(key)) { centroids.push([...features[i]]); used.add(key); }
+          }
+          while (centroids.length < k) {
+            const idx = Math.floor(Math.random() * features.length);
+            centroids.push([...features[idx]]);
+          }
+
+          let labels = new Array(features.length).fill(0);
+          for (let iter = 0; iter < maxIter; iter++) {
+            let changed = false;
+            // assign
+            for (let i = 0; i < features.length; i++) {
+              let best = 0;
+              let bestDist = Infinity;
+              for (let c = 0; c < centroids.length; c++) {
+                const d = features[i].reduce((acc, val, idx) => acc + Math.pow(val - (centroids[c][idx] ?? 0), 2), 0);
+                if (d < bestDist) { bestDist = d; best = c; }
+              }
+              if (labels[i] !== best) { labels[i] = best; changed = true; }
+            }
+            // recompute centroids
+            const sums: number[][] = new Array(k).fill(0).map(() => new Array(features[0].length).fill(0));
+            const counts = new Array(k).fill(0);
+            for (let i = 0; i < features.length; i++) {
+              const lab = labels[i];
+              counts[lab]++;
+              for (let j = 0; j < features[0].length; j++) sums[lab][j] += features[i][j];
+            }
+            for (let c = 0; c < k; c++) {
+              if (counts[c] === 0) continue;
+              for (let j = 0; j < sums[c].length; j++) centroids[c][j] = sums[c][j] / counts[c];
+            }
+            if (!changed) break;
+          }
+          return { labels, centroids, projection_2d: features };
+        };
+
+        // keep original rows available to both the primary branch and the fallback
+        const original = tableData || [];
+        try {
+          // Prefer calling the Node backend proxy so client doesn't need to reach the Python service directly.
+          // fetchToBackend will try http://127.0.0.1:5003 first, then fall back to relative path.
+          const resp = await fetchToBackend('/api/analytics/kmeans', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: tableData, n_clusters: params.n_clusters || 3, max_iter: params.max_iter || 300 })
+          });
+
+          if (!resp.ok) {
+            const err = await resp.json().catch(() => ({ error: 'KMeans service error' }));
+            throw new Error(err.error || `KMeans failed (status ${resp.status})`);
+          }
+
+          var kres = await resp.json();
+          // Prepare augmented table: original rows + cluster column
+          const labels = Array.isArray(kres?.labels) ? kres.labels : [];
+          let augmented: any[] = [];
+          try {
+            if (original.length === labels.length && original.length > 0) {
+              if (typeof original[0] === 'object' && !Array.isArray(original[0])) {
+                // Add capitalized 'Cluster' column to match expected output
+                augmented = original.map((r: any, i: number) => ({ ...(r || {}), Cluster: labels[i] }));
+              } else if (Array.isArray(original[0])) {
+                // append label as last column
+                augmented = original.map((r: any, i: number) => ([...(r || []), labels[i]]));
+              } else {
+                // fallback: wrap primitive values into an object
+                augmented = original.map((v: any, i: number) => ({ value: v, Cluster: labels[i] }));
+              }
+            } else {
+              // lengths don't match or no original rows: build minimal table from projection if possible
+              const projection = kres?.projection_2d || [];
+              augmented = projection.map((p: any, i: number) => ({ x: p[0], y: p[1], Cluster: labels[i] }));
+            }
+          } catch (e) {
+            console.warn('[KMeans] failed to build augmented table:', e);
+            augmented = [];
+          }
+
+          // store results on widget; save augmented table to both tableData and tableDataProcessed so DataTableModal shows it
+          const newData = { ...widget.data, kmeansParams: params, kmeansResults: kres, tableData: augmented, tableDataProcessed: augmented };
+          onUpdateWidget && onUpdateWidget({ data: newData });
+          // also keep a local copy so the modal shows immediately even if parent update hasn't propagated
+          setLocalAugmentedTable(augmented);
+          // keep local kmeans results for inline chart rendering
+          setLocalKmeansResults(kres);
+          console.log('[KMeans] results saved to widget', kres);
+          // Position inline panel directly below widget and show it
+          try { positionInlineBelowWidget(); } catch (e) { /* ignore */ }
+          if (!inlineSuppressOpen) {
+            // show the compact 3-row results list after a run; individual items open their respective views
+            setShowKmeansResultList(true);
+            setShowInlineResults(false);
+          }
+          return true;
+        } catch (err: any) {
+          console.error('[KMeans] primary error', err);
+          try { console.error(err && err.stack ? err.stack : null); } catch (e) { /* ignore */ }
+          // Attempt local fallback computation
+          try {
+            console.warn('[KMeans] attempting local fallback');
+            const local = computeLocalKMeans(tableData, params.n_clusters || 3, params.max_iter || 300);
+            const localLabels = Array.isArray(local.labels) ? local.labels : [];
+            const augmentedLocal = (original.length === localLabels.length && original.length > 0)
+              ? original.map((r: any, i: number) => ({ ...(r || {}), Cluster: localLabels[i] }))
+              : (local.projection_2d || []).map((p: any, i: number) => ({ x: p[0], y: p[1], Cluster: localLabels[i] }));
+            const kresLocal = { labels: localLabels, centroids: local.centroids, projection_2d: local.projection_2d };
+              const newDataLocal = { ...widget.data, kmeansParams: params, kmeansResults: kresLocal, tableData: augmentedLocal, tableDataProcessed: augmentedLocal };
+              onUpdateWidget && onUpdateWidget({ data: newDataLocal });
+              // local copy for immediate modal rendering
+                setLocalAugmentedTable(augmentedLocal);
+                // keep local kmeans results for inline chart rendering
+                setLocalKmeansResults(kresLocal);
+              try { positionInlineBelowWidget(); } catch (e) { /* ignore */ }
+              if (!inlineSuppressOpen) {
+                setShowKmeansResultList(true);
+                setShowInlineResults(false);
+              }
+            console.log('[KMeans] local fallback results saved', kresLocal);
+            return true;
+          } catch (e2) {
+            console.error('[KMeans] local fallback failed', e2);
+            try { console.error(e2 && e2.stack ? e2.stack : null); } catch (ee) { /* ignore */ }
+            alert('KMeans computation failed: ' + (err?.message || String(err)));
+            return false;
+          }
+        }
+      };
+
+      const colors = getWidgetColors('kmeans-analysis');
+      const hasResults = !!widget.data?.kmeansResults;
+
+      // Inline panel: compact 3-row results list (Clustered Scatter, Data table, Centroids)
+      const KMeansInlinePanel = () => {
+        const results = widget.data?.kmeansResults || localKmeansResults;
+        const handleViewGraph = (e: any) => {
+          e.stopPropagation();
+          try { setInlineSuppressOpen(false); } catch (err) {}
+          try { positionInlineBelowWidget(); } catch (err) {}
+          const results = widget.data?.kmeansResults || localKmeansResults;
+          const projection = results?.projection_2d || [];
+            if (projection && projection.length > 0) {
+            setShowKmeansGraphModal(true);
+          } else {
+            // fallback: open data table modal so user sees some output
+            if (widget.data?.tableDataProcessed) setLocalAugmentedTable(widget.data.tableDataProcessed);
+            else if (widget.data?.tableData) setLocalAugmentedTable(widget.data.tableData);
+            openTableModal();
+          }
+        };
+
+        const handleViewData = (e: any) => {
+          e.stopPropagation();
+          // show full table modal using augmented table if available
+          if (widget.data?.tableDataProcessed) setLocalAugmentedTable(widget.data.tableDataProcessed);
+          else if (widget.data?.tableData) setLocalAugmentedTable(widget.data.tableData);
+          openTableModal();
+        };
+
+        const handleViewCentroids = (e: any) => {
+          e.stopPropagation();
+          // transform centroids to a table-like array for viewing
+          const centroids = results?.centroids || [];
+          const centroidTable = centroids.map((c: any, i: number) => {
+            const obj: any = { Cluster: i };
+            (c || []).forEach((v: any, idx: number) => { obj[`dim${idx}`] = v; });
+            return obj;
+          });
+          const tableToShow = (centroidTable && centroidTable.length > 0)
+            ? centroidTable
+            : [{ Cluster: 'N/A', note: 'No centroid data available' }];
+          setLocalAugmentedTable(tableToShow);
+          openTableModal();
+        };
+
+        // Create the panel node and portal it into document.body so it layers above canvas
+        const panelNode = (
+          <div className="kmeans-inline-panel" onClick={(e) => e.stopPropagation()} style={{ pointerEvents: 'auto' }}>
+            <div className="bg-white shadow rounded p-2 text-xs w-64" style={{ position: 'fixed', left: inlinePos.left, top: inlinePos.top, zIndex: 30, pointerEvents: 'auto' }}>
+              <div className="flex items-center justify-between p-1 border-b">
+                <div className="font-semibold">Clustered Scatter Plot</div>
+                <button type="button" onClick={(e) => { console.log('[KMeansInline] View Graph clicked'); handleViewGraph(e); }} className="text-blue-600 px-2">View</button>
+              </div>
+              <div className="flex items-center justify-between p-1 border-b">
+                <div className="">Data Table</div>
+                <button type="button" onClick={(e) => { console.log('[KMeansInline] View Data clicked'); handleViewData(e); }} className="text-blue-600 px-2">View</button>
+              </div>
+              <div className="flex items-center justify-between p-1">
+                <div className="">Centroids</div>
+                <button type="button" onClick={(e) => { console.log('[KMeansInline] View Centroids clicked'); handleViewCentroids(e); }} className="text-blue-600 px-2">View</button>
+              </div>
+            </div>
+          </div>
+        );
+        try {
+          return createPortal(panelNode, document.body as any);
+        } catch (e) {
+          return panelNode;
+        }
+      };
+
+      const kmeansResultPanel = showKmeansResultList ? <KMeansInlinePanel /> : null;
+
+      return (
+        <>
+            <div ref={rootRef} onClick={(e) => { const target = e.target as HTMLElement;
+              // If we've just closed the inline panel or the inline panel is suppressed,
+              // ignore root clicks to avoid immediately re-opening it.
+              if (justClosedRef.current) { e.stopPropagation(); return; }
+              if (inlineSuppressOpen) { e.stopPropagation(); return; }
+              // ignore clicks originating from the inline results panel itself
+              if (target.closest && target.closest('.kmeans-inline-panel')) { e.stopPropagation(); return; }
+              if (!target.closest('button, input')) { e.stopPropagation(); const hasResultsLocal = !!(widget.data && widget.data.kmeansResults); // Open parameters; if results exist also show inline graph
+              setShowParameters(true);
+              if (hasResultsLocal) { try { setInlineSuppressOpen(false); } catch (err) {} try { positionInlineBelowWidget(); } catch (err) {} setShowInlineResults(true); }
+            } }}>
+            <OrangeStyleWidget
+              icon={Scatter3D}
+              label={getWidgetLabel('kmeans-analysis')}
+              iconRef={iconRef}
+              portElements={(
+                <>
+                  <div
+                    role="button"
+                    aria-label="Start connection from right port"
+                    className="absolute rounded-full pointer-events-auto"
+                    onPointerDown={(e) => {
+                      try {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        const tgt = e.currentTarget as HTMLElement;
+                        const r = tgt.getBoundingClientRect();
+                        // Use the visual center of the clickable area so the connection
+                        // originates from the blue dot (inner circle). This also helps
+                        // when the hit area is larger than the visible dot.
+                        const cx = Math.round(r.left + r.width / 2);
+                        const cy = Math.round(r.top + r.height / 2);
+                        onStartConnection && onStartConnection({ clientX: cx, clientY: cy, portCenter: true });
+                      } catch (err) { /* swallow */ }
+                    }}
+                    style={{ width: 18, height: 18, right: 10, top: '50%', transform: 'translateY(-50%)', zIndex: 70 }}
+                  >
+                    {/* Inner visible dot: keep the visual size 8px but make the hit area bigger */}
+                    <div className="absolute rounded-full bg-white border-2" style={{ width: 8, height: 8, right: 5, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }} />
+                  </div>
+                </>
+              )}
+              statusText={hasResults ? `${widget.data.kmeansResults?.labels?.length || 0} samples` : ''}
+              statusColor={hasResults ? 'green' : 'gray'}
+              mainColor={colors.main}
+              lightColor={colors.light}
+              bgColor={colors.bg}
+            >
+              <div className="mt-2 flex flex-col items-center gap-2">
+                    <button onClick={(e) => { e.stopPropagation(); setShowParameters(true); const hasResultsLocal = !!(widget.data && widget.data.kmeansResults); if (hasResultsLocal) { try { setInlineSuppressOpen(false); } catch (err) {} try { positionInlineBelowWidget(); } catch (err) {} setShowInlineResults(true); } }} className="px-3 py-1.5 text-xs font-medium rounded transition-colors text-white" style={{ backgroundColor: colors.main }}>
+                  Configure KMeans
+                </button>
+                {hasResults && (
+                  <>
+                    <button onClick={(e) => { e.stopPropagation(); try { setInlineSuppressOpen(false); } catch (err) {} try { positionInlineBelowWidget(); } catch (err) {} setShowInlineResults(true); }} className="px-3 py-1.5 text-xs font-medium rounded transition-colors" style={{ backgroundColor: colors.light, color: colors.main }}>
+                      View Results
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); openTableModal(); }} className="px-3 py-1.5 text-xs font-medium rounded transition-colors" style={{ backgroundColor: colors.light, color: colors.main }}>
+                      View Data
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={async (e) => {
+                    console.log('[KMeans UI] inline Run button clicked for widget', widget.id);
+                    e.stopPropagation();
+                    try { setKmeansRunning(true); await runKMeans(); }
+                    catch (err) { console.error('[KMeans] run button error', err); alert('KMeans run failed: ' + (err?.message || String(err))); }
+                    finally { setKmeansRunning(false); }
+                  }}
+                  disabled={kmeansRunning}
+                  className={`px-3 py-1.5 text-xs font-medium rounded text-white ${kmeansRunning ? 'bg-gray-400' : ''}`}
+                  style={{ backgroundColor: colors.main }}
+                >
+                  {kmeansRunning ? 'Running…' : 'Run KMeans'}
+                </button>
+              </div>
+            </OrangeStyleWidget>
+          </div>
+
+          {/* KMeans parameters modal (reuse ParametersModal) */}
+          <ParametersModal isOpen={showParameters} onClose={() => setShowParameters(false)} title="KMeans Parameters">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Number of Clusters</label>
+                <input type="number" min={1} value={(widget.data?.kmeansParams?.n_clusters) || 3} onChange={(e) => {
+                  const v = Math.max(1, Number(e.target.value) || 3);
+                  onUpdateWidget && onUpdateWidget({ data: { ...widget.data, kmeansParams: { ...(widget.data?.kmeansParams || {}), n_clusters: v } } });
+                }} className="w-full p-2 border rounded" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Max Iterations</label>
+                <input type="number" min={10} value={(widget.data?.kmeansParams?.max_iter) || 300} onChange={(e) => {
+                  const v = Math.max(10, Number(e.target.value) || 300);
+                  onUpdateWidget && onUpdateWidget({ data: { ...widget.data, kmeansParams: { ...(widget.data?.kmeansParams || {}), max_iter: v } } });
+                }} className="w-full p-2 border rounded" />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={async (e) => {
+                    console.log('[KMeans UI] modal Run button clicked for widget', widget.id);
+                    e.preventDefault(); e.stopPropagation();
+                    // Close the modal first so the inline results panel can render above other UI
+                    try {
+                      setShowParameters(false);
+                    } catch (e) { /* ignore */ }
+                    // small delay to allow modal portal to unmount and z-index stacking to settle
+                    await new Promise((res) => setTimeout(res, 80));
+                    let success = false;
+                    try {
+                      setKmeansRunning(true);
+                      success = await runKMeans();
+                    } catch (err) {
+                      console.error('[KMeans] run button error', err);
+                      alert('KMeans run failed: ' + (err?.message || String(err)));
+                    } finally {
+                      setKmeansRunning(false);
+                    }
+                    if (success) {
+                      // clear suppression (user explicitly ran) then position and show compact results list
+                      try { setInlineSuppressOpen(false); } catch (err) {}
+                      try { positionInlineBelowWidget(); } catch (e) { /* ignore */ }
+                      try { setShowKmeansResultList(true); setShowInlineResults(false); } catch (e) { /* ignore */ }
+                    }
+                  }}
+                  disabled={kmeansRunning}
+                  className={`px-3 py-1 rounded text-white ${kmeansRunning ? 'bg-gray-400' : 'bg-blue-600'}`}>
+                  {kmeansRunning ? 'Running…' : 'Run'}
+                </button>
+                <button onClick={(e) => { console.log('[KMeans UI] modal Close clicked for widget', widget.id); e.preventDefault(); e.stopPropagation(); setShowParameters(false); }} className="px-3 py-1 bg-gray-200 rounded">Close</button>
+              </div>
+            </div>
+          </ParametersModal>
+
+          {/* Hierarchical parameters modal */}
+          {widget.type === 'hierarchical-clustering' && (
+            <ParametersModal isOpen={showParameters} onClose={() => setShowParameters(false)} title="Hierarchical Parameters">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Method</label>
+                  <select value={widget.data?.hier_params?.method || widget.data?.hier_method || 'agglomerative'} onChange={(e) => {
+                    const method = e.target.value;
+                    onUpdateWidget && onUpdateWidget({ data: { ...(widget.data || {}), hier_params: { ...(widget.data?.hier_params || {}), method }, hier_method: method } });
+                  }} className="w-full p-2 border rounded">
+                    <option value="agglomerative">Agglomerative (bottom-up)</option>
+                    <option value="divisive">Divisive (top-down)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Linkage</label>
+                  <select value={widget.data?.hier_params?.linkage || widget.data?.hier_linkage || 'single'} onChange={(e) => {
+                    const linkage = e.target.value;
+                    onUpdateWidget && onUpdateWidget({ data: { ...(widget.data || {}), hier_params: { ...(widget.data?.hier_params || {}), linkage }, hier_linkage: linkage } });
+                  }} className="w-full p-2 border rounded">
+                    <option value="single">Single</option>
+                    <option value="complete">Complete</option>
+                    <option value="average">Average</option>
+                    <option value="ward">Ward</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Number of clusters (k)</label>
+                  <input type="number" min={1} value={(widget.data?.hier_k) || 3} onChange={(e) => {
+                    const v = Math.max(1, Number(e.target.value) || 3);
+                    onUpdateWidget && onUpdateWidget({ data: { ...(widget.data || {}), hier_k: v } });
+                  }} className="w-full p-2 border rounded" />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={async (e) => {
+                      e.preventDefault(); e.stopPropagation();
+                      // close the modal then run clustering locally
+                      try { setShowParameters(false); } catch (err) {}
+                      await new Promise(res => setTimeout(res, 60));
+
+                      // local agglomerative clustering (simple single-linkage fallback)
+                      const rows: any[] = widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || [];
+                      if (!rows || rows.length === 0) { alert('No data available for Hierarchical Clustering'); return; }
+                      const k = widget.data?.hier_k || 3;
+
+                      // Extract 2D features similarly to other widgets (prefer common names)
+                      const sample = rows[0] || {};
+                      const keys = Object.keys(sample);
+                      const numericKeys = keys.filter((kn) => rows.some(r => !isNaN(Number(r[kn]))));
+                      const lower = numericKeys.map(k => k.toLowerCase());
+                      const pick = (cands: string[]) => { for (const c of cands) { const idx = lower.findIndex(l => l.includes(c)); if (idx >= 0) return numericKeys[idx]; } return numericKeys[0] || null; };
+                      const xKey = pick(['shift','wavenumber','raman','x']);
+                      const yKey = pick(['intensity','counts','value','y']);
+                      const featKeys = [xKey, yKey].filter(Boolean) as string[];
+                      const features = rows.map(r => featKeys.map(k2 => { const v = Number(r[k2]); return Number.isFinite(v) ? v : 0; }));
+
+                      // very small linkage implementation (single-linkage)
+                      const euclid = (a: number[], b: number[]) => { let s = 0; for (let i=0;i<a.length;i++) s += (a[i]-b[i])**2; return Math.sqrt(s); };
+                      let clusters: number[][] = []; for (let i=0;i<features.length;i++) clusters.push([i]);
+                      const linkage: Array<[number,number,number,number]> = [];
+                      const clusterDist = (c1:number[], c2:number[]) => { let best = Infinity; for (const i of c1) for (const j of c2) { const d = euclid(features[i], features[j]); if (d < best) best = d; } return best; };
+                      while (clusters.length > 1) {
+                        let bestI=0,bestJ=1,bestD=Infinity;
+                        for (let i=0;i<clusters.length;i++) for (let j=i+1;j<clusters.length;j++){ const d = clusterDist(clusters[i], clusters[j]); if (d < bestD){ bestD=d; bestI=i; bestJ=j; } }
+                        linkage.push([bestI,bestJ,bestD, clusters[bestI].length+clusters[bestJ].length]);
+                        const merged = clusters[bestI].concat(clusters[bestJ]);
+                        if (bestJ > bestI) { clusters.splice(bestJ,1); clusters.splice(bestI,1); } else { clusters.splice(bestI,1); clusters.splice(bestJ,1); }
+                        clusters.push(merged);
+                      }
+
+                      // cut linkage to k clusters (naive)
+                      let cutClusters: number[][] = []; for (let i=0;i<features.length;i++) cutClusters.push([i]);
+                      for (let m=0; m<linkage.length && cutClusters.length > k; m++) {
+                        const [i,j] = linkage[m];
+                        if (i<0||j<0||i>=cutClusters.length||j>=cutClusters.length) break;
+                        const merged = cutClusters[i].concat(cutClusters[j]);
+                        if (j>i) { cutClusters.splice(j,1); cutClusters.splice(i,1); } else { cutClusters.splice(i,1); cutClusters.splice(j,1); }
+                        cutClusters.push(merged);
+                      }
+                      const labels = new Array(features.length).fill(0);
+                      for (let ci=0; ci<cutClusters.length; ci++) for (const idx of cutClusters[ci]) labels[idx] = ci;
+
+                      const result = { linkage, labels, featKeys, features };
+                      onUpdateWidget && onUpdateWidget({ data: { ...(widget.data||{}), hierarchicalResults: result, hier_k: k } });
+                      openTableModal();
+                    }}
+                    className="px-3 py-1 rounded text-white bg-blue-600"
+                  >
+                    Run
+                  </button>
+                  <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowParameters(false); }} className="px-3 py-1 bg-gray-200 rounded">Close</button>
+                </div>
+              </div>
+            </ParametersModal>
+          )}
+
+          {/* Inline results panel (portal + fallback) */}
+          {kmeansResultPanel}
+              {/* no transient banner: we show inline graph only after Run */}
+        </>
+      );
+    }
+    if (widget.type === 'hierarchical-clustering') {
+      return (
+        <HierarchicalWidget widget={widget} onUpdateWidget={onUpdateWidget} onStartConnection={onStartConnection} iconRef={iconRef} />
       );
     }
     if (widget.type === 'noise-filter') {
@@ -1801,100 +3547,117 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       const hasData = (modalPreviewData && modalPreviewData.length > 0) || widget.data?.tableDataProcessed;
 
       return (
-        <OrangeStyleWidget
-          icon={Filter}
-          label="Noise Filter"
-          statusText={hasData ? 'Data processed' : 'Ready'}
-          statusColor={hasData ? 'green' : 'gray'}
-          mainColor={colors.main}
-          lightColor={colors.light}
-          bgColor={colors.bg}
-        >
-          <div className="w-full px-3 py-2 space-y-2">
-            {/* Method Selector */}
-            <div className="flex items-center gap-2 text-xs">
-              <label className="text-xs font-semibold">Method:</label>
-              <select 
-                value={noiseMethod} 
-                onChange={(e) => setNoiseMethod(e.target.value)}
-                className="flex-1 px-2 py-1 border rounded text-xs"
-              >
-                <option value="moving_average">Moving Average</option>
-                <option value="savitzky_golay">Savitzky-Golay</option>
-                <option value="median">Median Filter</option>
-                <option value="gaussian">Gaussian</option>
-              </select>
-            </div>
+        <>
+          <OrangeStyleWidget
+            icon={Filter}
+            label="Noise Filter"
+            statusText={hasData ? 'Processed' : ''}
+            statusColor={hasData ? 'green' : 'gray'}
+            mainColor={colors.main}
+            lightColor={colors.light}
+            bgColor={colors.bg}
+          />
 
-            {/* Window Size (for all methods) */}
-            <div className="flex items-center gap-2 text-xs">
-              <label className="text-xs">Window:</label>
-              <input 
-                type="number" 
-                min={3} 
-                max={51}
-                step={2}
-                value={noiseWindow} 
-                onChange={(e) => setNoiseWindow(Number(e.target.value))} 
-                className="w-20 px-2 py-1 border rounded text-xs" 
-              />
-              <span className="text-[10px] text-gray-500">({noiseWindow} points)</span>
-            </div>
+          {/* Parameters Modal */}
+          <ParametersModal
+            isOpen={showParameters}
+            onClose={() => setShowParameters(false)}
+            title="Noise Filter Parameters"
+          >
+            <div className="space-y-4">
+              {/* Method Selector */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">Filter Method</label>
+                <select 
+                  value={noiseMethod} 
+                  onChange={(e) => setNoiseMethod(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="moving_average">Moving Average</option>
+                  <option value="savitzky_golay">Savitzky-Golay</option>
+                  <option value="median">Median Filter</option>
+                  <option value="gaussian">Gaussian</option>
+                </select>
+              </div>
 
-            {/* Conditional parameters based on method */}
-            {noiseMethod === 'savitzky_golay' && (
-              <div className="flex items-center gap-2 text-xs">
-                <label className="text-xs">Order:</label>
+              {/* Window Size */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">Window Size</label>
                 <input 
                   type="number" 
-                  min={1} 
-                  max={5}
-                  value={noiseOrder} 
-                  onChange={(e) => setNoiseOrder(Number(e.target.value))} 
-                  className="w-20 px-2 py-1 border rounded text-xs" 
+                  min={3} 
+                  max={51}
+                  step={2}
+                  value={noiseWindow} 
+                  onChange={(e) => setNoiseWindow(Number(e.target.value))} 
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                 />
-                <span className="text-[10px] text-gray-500">(polynomial)</span>
+                <p className="text-xs text-gray-500">Number of data points ({noiseWindow} points)</p>
               </div>
-            )}
 
-            {noiseMethod === 'gaussian' && (
-              <div className="flex items-center gap-2 text-xs">
-                <label className="text-xs">Sigma:</label>
-                <input 
-                  type="number" 
-                  min={0.1} 
-                  max={5}
-                  step={0.1}
-                  value={noiseSigma} 
-                  onChange={(e) => setNoiseSigma(Number(e.target.value))} 
-                  className="w-20 px-2 py-1 border rounded text-xs" 
-                />
-                <span className="text-[10px] text-gray-500">(spread)</span>
+              {/* Conditional parameters based on method */}
+              {noiseMethod === 'savitzky_golay' && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Polynomial Order</label>
+                  <input 
+                    type="number" 
+                    min={1} 
+                    max={5}
+                    value={noiseOrder} 
+                    onChange={(e) => setNoiseOrder(Number(e.target.value))} 
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                  />
+                  <p className="text-xs text-gray-500">Degree of polynomial (1-5)</p>
+                </div>
+              )}
+
+              {noiseMethod === 'gaussian' && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Sigma (Spread)</label>
+                  <input 
+                    type="number" 
+                    min={0.1} 
+                    max={5}
+                    step={0.1}
+                    value={noiseSigma} 
+                    onChange={(e) => setNoiseSigma(Number(e.target.value))} 
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                  />
+                  <p className="text-xs text-gray-500">Gaussian parameter (0.1-5.0)</p>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div className="flex gap-2 pt-2">
+                <button 
+                  type="button" 
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); console.log('[Noise] Compute clicked'); runNoiseFilter(); }} 
+                  className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 cursor-pointer"
+                  title="Apply noise filtering to the data"
+                  style={{ pointerEvents: 'auto' }}
+                >
+                  Compute
+                </button>
+                <button 
+                  type="button" 
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); console.log('[Noise] Apply & Close clicked'); runNoiseFilter(); setShowParameters(false); }} 
+                  className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 cursor-pointer"
+                  title="Apply and close"
+                  style={{ pointerEvents: 'auto' }}
+                >
+                  Apply & Close
+                </button>
+                <button 
+                  type="button" 
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); console.log('[Noise] Reset clicked'); setNoiseMethod('moving_average'); setNoiseWindow(5); setNoiseOrder(3); setNoiseSigma(1.0); }} 
+                  className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 cursor-pointer"
+                >
+                  Reset
+                </button>
               </div>
-            )}
-
-            {/* Apply and Open buttons */}
-            <div className="flex gap-2">
-              <button 
-                type="button" 
-                onClick={(e) => { e.stopPropagation(); runNoiseFilter(); }} 
-                className="flex-1 px-3 py-2 rounded text-xs font-semibold text-white"
-                style={{ backgroundColor: colors.main }}
-                title="Apply noise filtering to the data"
-              >
-                Apply
-              </button>
-              <button 
-                type="button" 
-                onClick={(e) => { e.stopPropagation(); openNoisePreview(); }} 
-                className="flex-1 px-3 py-2 rounded text-xs font-semibold bg-gray-200 text-gray-800 hover:bg-gray-300"
-                title={hasData ? 'View the smoothed data' : 'Click Apply first to process data'}
-              >
-                View Data
-              </button>
             </div>
-          </div>
-        </OrangeStyleWidget>
+          </ParametersModal>
+        </>
       );
     }
       if (widget.type === 'smoothing') {
@@ -1950,39 +3713,87 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           }
         };
 
-        return (
-          <div className="flex flex-col items-center justify-center w-full h-full cursor-default px-2" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-2 flex items-center gap-2">
-              <label className="text-xs">Sigma:</label>
-              <input
-                type="number"
-                min="0.1"
-                step="0.1"
-                value={sigma}
-                onChange={(e) => setSigma(Number(e.target.value))}
-                className="w-16 px-2 py-1 border rounded"
-              />
-            </div>
+        const colors = getWidgetColors('smoothing');
+        const hasData = widget.data?.tableDataProcessed;
 
-            {/* Outer connection circle */}
-            <div className="rounded-full p-1 flex items-center justify-center" style={{ border: '2px dashed rgba(0,0,0,0.06)', borderRadius: 999 }}>
-              {/* Inner icon circle (clickable) */}
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={(e) => { e.stopPropagation(); runSmoothing(); }}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); runSmoothing(); } }}
-                className="rounded-full p-1 flex items-center justify-center focus:outline-none"
-                style={{ borderRadius: 999 }}
-              >
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center icon-outer`} style={{ width: 64, height: 64 }}>
-                  <Filter className={`h-6 w-6 transition-transform duration-200 icon`} />
+        return (
+          <>
+            <OrangeStyleWidget
+              icon={Filter}
+              label="Smoothing"
+              statusText={hasData ? 'Smoothed' : ''}
+              statusColor={hasData ? 'green' : 'gray'}
+              mainColor={colors.main}
+              lightColor={colors.light}
+              bgColor={colors.bg}
+            />
+
+            {/* Parameters Modal */}
+            <ParametersModal
+              isOpen={showParameters}
+              onClose={() => setShowParameters(false)}
+              title="Smoothing Parameters"
+            >
+              <div className="space-y-4">
+                {/* Sigma Parameter */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Sigma (Smoothness)</label>
+                  <input
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    value={sigma}
+                    onChange={(e) => setSigma(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500">Higher = smoother</p>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-2 pt-2">
+                  <button 
+                    type="button" 
+                    onClick={(e) => { 
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('[Smoothing] Compute clicked');
+                      runSmoothing(); 
+                    }} 
+                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 cursor-pointer"
+                    style={{ pointerEvents: 'auto' }}
+                  >
+                    Compute
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={(e) => { 
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('[Smoothing] Apply & Close clicked');
+                      runSmoothing(); 
+                      setShowParameters(false); 
+                    }} 
+                    className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 cursor-pointer"
+                    style={{ pointerEvents: 'auto' }}
+                  >
+                    Apply & Close
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('[Smoothing] Reset clicked');
+                      setSigma(1.0);
+                    }} 
+                    className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 cursor-pointer"
+                  >
+                    Reset
+                  </button>
                 </div>
               </div>
-            </div>
-
-            <div className="mt-2 text-[12px] font-medium text-center">Smoothing</div>
-          </div>
+            </ParametersModal>
+          </>
         );
       }
       if (widget.type === 'baseline-correction') {
@@ -2131,39 +3942,133 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           setShowLineChartModal(true);
         };
 
+        const colors = getWidgetColors('baseline-correction');
+        const hasData = widget.data?.tableDataProcessed;
+
+        return (
+          <>
+            <OrangeStyleWidget
+              icon={Calculator}
+              label="Baseline"
+              statusText={hasData ? 'Corrected' : ''}
+              statusColor={hasData ? 'green' : 'gray'}
+              mainColor={colors.main}
+              lightColor={colors.light}
+              bgColor={colors.bg}
+            />
+
+            {/* Parameters Modal */}
+            <ParametersModal
+              isOpen={showParameters}
+              onClose={() => setShowParameters(false)}
+              title="Baseline Correction Parameters"
+            >
+              <div className="space-y-4">
+                {/* Method Selector */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Correction Method</label>
+                  <select 
+                    value={localBaselineParams?.method || 'min_subtract'} 
+                    onChange={(e) => setLocalBaselineParams({ ...(localBaselineParams || {}), method: e.target.value })} 
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="min_subtract">Min Subtract</option>
+                    <option value="rolling_min">Rolling Min</option>
+                    <option value="polynomial">Polynomial</option>
+                  </select>
+                </div>
+
+                {/* Window Size (for rolling_min and polynomial) */}
+                {(localBaselineParams?.method === 'rolling_min' || localBaselineParams?.method === 'polynomial') && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Window Size</label>
+                    <input 
+                      type="number" 
+                      min={1} 
+                      value={localBaselineParams?.window || 5} 
+                      onChange={(e) => setLocalBaselineParams({ ...(localBaselineParams || {}), window: Number(e.target.value) })} 
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                    />
+                    <p className="text-xs text-gray-500">Number of points</p>
+                  </div>
+                )}
+
+                {/* Polynomial Degree */}
+                {localBaselineParams?.method === 'polynomial' && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Polynomial Degree</label>
+                    <input 
+                      type="number" 
+                      min={0} 
+                      value={localBaselineParams?.degree || 2} 
+                      onChange={(e) => setLocalBaselineParams({ ...(localBaselineParams || {}), degree: Number(e.target.value) })} 
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                    />
+                    <p className="text-xs text-gray-500">Degree (0-5)</p>
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex gap-2 pt-2">
+                  <button 
+                    type="button" 
+                    onClick={(e) => { 
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('[Baseline] Compute button clicked');
+                      runBaselineCorrection(); 
+                    }} 
+                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 cursor-pointer"
+                    style={{ pointerEvents: 'auto' }}
+                  >
+                    Compute
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={(e) => { 
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('[Baseline] Apply & Close clicked');
+                      runBaselineCorrection(); 
+                      setShowParameters(false); 
+                    }} 
+                    className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 cursor-pointer"
+                    style={{ pointerEvents: 'auto' }}
+                  >
+                    Apply & Close
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('[Baseline] Reset clicked');
+                      setLocalBaselineParams({ method: 'min_subtract' });
+                    }} 
+                    className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 cursor-pointer"
+                    style={{ pointerEvents: 'auto' }}
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+            </ParametersModal>
+          </>
+        );
+      }
+
+      // Temporarily keep the old rendering code for reference
+      if (false && widget.type === 'baseline-correction-old') {
         return (
           <div className="flex flex-col items-center justify-center w-full h-full cursor-default px-2" onClick={(e) => e.stopPropagation()}>
-            {/* param controls above the icon so users can tweak before applying */}
-            <div className="mb-2 flex items-center gap-2 text-sm">
-              <label className="text-xs">Method:</label>
-              <select value={localBaselineParams?.method || 'min_subtract'} onChange={(e) => setLocalBaselineParams({ ...(localBaselineParams || {}), method: e.target.value })} className="px-2 py-1 border rounded text-xs">
-                <option value="min_subtract">Min Subtract</option>
-                <option value="rolling_min">Rolling Min</option>
-                <option value="polynomial">Polynomial</option>
-              </select>
-              {(localBaselineParams?.method === 'rolling_min' || localBaselineParams?.method === 'polynomial') && (
-                <>
-                  <label className="text-xs">Window:</label>
-                  <input type="number" min={1} value={localBaselineParams?.window || 5} onChange={(e) => setLocalBaselineParams({ ...(localBaselineParams || {}), window: Number(e.target.value) })} className="w-16 px-2 py-1 border rounded text-xs" />
-                </>
-              )}
-              {localBaselineParams?.method === 'polynomial' && (
-                <>
-                  <label className="text-xs">Degree:</label>
-                  <input type="number" min={0} value={localBaselineParams?.degree || 2} onChange={(e) => setLocalBaselineParams({ ...(localBaselineParams || {}), degree: Number(e.target.value) })} className="w-12 px-2 py-1 border rounded text-xs" />
-                </>
-              )}
-              <button type="button" onClick={() => runBaselineCorrection()} className="px-2 py-1 bg-blue-600 text-white rounded text-xs">Apply</button>
-            </div>
-
             {/* Outer connection circle */}
             <div className="rounded-full p-1 flex items-center justify-center" style={{ border: '2px dashed rgba(0,0,0,0.06)', borderRadius: 999 }}>
               {/* Inner icon circle (clickable) */}
               <div
                 role="button"
                 tabIndex={0}
-                onClick={(e) => { e.stopPropagation(); runBaselineCorrection(); }}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); runBaselineCorrection(); } }}
+                onClick={(e) => { e.stopPropagation(); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); } }}
                 className="rounded-full p-1 flex items-center justify-center focus:outline-none"
                 style={{ borderRadius: 999 }}
               >
@@ -2507,151 +4412,108 @@ else:
           }
         };
 
+        const colors = getWidgetColors('custom-code');
+        const hasData = widget.data?.tableDataProcessed && widget.data.tableDataProcessed.length > 0;
+        const hasCode = widget.data?.widgetName || customCode !== defaultCode;
+
         return (
           <>
-            {/* Collapsed Widget View - Extra Wide, Expands when showing output */}
-            <div className="flex flex-col w-full h-full p-3 gap-2" onClick={(e) => e.stopPropagation()} style={{ minWidth: '280px', minHeight: showOutputInWidget ? '350px' : '120px' }}>
-              {/* Header */}
-              <div className="flex items-center justify-between pb-2 border-b">
-                <div className="flex items-center gap-2">
-                  <Code className={`h-4 w-4 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`} />
-                  <span className="text-xs font-bold">Custom Code Widget</span>
+            <OrangeStyleWidget
+              icon={Code}
+              label={widget.data?.widgetName || "Custom Code"}
+              statusText={hasData ? 'Executed' : hasCode ? 'Configured' : ''}
+              statusColor={hasData ? 'green' : hasCode ? 'blue' : 'gray'}
+              mainColor={colors.main}
+              lightColor={colors.light}
+              bgColor={colors.bg}
+            />
+
+            {/* Parameters Modal - Code Editor */}
+            <ParametersModal
+              isOpen={showParameters}
+              onClose={() => setShowParameters(false)}
+              title="Custom Code Editor"
+            >
+              <div className="space-y-4">
+                {/* Widget Name */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Widget Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., 'Peak Detector'"
+                    value={widgetName}
+                    onChange={(e) => setWidgetName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
                 </div>
-                <div className="flex items-center gap-2">
-                  {/* Show "Edit Code" if this is a created widget */}
-                  {widget.data?.widgetName && (
-                    <button
-                      onClick={() => setShowCodeEditor(true)}
-                      className="px-3 py-1 text-xs font-semibold text-white bg-purple-600 rounded hover:bg-purple-700 transition-colors"
-                      title="Edit the Python code"
-                    >
-                      Edit Code
-                    </button>
-                  )}
-                  {/* Show "Re-run" if widget has code and input data */}
-                  {widget.data?.widgetName && widget.data?.customCode && widget.data?.tableData && (
-                    <button
-                      onClick={() => handleExecuteCode()}
-                      disabled={isExecuting}
-                      className="px-3 py-1 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
-                      title="Re-execute the code with current input data"
-                    >
-                      {isExecuting ? '⏳ Running...' : '🔄 Re-run'}
-                    </button>
-                  )}
-                  {/* Show "View Output" if widget has processed data */}
-                  {widget.data?.tableDataProcessed && widget.data.tableDataProcessed.length > 0 && widget.data?.widgetName && (
-                    <button
-                      onClick={() => {
-                        console.log('Toggle output display');
-                        setShowOutputInWidget(!showOutputInWidget);
-                      }}
-                      className={`px-3 py-1 text-xs font-semibold text-white ${showOutputInWidget ? 'bg-gray-600' : 'bg-green-600'} rounded hover:bg-green-700 transition-colors flex items-center gap-1`}
-                      title="Toggle output data display"
-                    >
-                      <span>{showOutputInWidget ? '📊 Hide' : '📊 Show'}</span> Output
-                    </button>
-                  )}
-                  {/* Show "Open" only if this is a new/empty widget (no widgetName means it's the editor widget) */}
-                  {!widget.data?.widgetName && (
-                    <button
-                      onClick={() => setShowCodeEditor(true)}
-                      className="px-3 py-1 text-xs font-semibold text-white bg-purple-600 rounded hover:bg-purple-700 transition-colors"
-                    >
-                      Open
-                    </button>
-                  )}
+
+                {/* Widget Description */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Description</label>
+                  <input
+                    type="text"
+                    placeholder="Describe what your widget does"
+                    value={widgetDescription}
+                    onChange={(e) => setWidgetDescription(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Python Code */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Python Code</label>
+                  <textarea
+                    value={customCode}
+                    onChange={(e) => setCustomCode(e.target.value)}
+                    placeholder="# Write your Python code here&#10;# Input: input_data&#10;# Output: output_data"
+                    className="w-full h-48 px-3 py-2 text-sm font-mono border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+                    style={{ fontFamily: 'Consolas, Monaco, monospace' }}
+                  />
+                  <p className="text-xs text-gray-500">Use input_data (list of dicts) and return output_data</p>
+                </div>
+
+                {/* Execution Output */}
+                {executionOutput && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Output</label>
+                    <div className="p-3 bg-gray-50 border border-gray-300 rounded text-xs font-mono whitespace-pre-wrap max-h-32 overflow-y-auto">
+                      {executionOutput}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex gap-2 pt-2">
+                  <button 
+                    type="button" 
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); console.log('[CustomCode] Execute clicked'); handleExecuteCode(); }} 
+                    disabled={isExecuting || !customCode}
+                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm disabled:bg-gray-400 cursor-pointer"
+                  >
+                    {isExecuting ? 'Running...' : 'Execute'}
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); console.log('[CustomCode] Save & Close clicked'); if (onUpdateWidget) { onUpdateWidget({ data: { ...(widget.data || {}), widgetName, widgetDescription, customCode } }); } setShowParameters(false); }} 
+                    className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 cursor-pointer"
+                  >
+                    Save & Close
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCustomCode(defaultCode); setWidgetName(''); setWidgetDescription(''); setExecutionOutput(''); }} 
+                    className="px-3 py-1 bg-gray-200 rounded text-sm hover:bg-gray-300 cursor-pointer"
+                  >
+                    Reset
+                  </button>
                 </div>
               </div>
+            </ParametersModal>
 
-              {/* Widget Summary - Horizontal Layout */}
-              <div className="flex-1 flex items-center gap-3 px-2">
-                <Code className="h-10 w-10 text-purple-400 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  {widgetName || widget.data?.widgetName ? (
-                    <>
-                      <p className="text-sm font-semibold truncate">{widget.data?.widgetName || widgetName}</p>
-                      <p className="text-xs text-gray-500 truncate">{widget.data?.widgetDescription || widgetDescription || 'Custom code widget'}</p>
-                      {/* Show output data summary */}
-                      {widget.data?.tableDataProcessed && widget.data.tableDataProcessed.length > 0 && (
-                        <p className="text-xs text-green-600 font-medium mt-1">
-                          ✓ {widget.data.tableDataProcessed.length} rows | {Object.keys(widget.data.tableDataProcessed[0] || {}).length} columns
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-xs text-gray-500">Click "Open" to configure</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Output Data Display - Inside Widget */}
-              {showOutputInWidget && widget.data?.tableDataProcessed && widget.data.tableDataProcessed.length > 0 && (
-                <div className="mt-2 p-3 bg-gray-50 rounded border border-gray-200 max-h-64 overflow-auto">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-xs font-semibold text-gray-700">Output Data</h4>
-                    <span className="text-xs text-gray-500">
-                      {widget.data.tableDataProcessed.length} rows
-                    </span>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-xs">
-                      <thead className="bg-gray-100 sticky top-0">
-                        <tr>
-                          {Object.keys(widget.data.tableDataProcessed[0] || {}).map((key) => (
-                            <th key={key} className="px-2 py-1 text-left font-semibold text-gray-700 border-b">
-                              {key}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {widget.data.tableDataProcessed.slice(0, 10).map((row: any, idx: number) => (
-                          <tr key={idx} className="hover:bg-gray-100">
-                            {Object.keys(widget.data.tableDataProcessed[0] || {}).map((key) => (
-                              <td key={key} className="px-2 py-1 border-b text-gray-600">
-                                {(() => {
-                                  const value = row[key];
-                                  if (typeof value === 'number') {
-                                    // Smart number formatting
-                                    if (Math.abs(value) >= 1000) {
-                                      return value.toFixed(0); // Large numbers: no decimals
-                                    } else if (Math.abs(value) >= 1) {
-                                      return value.toFixed(2); // Regular numbers: 2 decimals
-                                    } else if (Math.abs(value) >= 0.01) {
-                                      return value.toFixed(4); // Small numbers: 4 decimals
-                                    } else if (value === 0) {
-                                      return '0';
-                                    } else {
-                                      return value.toExponential(2); // Very small: scientific notation
-                                    }
-                                  } else if (value === null || value === undefined) {
-                                    return '-';
-                                  } else if (typeof value === 'boolean') {
-                                    return value ? '✓' : '✗';
-                                  }
-                                  return String(value);
-                                })()}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {widget.data.tableDataProcessed.length > 10 && (
-                      <p className="text-xs text-gray-500 mt-2 text-center">
-                        Showing first 10 of {widget.data.tableDataProcessed.length} rows
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Floating Code Editor Modal */}
+            {/* Advanced Code Editor Modal (kept for complex editing) */}
             {showCodeEditor && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowCodeEditor(false)}>
-                <div className="bg-white rounded-lg shadow-2xl w-[800px] h-[700px] flex flex-col" onClick={(e) => e.stopPropagation()}>
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowCodeEditor(false); }}>
+                <div className="bg-white rounded-lg shadow-2xl w-[800px] h-[700px] flex flex-col" onClick={(e) => { e.stopPropagation(); }}>
                   {/* Modal Header */}
                   <div className="flex items-center justify-between p-4 border-b bg-purple-600 text-white flex-shrink-0">
                     <div className="flex items-center gap-2">
@@ -2660,13 +4522,13 @@ else:
                     </div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => setShowCodeEditor(false)}
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowCodeEditor(false); }}
                         className="px-4 py-1.5 text-sm font-semibold bg-white text-purple-600 rounded hover:bg-gray-100 transition-colors"
                       >
                         Close
                       </button>
                       <button
-                        onClick={() => setShowCodeEditor(false)}
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowCodeEditor(false); }}
                         className="w-8 h-8 flex items-center justify-center bg-white text-purple-600 rounded hover:bg-gray-100 transition-colors font-bold text-lg"
                         title="Close"
                       >
@@ -2760,8 +4622,8 @@ else:
                       {/* Bottom Close Button */}
                       <div className="pt-2 border-t">
                         <button
-                          onClick={() => setShowCodeEditor(false)}
-                          className="w-full px-6 py-3 text-sm font-semibold text-gray-700 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
+                          onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowCodeEditor(false); }}
+                          className="w-full px-6 py-3 text-sm font-semibold text-gray-700 bg-gray-200 rounded hover:bg-gray-300 transition-colors cursor-pointer"
                         >
                           Close Editor
                         </button>
@@ -2774,7 +4636,7 @@ else:
 
             {/* Community Widgets Modal */}
             {showCommunityModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowCommunityModal(false)}>
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowCommunityModal(false); }}>
                 <div className="bg-white rounded-lg p-4 max-w-2xl w-full max-h-96 overflow-auto" onClick={(e) => e.stopPropagation()}>
                   <h3 className="text-lg font-bold mb-3">Community Widgets</h3>
                   {communityWidgets.length === 0 ? (
@@ -2792,7 +4654,7 @@ else:
                               </p>
                             </div>
                             <button
-                              onClick={() => handleLoadCommunityWidget(w.id)}
+                              onClick={(e) => { e.stopPropagation(); handleLoadCommunityWidget(w.id); }}
                               className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700"
                             >
                               Load
@@ -2803,7 +4665,7 @@ else:
                     </div>
                   )}
                   <button
-                    onClick={() => setShowCommunityModal(false)}
+                    onClick={(e) => { e.stopPropagation(); setShowCommunityModal(false); }}
                     className="mt-4 w-full px-3 py-2 bg-gray-200 rounded hover:bg-gray-300"
                   >
                     Close
@@ -2813,30 +4675,122 @@ else:
             )}
 
             {/* Data Table Modal for Viewing Output */}
-            <DataTableModal
-              isOpen={showTableModal}
-              data={widget.data?.tableDataProcessed || widget.data?.tableData || []}
-              onClose={() => setShowTableModal(false)}
-            />
+              <DataTableModal
+                key={`datatable-${widget.id}-${showTableModal ? 'open' : 'closed'}`}
+                isOpen={showTableModal}
+                data={localAugmentedTable || widget.data?.tableDataProcessed || widget.data?.tableData || []}
+                onClose={() => { guardedCloseTableModal({ setJustClosed: true }); }}
+              />
           </>
         );
       }
 
         if (widget.type === 'blank-remover') {
-          // simple display: icon inside a circular control and label beneath
-          return (
-            <div className="flex flex-col items-center justify-center w-full h-full cursor-default px-2" onClick={(e) => e.stopPropagation()}>
-              <div
-                role="button"
-                tabIndex={0}
-                className="rounded-full flex items-center justify-center focus:outline-none"
-                style={{ borderRadius: 999, width: 80, height: 80 }}
-              >
-                <Filter className={`h-7 w-7 transition-transform duration-200 icon ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`} />
-              </div>
+          const [threshold, setThreshold] = useState<number>(0.1);
 
-              <div className="mt-2 text-[12px] font-medium text-center">Blank Remover</div>
-            </div>
+          const runBlankRemover = () => {
+            const tableData: Record<string, any>[] = widget.data?.tableData || widget.data?.parsedData || [];
+            if (!tableData || tableData.length === 0) return;
+
+            // Simple blank removal: filter rows where sum of numeric values < threshold
+            const processed = tableData.filter((row) => {
+              const values = Object.values(row).filter((v) => !isNaN(Number(v))).map(Number);
+              const sum = values.reduce((a, b) => a + b, 0);
+              return sum > threshold;
+            });
+
+            if (onUpdateWidget) {
+              onUpdateWidget({ 
+                data: { 
+                  ...(widget.data || {}), 
+                  tableDataProcessed: processed,
+                  blankRemoverThreshold: threshold 
+                } 
+              });
+            }
+          };
+
+          const colors = getWidgetColors('blank-remover');
+          const hasData = widget.data?.tableDataProcessed;
+
+          return (
+            <>
+              <OrangeStyleWidget
+                icon={Filter}
+                label="Blank Remover"
+                statusText={hasData ? 'Filtered' : ''}
+                statusColor={hasData ? 'green' : 'gray'}
+                mainColor={colors.main}
+                lightColor={colors.light}
+                bgColor={colors.bg}
+              />
+
+              {/* Parameters Modal */}
+              <ParametersModal
+                isOpen={showParameters}
+                onClose={() => setShowParameters(false)}
+                title="Blank Remover Parameters"
+              >
+                <div className="space-y-4">
+                  {/* Threshold parameter */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Threshold</label>
+                    <input 
+                      type="number" 
+                      min={0} 
+                      step={0.1}
+                      value={threshold} 
+                      onChange={(e) => setThreshold(Number(e.target.value))} 
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <p className="text-xs text-gray-500">Minimum sum threshold to keep row</p>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex gap-2 pt-2">
+                    <button 
+                      type="button" 
+                      onClick={(e) => { 
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('[BlankRemover] Compute clicked');
+                        runBlankRemover(); 
+                      }} 
+                      className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 cursor-pointer"
+                      style={{ pointerEvents: 'auto' }}
+                    >
+                      Compute
+                    </button>
+                      <button 
+                        type="button" 
+                        onClick={(e) => { 
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('[BlankRemover] Apply & Close clicked');
+                          runBlankRemover(); 
+                          setShowParameters(false); 
+                        }} 
+                        className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 cursor-pointer"
+                        style={{ pointerEvents: 'auto' }}
+                      >
+                        Apply & Close
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('[BlankRemover] Reset clicked');
+                          setThreshold(0.1);
+                        }} 
+                        className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 cursor-pointer"
+                      >
+                        Reset
+                      </button>
+                  </div>
+                </div>
+              </ParametersModal>
+            </>
           );
         }
     // Default: just show icon
@@ -2851,32 +4805,17 @@ else:
           setShowSelector(true);
         }}
       >
-          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center`} style={{ width: 80 }}>
-            {/* Outer connection ring with centered inner icon */}
-            <div className="rounded-full flex items-center justify-center" style={{ border: '2px dashed rgba(0,0,0,0.06)', borderRadius: 999, width: 80, height: 80 }}>
-              <div className="w-16 h-16 rounded-full flex items-center justify-center">
-                {!iconLoadFailed ? (
-                  <img
-                    src={customIconPath}
-                    alt={widget.type}
-                    className="h-5 w-5 icon"
-                    onError={() => setIconLoadFailed(true)}
-                  />
-                ) : (
-                  <IconComponent className={`h-5 w-5 transition-transform duration-200 ${theme === 'dark' ? 'text-emerald-300' : 'text-orange-500'} icon`} />
-                )}
-              </div>
-            </div>
-
-            {/* Label below the connection circle (keeps the inner circle icon-only) */}
-            <div className="mt-2 text-[9px] text-center truncate max-w-[64px]" title={widget.label || widget.type}>
-              {(widget.label && widget.label.length > 0)
-                ? widget.label
-                : widget.type
-                    .split('-')
-                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(' ')}
-            </div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex items-center justify-center">
+            {!iconLoadFailed ? (
+              <img
+                src={customIconPath}
+                alt={widget.type}
+                className="orange-widget-icon"
+                onError={() => setIconLoadFailed(true)}
+              />
+            ) : (
+              <IconComponent className="orange-widget-icon" />
+            )}
           </div>
       </div>
     );
@@ -2898,7 +4837,7 @@ else:
         }}
         className={`absolute transition-all duration-300 ${
           isDragging ? 'opacity-50 scale-95' : ''
-  } ${isConnectingFrom ? 'ring-4 ring-gray-400 ring-opacity-50' : ''} ${isHighlighted ? 'ring-2 ring-yellow-300 ring-opacity-80' : ''}`}
+  }`}
         style={{
           left: widget.position.x,
           top: widget.position.y,
@@ -2916,73 +4855,90 @@ else:
         }}
       >
         <div
-          className={`relative w-20 h-20 rounded-full flex flex-col items-center justify-center border-2 group transition-shadow duration-200 ${
-            theme === 'dark'
-              ? (isSupabase ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 hover:border-[var(--primary)] shadow-inner' : 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 hover:border-[var(--primary)] shadow-md hover:shadow-2xl')
-              : (isSupabase ? 'bg-gradient-to-br from-white to-gray-50 border-gray-200 hover:border-[var(--primary)] shadow-inner' : 'bg-gradient-to-br from-white to-gray-50 border-gray-200 hover:border-[var(--primary)] shadow-card hover:shadow-2xl')
-            } ${isConnectingFrom ? 'ring-4 ring-gray-400 ring-opacity-50' : ''} ${isHighlighted ? 'ring-2 ring-yellow-300 ring-opacity-80' : ''}`}
+          className={`orange-widget ${isConnectingFrom ? 'connecting' : ''}`}
+          data-category={getWidgetCategory(widget.type)}
           style={{ willChange: 'box-shadow, transform' }}
         >
-          {/* Outer ring removed; connections will start from an inner interaction area */}
-          {/* Controls inside the circle: drag (left), settings (center), delete (right) */}
+          {/* Control buttons - only show on hover, positioned at top-left corner */}
           <div
-            className={`absolute top-2 left-1/2 -translate-x-1/2 z-30 transition-opacity duration-200 ${
-              showControls ? 'opacity-100' : 'opacity-0'
+            className={`absolute -top-2 -left-2 z-40 transition-all duration-200 ${
+              showControls ? 'opacity-100 scale-100' : 'opacity-0 scale-50 pointer-events-none'
             }`}
           >
-            <div className="flex items-center gap-2 w-28 justify-between">
-              {/* Settings (left) */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // If this is a File Upload widget, clicking the settings icon should open the file picker
-                  if (widget.type === 'file-upload') {
-                    (fileInputRef.current as HTMLInputElement | null)?.click();
-                    return;
-                  }
-                  onOpenConfig();
-                }}
-                title="Settings"
-                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
-                  theme === 'dark' ? 'bg-gray-600 text-gray-300' : 'bg-white text-gray-700 shadow-sm'
-                }`}
-              >
-                <Settings className="h-3 w-3" />
-              </button>
-
-              {/* Drag handle (center) - drag source attached here so only this handle initiates drag */}
-              <button
-                ref={drag}
-                title="Drag"
-                aria-label="Drag widget"
-                className={`w-7 h-7 rounded-full flex items-center justify-center cursor-move transition-all duration-150 ${
-                  theme === 'dark' ? 'bg-gray-700 border border-gray-600' : 'bg-gray-100 border border-gray-200'
-                }`}
-              >
-                <GripVertical className="h-3 w-3 opacity-70" />
-              </button>
-
-              {/* Delete (right) */}
-              {/* Delete button removed per user request */}
-            </div>
+            {/* Settings button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (widget.type === 'file-upload') {
+                  (fileInputRef.current as HTMLInputElement | null)?.click();
+                  return;
+                }
+                onOpenConfig();
+              }}
+              title="Settings"
+              className="orange-control-btn"
+            >
+              <Settings />
+            </button>
           </div>
 
-          {/* outer ring removed per user request */}
+          {/* Drag handle - positioned at top-right corner */}
+          <div
+            className={`absolute -top-2 -right-2 z-40 transition-all duration-200 ${
+              showControls ? 'opacity-100 scale-100' : 'opacity-0 scale-50 pointer-events-none'
+            }`}
+          >
+            <button
+              ref={drag}
+              title="Drag"
+              aria-label="Drag widget"
+              className="orange-control-btn cursor-move"
+            >
+              <GripVertical />
+            </button>
+          </div>
 
-          <div className="flex-1 w-full relative flex items-center justify-center" style={{ paddingTop: 6 }}>
+          {/* Widget content centered - pointer-events-none to allow connection overlay to work */}
+          <div className={`w-full h-full relative flex items-center justify-center ${['supabase','data-table','file-upload','kmeans-analysis'].includes(widget.type) ? 'pointer-events-auto' : 'pointer-events-none'}`}>
             {renderWidgetContent()}
           </div>
 
           {/* file-upload uses the same top-row controls as other widgets; no duplicate bottom buttons */}
           {/* Outer ring overlay: single interaction area that starts connections by angle
               and a dashed semi-arc highlight that orients toward the pointer when highlighted */}
-          <div className="absolute inset-0 pointer-events-auto flex items-center justify-center">
-            {/* Interaction area: small inner circle to start connections (user requested inner-layer connections) */}
+          {/* disable the connection overlay while any modal is open so modal buttons receive clicks */}
+          <div className={`absolute inset-0 ${['supabase','data-table','file-upload','kmeans-analysis'].includes(widget.type) ? 'pointer-events-none' : (showParameters || showTableModal || showInlineResults) ? 'pointer-events-none' : 'pointer-events-auto'} flex items-center justify-center z-50`}>
+            {/* Interaction area: matches blue icon circle size for connections on the blue circle */}
             <div
-              className="absolute w-16 h-16 rounded-full"
-              style={{ transform: 'translateZ(0)' }}
+              className="absolute rounded-full"
+              style={(() => {
+                // If we have computed icon center (viewport coords), render overlay fixed over the icon
+                if (iconCenter && ['supabase','data-table','file-upload'].includes(widget.type)) {
+                    return {
+                    position: 'fixed',
+                    width: '70px',
+                    height: '70px',
+                    left: `${iconCenter.left}px`,
+                    top: `${iconCenter.top}px`,
+                    transform: 'translate(-50%,-50%)',
+                    transformOrigin: 'center',
+                    willChange: 'transform',
+                    zIndex: 9000
+                  } as React.CSSProperties;
+                }
+                return {
+                  width: '70px',
+                  height: '70px',
+                  left: '50%',
+                  top: ['supabase','data-table','file-upload'].includes(widget.type) ? '12px' : '50%',
+                  transform: ['supabase','data-table','file-upload'].includes(widget.type) ? 'translate(-50%,0)' : 'translate(-50%,-50%)',
+                  transformOrigin: 'center',
+                  willChange: 'transform'
+                } as React.CSSProperties;
+              })()}
               onPointerDown={(e) => {
-                // start connection from the exact client coordinates so Canvas can compute a perimeter anchor
+                // For input widgets the overlay is non-interactive (pointer-events-none on parent)
+                // so this handler will only run for non-input widgets.
                 try {
                   e.preventDefault();
                   e.stopPropagation();
@@ -2991,17 +4947,70 @@ else:
                   // swallow
                 }
               }}
-            />
+            >
+              {/* Show connection dots only while connecting (source) or when highlighted as target */}
+              {(isConnectingFrom || isHighlighted) && !['supabase','data-table','file-upload'].includes(widget.type) && (
+                <>
+                  {/* Position connection dots inside icon circle for input widgets (Supabase/Data table/File upload) */}
+                  <div
+                    className="absolute rounded-full bg-white border-2 pointer-events-none"
+                    style={(() => {
+                      if (['supabase','data-table','file-upload'].includes(widget.type)) {
+                        return {
+                          width: '8px',
+                          height: '8px',
+                          left: '14px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          borderColor: getWidgetColors(widget.type).main,
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.25)'
+                        } as React.CSSProperties;
+                      }
+                      return {
+                        width: '8px',
+                        height: '8px',
+                        left: '5px',
+                        top: '30%',
+                        transform: 'translateY(-50%)',
+                        borderColor: getWidgetColors(widget.type).main,
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.25)'
+                      } as React.CSSProperties;
+                    })()}
+                  />
+                  <div
+                    className="absolute rounded-full bg-white border-2 pointer-events-none"
+                    style={(() => {
+                      if (['supabase','data-table','file-upload'].includes(widget.type)) {
+                        return {
+                          width: '8px',
+                          height: '8px',
+                          right: '14px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          borderColor: getWidgetColors(widget.type).main,
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.25)'
+                        } as React.CSSProperties;
+                      }
+                      return {
+                        width: '8px',
+                        height: '8px',
+                        right: '5px',
+                        top: '30%',
+                        transform: 'translateY(-50%)',
+                        borderColor: getWidgetColors(widget.type).main,
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.25)'
+                      } as React.CSSProperties;
+                    })()}
+                  />
+                </>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Widget Label: render only for non-supabase widgets (supabase renders its own label inside) */}
         {widget.type !== 'supabase' && (
-          <div
-            className={`absolute top-full left-1/2 transform -translate-x-1/2 px-2 py-1 rounded text-xs font-medium whitespace-nowrap transition-all duration-300 ${
-              theme === 'dark' ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700 shadow-sm'
-            } ${showControls ? 'opacity-100' : 'opacity-0'}`}
-          >
+          <div className={`orange-widget-label absolute top-full mt-1 left-1/2 transform -translate-x-1/2 ${showControls ? 'opacity-100' : 'opacity-80'}`}>
             {editingLabel !== null ? (
               <input
                 value={editingLabel}
@@ -3020,10 +5029,7 @@ else:
             ) : (
               (widget.label && widget.label.length > 0)
                 ? widget.label
-                : widget.type
-                    .split('-')
-                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(' ')
+                : getWidgetLabel(widget.type)
             )}
           </div>
         )}
@@ -3050,13 +5056,42 @@ else:
         {/* Processing Indicator removed per user request */}
 
         {/* Data Table Modal */}
-        {widget.type === 'data-table' && (
-          <DataTableModal
-            isOpen={showTableModal}
-            data={widget.data?.tableData || []}
-            onClose={() => setShowTableModal(false)}
-          />
-        )}
+          {widget.type === 'data-table' && (
+            <>
+              {console.log('[CanvasWidget] Rendering DataTableModal for widget:', widget.id, 'isOpen:', showTableModal, 'dataLength:', (widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || []).length)}
+              <DataTableModal
+                key={`datatable-${widget.id}-${showTableModal ? 'open' : 'closed'}`}
+                isOpen={showTableModal}
+                data={widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || []}
+                sourceWidgetId={widget.id}
+                onClose={() => {
+                  console.log('[CanvasWidget] DataTableModal close button clicked - forcing close (bypassing lock)');
+                  // Bypass the lock for explicit close button clicks
+                  setShowTableModal(false);
+                  setLocalAugmentedTable(null);
+                  justClosedRef.current = true;
+                  setTimeout(() => { justClosedRef.current = false; }, 500);
+                }}
+              />
+            </>
+          )}
+
+          {/* Render DataTableModal for any widget (non-data-table) when requested (e.g., KMeans results) */}
+          {widget.type !== 'data-table' && showTableModal && (
+            <DataTableModal
+              key={`datatable-${widget.id}-${showTableModal ? 'open' : 'closed'}`}
+              isOpen={showTableModal}
+              data={localAugmentedTable || widget.data?.tableDataProcessed || widget.data?.tableData || []}
+              sourceWidgetId={widget.id}
+              onClose={() => { 
+                console.log('[CanvasWidget] DataTableModal close button clicked (non-data-table) - forcing close');
+                setShowTableModal(false);
+                setLocalAugmentedTable(null);
+                justClosedRef.current = true;
+                setTimeout(() => { justClosedRef.current = false; }, 500);
+              }}
+            />
+          )}
 
       {/* Widget Selector Modal */}
       <WidgetSelectorModal
@@ -3085,10 +5120,69 @@ else:
           <div className="w-48 rounded bg-white shadow-lg dark:bg-gray-800 text-sm overflow-hidden">
             {[
               { key: 'open', label: 'Open', shortcut: 'Enter', action: () => {
+                  // Special case: PCA with results - show inline results modal
+                  if (widget.type === 'pca-analysis' && widget.data?.pcaResults) {
+                    setShowInlineResults(true);
+                  }
+                  // KMeans: if results exist, open data table, otherwise open parameters
+                  else if (widget.type === 'kmeans-analysis') {
+                    if (widget.data?.kmeansResults) openTableModal();
+                    else setShowParameters(true);
+                  }
+                  // For preprocessing widgets, show parameters
+                  else if (['noise-filter', 'baseline-correction', 'smoothing', 'normalization', 'blank-remover', 'spectral-segmentation', 'future-extraction', 'custom-code', 'pca-analysis'].includes(widget.type)) {
+                    setShowParameters(true);
+                  }
+                  else if (widget.type === 'hierarchical-clustering') {
+                    // If this widget already has data or results, ask it to open its combined outputs.
+                    // Otherwise open the Parameters pane so the user can connect/configure a data source.
+                    const hasData = (
+                      (widget.data?.tableData && widget.data.tableData.length > 0) ||
+                      (widget.data?.tableDataProcessed && widget.data.tableDataProcessed.length > 0) ||
+                      (widget.data?.parsedData && widget.data.parsedData.length > 0) ||
+                      (widget.data?.hierarchicalResults)
+                    );
+                    if (hasData) {
+                      try {
+                        console.debug('[CanvasWidget] dispatching openHierarchicalOutput(all) for', widget.id);
+                        window.dispatchEvent(new CustomEvent('openHierarchicalOutput', { detail: { widgetId: widget.id, view: 'all' } }));
+                      } catch (err) {
+                        console.debug('[CanvasWidget] openHierarchicalOutput dispatch failed', err);
+                      }
+                    } else {
+                      // No data yet - open parameters so user can configure
+                      try {
+                        console.debug('[CanvasWidget] No data - dispatching openWidgetParameters for', widget.id);
+                        window.dispatchEvent(new CustomEvent('openWidgetParameters', { detail: { widgetId: widget.id } }));
+                      } catch (err) {
+                        console.debug('[CanvasWidget] dispatch failed, falling back to local setShowParameters', err);
+                      }
+                      setShowParameters(true);
+                    }
+                  }
                   // Open the appropriate modal depending on widget type
-                  if (widget.type === 'data-table') {
-                    setShowTableModal(true);
-                  } else if (widget.type === 'line-chart') {
+                  else if (widget.type === 'data-table') {
+                    const hasData = (
+                      (widget.data?.tableData && widget.data.tableData.length > 0) ||
+                      (widget.data?.tableDataProcessed && widget.data.tableDataProcessed.length > 0) ||
+                      (widget.data?.parsedData && widget.data.parsedData.length > 0)
+                    );
+                    console.log('[CanvasWidget] Context menu Open clicked for data-table:', widget.id, 'hasData:', hasData);
+                      console.log('[CanvasWidget] Data sources:', {
+                        tableData: widget.data?.tableData?.length || 0,
+                        tableDataProcessed: widget.data?.tableDataProcessed?.length || 0,
+                        parsedData: widget.data?.parsedData?.length || 0
+                      });
+                      if (hasData) {
+                        // Open the full Data Table modal and center it over the canvas viewport
+                        // Use guarded opener to avoid immediate close/reopen races
+                        console.log('[CanvasWidget] Opening data table modal for widget:', widget.id);
+                        openTableModal();
+                      } else {
+                        // No data: do nothing (do not show an empty modal)
+                        console.warn('[CanvasWidget] Open ignored: data-table has no data for widget:', widget.id);
+                      }
+                    } else if (widget.type === 'line-chart') {
                     setShowLineChartModal(true);
                   } else if (widget.type === 'scatter-plot') {
                     setShowScatterModal(true);
@@ -3111,7 +5205,8 @@ else:
             ].map((item, idx) => (
               <button
                 key={item.key}
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   item.action();
                   setShowContextMenu(false);
                 }}
@@ -3187,6 +5282,49 @@ else:
           columns={widget.data?.tableData && widget.data.tableData.length > 0 ? Object.keys(widget.data.tableData[0]) : []}
         />
       )}
+
+      {/* KMeans Graph Modal (shows 2D projection with cluster coloring) */}
+      {showKmeansGraphModal && (() => {
+        const results = widget.data?.kmeansResults || localKmeansResults;
+        const projection = results?.projection_2d || [];
+        const labels = results?.labels || [];
+        const clusters: Record<string, { x: number; y: number }[]> = {};
+        for (let i = 0; i < projection.length; i++) {
+          const p = projection[i] || [0, 0];
+          const lbl = (labels && labels[i] !== undefined) ? String(labels[i]) : '0';
+          clusters[lbl] = clusters[lbl] || [];
+          clusters[lbl].push({ x: Number(p[0] || 0), y: Number(p[1] || 0) });
+        }
+        const clusterKeys = Object.keys(clusters);
+        const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+            <div className="bg-white rounded-lg shadow-lg p-4 min-w-[600px] max-w-[90vw]">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-semibold">KMeans Clustered Scatter</h3>
+                <button onClick={() => setShowKmeansGraphModal(false)} className="text-gray-600 px-2">Close</button>
+              </div>
+              {projection.length === 0 ? (
+                <div className="p-4 text-center text-sm text-gray-600">No projection data available.</div>
+              ) : (
+                <div style={{ width: '100%', height: 420 }}>
+                  <ResponsiveContainer>
+                    <ScatterChart>
+                      <CartesianGrid />
+                      <XAxis type="number" dataKey="x" name="X" />
+                      <YAxis type="number" dataKey="y" name="Y" />
+                      <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                      {clusterKeys.map((k, idx) => (
+                        <Scatter key={k} name={`Cluster ${k}`} data={clusters[k]} fill={COLORS[idx % COLORS.length]} />
+                      ))}
+                    </ScatterChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 };

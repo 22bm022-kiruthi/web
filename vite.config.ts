@@ -10,6 +10,7 @@ export default defineConfig({
     proxy: {
       // Use explicit IPv4 loopback address to avoid Windows localhost/IPv6 proxy edge-cases
       '/api': {
+        // point to backend default port (ensure this matches the running backend)
         target: 'http://127.0.0.1:5003',
         changeOrigin: true,
         secure: false

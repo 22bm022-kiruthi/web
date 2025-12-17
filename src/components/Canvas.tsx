@@ -146,7 +146,15 @@ const Canvas: React.FC<CanvasProps> = ({
         try {
           const rect = canvasRef.current.getBoundingClientRect();
           const w = widgets.find((x) => x.id === widgetId);
-          if (w) {
+          // If the caller marked this as a port center, use the exact client coords
+          // converted to canvas coordinates so the connection starts at the visible dot.
+          if ((portOrPoint as any).portCenter) {
+            anchor = { x: (portOrPoint as any).clientX - rect.left, y: (portOrPoint as any).clientY - rect.top };
+            setConnectingFromPort(null);
+            console.debug('[Canvas] portCenter anchor (canvas coords):', anchor, 'widgetId=', widgetId);
+            // Immediately set a connection preview so the preview originates at the dot
+            setConnectionPreview({ from: anchor, to: anchor });
+          } else if (w) {
             const cx = w.position.x + 40;
             const cy = w.position.y + 40;
             // compute angle from center to client point
@@ -185,6 +193,7 @@ const Canvas: React.FC<CanvasProps> = ({
           from = { x: baseX, y: baseY + INNER_RADIUS };
         }
         const to = { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
+        console.debug('[Canvas] preview from', from, 'to', to);
         setConnectionPreview({ from, to });
       };
 
@@ -216,6 +225,7 @@ const Canvas: React.FC<CanvasProps> = ({
 
           if (best && best.id) {
             if (widgetId !== best.id) onAddConnection(widgetId, best.id);
+            console.debug('[Canvas] onAddConnection chosen target:', best.id, 'from', widgetId);
           }
         } catch (err) {
           // swallow
@@ -255,7 +265,7 @@ const Canvas: React.FC<CanvasProps> = ({
   return (
     <div
       ref={setCanvasRef}
-      className={`relative w-full h-full overflow-hidden transition-all duration-300 ${
+      className={`relative w-full h-full overflow-hidden transition-all duration-300 orange-canvas ${
         isOver ? (theme === 'dark' ? 'bg-gray-800/50' : 'bg-gray-50') : ''
       }`}
       onMouseMove={handleMouseMove}
@@ -263,21 +273,6 @@ const Canvas: React.FC<CanvasProps> = ({
       // To prevent canvas from losing drag events by stopping propagation on inner elements:
       onDragOver={(e) => e.preventDefault()}
     >
-      {/* Orange Data Mining style background - Light gray with subtle grid */}
-      <div
-        className={`absolute inset-0 ${
-          theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'
-        }`}
-        style={{
-          backgroundImage:
-            theme === 'dark'
-              ? `linear-gradient(rgba(75, 85, 99, 0.1) 1px, transparent 1px),
-                 linear-gradient(90deg, rgba(75, 85, 99, 0.1) 1px, transparent 1px)`
-              : `linear-gradient(rgba(229, 231, 235, 0.5) 1px, transparent 1px),
-                 linear-gradient(90deg, rgba(229, 231, 235, 0.5) 1px, transparent 1px)`,
-          backgroundSize: '20px 20px',
-        }}
-      />
 
       {/* Connection Lines */}
       <svg
@@ -290,11 +285,55 @@ const Canvas: React.FC<CanvasProps> = ({
 
           if (!fromWidget || !toWidget) return null;
 
+          // Helper: compute port coordinates for input widgets so connections appear to start/end at dots
+          const computePort = (w: typeof fromWidget, sidePreference: 'left' | 'right' | 'auto' = 'auto') => {
+            // Prefer using a measured icon center if available (stored in widget.data.iconCenter as viewport coords)
+            const canvasRect = canvasRef.current ? canvasRef.current.getBoundingClientRect() : { left: 0, top: 0 } as DOMRect;
+            let centerX = w.position.x + 40;
+            let centerY = w.position.y + 40;
+            try {
+              const ic = (w.data && (w.data as any).iconCenter) || null;
+              if (ic && typeof ic.left === 'number' && typeof ic.top === 'number') {
+                // convert viewport coords to canvas-local coordinates
+                centerX = ic.left - canvasRect.left;
+                centerY = ic.top - canvasRect.top;
+              }
+            } catch (err) {
+              // fallback to position-based center
+            }
+            const leftDotX = centerX - 21;
+            const rightDotX = centerX + 21;
+            const isInput = ['supabase', 'data-table', 'file-upload'].includes(w.type);
+            if (!isInput) return { x: centerX, y: centerY };
+            if (sidePreference === 'left') return { x: leftDotX, y: centerY };
+            if (sidePreference === 'right') return { x: rightDotX, y: centerY };
+            // auto: default to center if we cannot infer side
+            return { x: centerX, y: centerY };
+          };
+
+          // Decide which ports to use based on relative positions so lines connect visually between dots
+          const dx = toWidget.position.x - fromWidget.position.x;
+          let fromPoint = { x: fromWidget.position.x + 40, y: fromWidget.position.y + 40 };
+          let toPoint = { x: toWidget.position.x + 40, y: toWidget.position.y + 40 };
+          if (dx > 0) {
+            // from is left of to -> use right port on from and left port on to
+            fromPoint = computePort(fromWidget, 'right');
+            toPoint = computePort(toWidget, 'left');
+          } else if (dx < 0) {
+            // from is right of to -> use left port on from and right port on to
+            fromPoint = computePort(fromWidget, 'left');
+            toPoint = computePort(toWidget, 'right');
+          } else {
+            // vertically aligned or same x: use centers
+            fromPoint = { x: fromWidget.position.x + 40, y: fromWidget.position.y + 40 };
+            toPoint = { x: toWidget.position.x + 40, y: toWidget.position.y + 40 };
+          }
+
           return (
             <ConnectionLine
               key={connection.id}
-              from={{ x: fromWidget.position.x + 40, y: fromWidget.position.y + 40 }}
-              to={{ x: toWidget.position.x + 40, y: toWidget.position.y + 40 }}
+              from={fromPoint}
+              to={toPoint}
               theme={theme}
               createdAt={connection.createdAt}
             />
@@ -309,6 +348,10 @@ const Canvas: React.FC<CanvasProps> = ({
             isPreview
             theme={theme}
           />
+        )}
+        {/* Debug: show a small marker at the preview 'from' point to verify anchor */}
+        {connectionPreview && (
+          <circle cx={connectionPreview.from.x} cy={connectionPreview.from.y} r={4} fill="#ef4444" style={{ pointerEvents: 'none' }} />
         )}
       </svg>
 

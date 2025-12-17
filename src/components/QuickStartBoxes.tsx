@@ -53,3 +53,4 @@ const QuickStartBoxes: React.FC<QuickStartBoxesProps> = ({ onQuickAdd }) => {
 };
 
 export default QuickStartBoxes;
+

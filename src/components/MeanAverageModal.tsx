@@ -112,8 +112,8 @@ const MeanAverageModal: React.FC<MeanAverageModalProps> = ({
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Mean / Average</h2>
           <button
-            className="text-gray-500 hover:text-red-500 text-xl font-bold"
-            onClick={onClose}
+            className="text-gray-500 hover:text-red-500 text-xl font-bold cursor-pointer"
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClose(); }}
             aria-label="Close"
           >
             ×
@@ -177,9 +177,9 @@ const MeanAverageModal: React.FC<MeanAverageModalProps> = ({
 
         <div className="mb-3">
           <div className="flex gap-2">
-            <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm" onClick={runCompute}>Compute</button>
-            <button className="px-3 py-1 bg-green-600 text-white rounded text-sm" onClick={applyAndClose}>Apply & Close</button>
-            <button className="px-3 py-1 bg-gray-200 rounded text-sm" onClick={() => { setLocalRows(selectedRows || []); setLocalCols(selectedCols || []); setResults([]); }}>Reset</button>
+            <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm cursor-pointer" onClick={(e) => { e.preventDefault(); e.stopPropagation(); console.log('[MeanAverage] Compute clicked'); runCompute(); }}>Compute</button>
+            <button className="px-3 py-1 bg-green-600 text-white rounded text-sm cursor-pointer" onClick={(e) => { e.preventDefault(); e.stopPropagation(); console.log('[MeanAverage] Apply & Close clicked'); applyAndClose(); }}>Apply & Close</button>
+            <button className="px-3 py-1 bg-gray-200 rounded text-sm cursor-pointer" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLocalRows(selectedRows || []); setLocalCols(selectedCols || []); setResults([]); }}>Reset</button>
           </div>
         </div>
 
