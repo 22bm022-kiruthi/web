@@ -90,10 +90,11 @@ router.get('/fetch', async (req, res) => {
     } else if (err.request) {
       // The request was made but no response was received
       console.error('No response received:', err.message);
-      return res.status(502).json({ error: 'Supabase unreachable', details: err.message });
+      // Return 200 with empty data to allow app to function offline/in demo mode
+      return res.status(200).json({ data: [], message: 'Supabase unavailable - returning empty data' });
     }
-    // Return 502 to indicate upstream service (Supabase) is unreachable or errored
-    res.status(502).json({ error: 'Supabase fetch failed', details: String(err) });
+    // Return 200 with empty data to allow app to function offline/in demo mode
+    res.status(200).json({ data: [], message: 'Supabase fetch failed - returning empty data', error: String(err) });
   }
 });
 

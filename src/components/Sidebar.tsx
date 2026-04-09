@@ -30,7 +30,14 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = ({ widgetType }) => {
   const { theme } = useTheme();
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'widget',
-    item: { type: widgetType.id },
+    item: () => {
+      console.debug('[Sidebar] drag begin (item()):', widgetType.id);
+      return { type: widgetType.id };
+    },
+    end: (item, monitor) => {
+      const didDrop = monitor && (monitor as any).didDrop && (monitor as any).didDrop();
+      console.debug('[Sidebar] drag end:', widgetType.id, 'item:', item, 'didDrop:', didDrop);
+    },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
@@ -60,6 +67,8 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = ({ widgetType }) => {
               style={{ display: showFallback ? 'none' : 'block' }}
               onLoad={() => setShowFallback(false)}
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; setShowFallback(true); }}
+              draggable={false}
+              onDragStart={(e) => { e.preventDefault(); }}
             />
             <IconComponent style={{ display: showFallback ? 'block' : 'none' }} className={`h-5 w-5 icon transition-colors duration-300`} />
         </div>
@@ -83,24 +92,25 @@ const SmallWidgetItem: React.FC<{ widgetType: WidgetType }> = ({ widgetType }) =
   // Use useDrag hook at the top level of the component
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'widget',
-    item: { type: widgetType.id },
+    item: () => {
+      console.debug('[Sidebar.SmallItem] drag begin (item()):', widgetType.id);
+      return { type: widgetType.id };
+    },
+    end: (item, monitor) => {
+      const didDrop = monitor && (monitor as any).didDrop && (monitor as any).didDrop();
+      console.debug('[Sidebar.SmallItem] drag end:', widgetType.id, 'item:', item, 'didDrop:', didDrop);
+    },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
   }));
 
   // HTML5 drag for React Flow
-  const onDragStart = (event: React.DragEvent) => {
-    console.log('[Sidebar] Drag started for widget:', widgetType.id);
-    event.dataTransfer.setData('application/reactflow', widgetType.id);
-    event.dataTransfer.effectAllowed = 'move';
-  };
+  // React DnD handles drag; avoid native HTML5 drag to prevent conflicts with drop handling
 
   return (
     <li
       ref={drag as any}
-      draggable
-      onDragStart={onDragStart}
       className={`flex flex-col items-center gap-1 px-2 py-2 rounded hover:bg-blue-50 transition cursor-grab ${
         isDragging ? 'opacity-50' : ''
       }`}
@@ -110,7 +120,7 @@ const SmallWidgetItem: React.FC<{ widgetType: WidgetType }> = ({ widgetType }) =
       <div className={`w-14 h-14 rounded flex items-center justify-center ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
         <div className="icon-outer">
           {!iconLoadFailed ? (
-            <img src={`/${widgetType.id}.svg`} alt={widgetType.name} className="h-5 w-5 icon" onError={() => setIconLoadFailed(true)} />
+            <img src={`/${widgetType.id}.svg`} alt={widgetType.name} className="h-5 w-5 icon" onError={() => setIconLoadFailed(true)} draggable={false} onDragStart={(e) => e.preventDefault()} />
           ) : (
             <IconComponent className={`h-5 w-5 icon`} />
           )}

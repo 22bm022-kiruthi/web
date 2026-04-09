@@ -48,6 +48,8 @@ SAFE_BUILTINS = {
     'zip': zip,
     'print': print,
     '__import__': safe_import,
+    'isinstance': isinstance,
+    'type': type,
 }
 
 # Safe libraries

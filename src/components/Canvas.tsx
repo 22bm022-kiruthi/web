@@ -35,27 +35,53 @@ const Canvas: React.FC<CanvasProps> = ({
     from: { x: number; y: number };
     to: { x: number; y: number };
   } | null>(null);
+  const [externalDrag, setExternalDrag] = useState<boolean>(false);
   const { theme } = useTheme();
 
   const [{ isOver }, drop] = useDrop(() => ({
     accept: ['widget', 'canvas-widget'], // Accept both new and existing widgets
     drop: (item: any, monitor) => {
-      if (!canvasRef.current) return;
-      const clientOffset = monitor.getClientOffset();
-      if (!clientOffset) return;
+      console.log('[Canvas] Drop detected, item:', item, 'monitor:', monitor);
+      if (!canvasRef.current) {
+        console.log('[Canvas] Drop: canvasRef is null');
+        return;
+      }
+      // clientOffset may be null under some HTML5Backend/browser combinations.
+      // Try several fallbacks to compute a reasonable drop position.
+      let clientOffset = monitor.getClientOffset() as { x: number; y: number } | null;
+      if (!clientOffset) clientOffset = (monitor as any).getSourceClientOffset ? (monitor as any).getSourceClientOffset() : null;
+      if (!clientOffset) clientOffset = (monitor as any).getInitialClientOffset ? (monitor as any).getInitialClientOffset() : null;
+      // As a final fallback, attempt to derive from initial + difference offsets
+      if (!clientOffset && (monitor as any).getInitialClientOffset && (monitor as any).getDifferenceFromInitialOffset) {
+        const init = (monitor as any).getInitialClientOffset();
+        const diff = (monitor as any).getDifferenceFromInitialOffset();
+        if (init && diff) {
+          clientOffset = { x: init.x + diff.x, y: init.y + diff.y };
+        }
+      }
+      console.log('[Canvas] Drop: clientOffset:', clientOffset);
+      if (!clientOffset) {
+        console.warn('[Canvas] Drop: no clientOffset — using canvas center fallback');
+        const canvasRect = canvasRef.current.getBoundingClientRect();
+        clientOffset = { x: canvasRect.left + canvasRect.width / 2, y: canvasRect.top + canvasRect.height / 2 };
+      }
       const canvasRect = canvasRef.current.getBoundingClientRect();
       const position = {
         x: clientOffset.x - canvasRect.left - 40,
         y: clientOffset.y - canvasRect.top - 40,
       };
 
+      console.log('[Canvas] Drop: calculated position:', position, 'canvasRect:', canvasRect);
+
       // If dragging from sidebar, add new widget
       if (item.type && typeof item.type === 'string' && !item.id) {
+        console.log('[Canvas] Drop: Adding new widget with type:', item.type);
         onAddWidget(item.type, position);
       }
 
       // If dragging an existing widget, update its position
       if (item.id) {
+        console.log('[Canvas] Drop: Updating position of existing widget:', item.id);
         onUpdateWidget(item.id, { position });
       }
     },
@@ -66,13 +92,35 @@ const Canvas: React.FC<CanvasProps> = ({
 
   const setCanvasRef = useCallback(
     (node: HTMLDivElement | null) => {
+      console.log('[Canvas] setCanvasRef called with node:', !!node);
       canvasRef.current = node;
       if (node) {
+        console.log('[Canvas] Registering drop handler on canvas node');
         drop(node);
       }
     },
     [drop]
   );
+
+  // Track native HTML5 drag state so we can avoid heavy processing while a drag is active
+  React.useEffect(() => {
+    const onNativeDragStart = () => {
+      console.debug('[Canvas] native dragstart detected');
+      setExternalDrag(true);
+    };
+    const onNativeDragEnd = () => {
+      console.debug('[Canvas] native dragend detected');
+      setExternalDrag(false);
+    };
+    window.addEventListener('dragstart', onNativeDragStart);
+    window.addEventListener('dragend', onNativeDragEnd);
+    window.addEventListener('dragleave', onNativeDragEnd);
+    return () => {
+      window.removeEventListener('dragstart', onNativeDragStart);
+      window.removeEventListener('dragend', onNativeDragEnd);
+      window.removeEventListener('dragleave', onNativeDragEnd);
+    };
+  }, []);
 
   const createLinkedNode = useCallback(
     (sourceId: string, widgetTypeId: string) => {
@@ -107,6 +155,7 @@ const Canvas: React.FC<CanvasProps> = ({
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
+      if (externalDrag) return; // avoid heavy preview work during native drags
       if (connectingFrom && canvasRef.current) {
         const rect = canvasRef.current.getBoundingClientRect();
         const fromWidget = widgets.find((w) => w.id === connectingFrom);
@@ -129,7 +178,7 @@ const Canvas: React.FC<CanvasProps> = ({
         }
       }
     },
-    [connectingFrom, connectingFromPort, widgets]
+    [connectingFrom, connectingFromPort, widgets, externalDrag]
   );
 
   const handleStartConnection = useCallback(
@@ -271,7 +320,8 @@ const Canvas: React.FC<CanvasProps> = ({
       onMouseMove={handleMouseMove}
       onClick={handleCancelConnection}
       // To prevent canvas from losing drag events by stopping propagation on inner elements:
-      onDragOver={(e) => e.preventDefault()}
+      onDragOver={(e) => { e.preventDefault(); /* keep native drag from interfering */ }}
+      onDrop={(e) => { console.debug('[Canvas] native onDrop event', e.type, 'dataTransfer types:', e.dataTransfer?.types); e.preventDefault(); }}
     >
 
       {/* Connection Lines */}
@@ -360,7 +410,7 @@ const Canvas: React.FC<CanvasProps> = ({
         // compute a quick distance-based highlight for preview end snapping
         let isHighlighted = false;
         let highlightAngle: number | null = null;
-        if (connectionPreview) {
+        if (!externalDrag && connectionPreview) {
           const dx = connectionPreview.to.x - (widget.position.x + 40);
           const dy = connectionPreview.to.y - (widget.position.y + 40);
           const dist = Math.sqrt(dx * dx + dy * dy);
@@ -437,6 +487,19 @@ const Canvas: React.FC<CanvasProps> = ({
                 className={`px-3 py-1 rounded-full ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-blue-100 text-blue-800'}`}
               >
                 Visualize
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!canvasRef.current) return;
+                  const rect = canvasRef.current.getBoundingClientRect();
+                  const position = { x: rect.width / 2 - 40, y: rect.height / 2 + 60 };
+                  onAddWidget('kmeans-analysis', position);
+                }}
+                className={`px-3 py-1 rounded-full ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-blue-100 text-blue-800'}`}
+              >
+                KMeans Clustering
               </button>
             </div>
           </div>

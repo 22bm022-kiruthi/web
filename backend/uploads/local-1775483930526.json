@@ -1,0 +1,642 @@
+{
+  "filename": "test_raman_rows.csv",
+  "parsedData": [
+    {
+      "S.No": "1",
+      "Sample name": "Polystyrene (PS)",
+      "Raman Shift": "1078.52",
+      "Raman intensity": "7160.15",
+      "Shift x axis": "1078.52",
+      "Intensity y axis": "7160.15",
+      "geo_tag": "5.443057,-130.012258"
+    },
+    {
+      "S.No": "2",
+      "Sample name": "WS2 (tungsten disulfide)",
+      "Raman Shift": "2084.21",
+      "Raman intensity": "10208.26",
+      "Shift x axis": "2084.21",
+      "Intensity y axis": "10208.26",
+      "geo_tag": "-37.936889,129.586631"
+    },
+    {
+      "S.No": "3",
+      "Sample name": "Silicon Wafer (Si)",
+      "Raman Shift": "531.17",
+      "Raman intensity": "5791.98",
+      "Shift x axis": "531.17",
+      "Intensity y axis": "5791.98",
+      "geo_tag": "17.329403,136.234352"
+    },
+    {
+      "S.No": "4",
+      "Sample name": "DNA (salmon sperm)",
+      "Raman Shift": "2682.13",
+      "Raman intensity": "568.32",
+      "Shift x axis": "2682.13",
+      "Intensity y axis": "568.32",
+      "geo_tag": "11.470323,-160.087131"
+    },
+    {
+      "S.No": "5",
+      "Sample name": "Titanium Dioxide (TiO2)",
+      "Raman Shift": "2569.69",
+      "Raman intensity": "3741.55",
+      "Shift x axis": "2569.69",
+      "Intensity y axis": "3741.55",
+      "geo_tag": "4.428434,-130.102497"
+    },
+    {
+      "S.No": "6",
+      "Sample name": "Reduced Graphene Oxide (rGO)",
+      "Raman Shift": "1187.12",
+      "Raman intensity": "10578.56",
+      "Shift x axis": "1187.12",
+      "Intensity y axis": "10578.56",
+      "geo_tag": "-14.177607,42.668161"
+    },
+    {
+      "S.No": "7",
+      "Sample name": "Carbon Nanotubes (CNT)",
+      "Raman Shift": "2640.46",
+      "Raman intensity": "654.94",
+      "Shift x axis": "2640.46",
+      "Intensity y axis": "654.94",
+      "geo_tag": "-18.059306,44.960067"
+    },
+    {
+      "S.No": "8",
+      "Sample name": "Polystyrene (PS)",
+      "Raman Shift": "2609.86",
+      "Raman intensity": "1010.61",
+      "Shift x axis": "2609.86",
+      "Intensity y axis": "1010.61",
+      "geo_tag": "-14.320894,-60.634433"
+    },
+    {
+      "S.No": "9",
+      "Sample name": "Hemoglobin",
+      "Raman Shift": "2094.19",
+      "Raman intensity": "6192.34",
+      "Shift x axis": "2094.19",
+      "Intensity y axis": "6192.34",
+      "geo_tag": "-29.457799,-128.834133"
+    },
+    {
+      "S.No": "10",
+      "Sample name": "Zinc Oxide (ZnO)",
+      "Raman Shift": "1580.92",
+      "Raman intensity": "10997.94",
+      "Shift x axis": "1580.92",
+      "Intensity y axis": "10997.94",
+      "geo_tag": "-0.352943,-86.46869"
+    },
+    {
+      "S.No": "11",
+      "Sample name": "DNA (salmon sperm)",
+      "Raman Shift": "2127.55",
+      "Raman intensity": "32.25",
+      "Shift x axis": "2127.55",
+      "Intensity y axis": "32.25",
+      "geo_tag": "28.454614,-33.439757"
+    },
+    {
+      "S.No": "12",
+      "Sample name": "Hemoglobin",
+      "Raman Shift": "2577.01",
+      "Raman intensity": "3329.78",
+      "Shift x axis": "2577.01",
+      "Intensity y axis": "3329.78",
+      "geo_tag": "26.910556,-46.087703"
+    },
+    {
+      "S.No": "13",
+      "Sample name": "PMMA (Polymethyl methacrylate)",
+      "Raman Shift": "1031.2",
+      "Raman intensity": "2905.9",
+      "Shift x axis": "1031.2",
+      "Intensity y axis": "2905.9",
+      "geo_tag": "-15.484556,88.383028"
+    },
+    {
+      "S.No": "14",
+      "Sample name": "Polyaniline (PANI)",
+      "Raman Shift": "3192.4",
+      "Raman intensity": "4317.79",
+      "Shift x axis": "3192.4",
+      "Intensity y axis": "4317.79",
+      "geo_tag": "23.753885,-116.907222"
+    },
+    {
+      "S.No": "15",
+      "Sample name": "DNA (salmon sperm)",
+      "Raman Shift": "3090.77",
+      "Raman intensity": "8513.02",
+      "Shift x axis": "3090.77",
+      "Intensity y axis": "8513.02",
+      "geo_tag": "14.921806,155.508014"
+    },
+    {
+      "S.No": "16",
+      "Sample name": "Human Serum Sample (HSS)",
+      "Raman Shift": "2380.38",
+      "Raman intensity": "3712.94",
+      "Shift x axis": "2380.38",
+      "Intensity y axis": "3712.94",
+      "geo_tag": "-9.385286,-101.98355"
+    },
+    {
+      "S.No": "17",
+      "Sample name": "Calcium Carbonate (CaCO3)",
+      "Raman Shift": "2118.65",
+      "Raman intensity": "2135.27",
+      "Shift x axis": "2118.65",
+      "Intensity y axis": "2135.27",
+      "geo_tag": "-20.397249,-128.264122"
+    },
+    {
+      "S.No": "18",
+      "Sample name": "Calcium Carbonate (CaCO3)",
+      "Raman Shift": "2900.1",
+      "Raman intensity": "8756.2",
+      "Shift x axis": "2900.1",
+      "Intensity y axis": "8756.2",
+      "geo_tag": "16.686783,51.163542"
+    },
+    {
+      "S.No": "19",
+      "Sample name": "Titanium Dioxide (TiO2)",
+      "Raman Shift": "1793.14",
+      "Raman intensity": "7401.21",
+      "Shift x axis": "1793.14",
+      "Intensity y axis": "7401.21",
+      "geo_tag": "28.681067,65.559577"
+    },
+    {
+      "S.No": "20",
+      "Sample name": "Human Serum Sample (HSS)",
+      "Raman Shift": "2292.14",
+      "Raman intensity": "8520.44",
+      "Shift x axis": "2292.14",
+      "Intensity y axis": "8520.44",
+      "geo_tag": "-41.514557,29.515036"
+    },
+    {
+      "S.No": "21",
+      "Sample name": "Titanium Dioxide (TiO2)",
+      "Raman Shift": "2134.92",
+      "Raman intensity": "4614.76",
+      "Shift x axis": "2134.92",
+      "Intensity y axis": "4614.76",
+      "geo_tag": "4.503947,166.997536"
+    },
+    {
+      "S.No": "22",
+      "Sample name": "MoS2 (molybdenum disulfide)",
+      "Raman Shift": "850.38",
+      "Raman intensity": "3645.11",
+      "Shift x axis": "850.38",
+      "Intensity y axis": "3645.11",
+      "geo_tag": "30.848923,-164.061346"
+    },
+    {
+      "S.No": "23",
+      "Sample name": "Bovine Serum Albumin (BSA)",
+      "Raman Shift": "2489.43",
+      "Raman intensity": "488.09",
+      "Shift x axis": "2489.43",
+      "Intensity y axis": "488.09",
+      "geo_tag": "22.641755,-1.831322"
+    },
+    {
+      "S.No": "24",
+      "Sample name": "PMMA (Polymethyl methacrylate)",
+      "Raman Shift": "1672.25",
+      "Raman intensity": "10529.6",
+      "Shift x axis": "1672.25",
+      "Intensity y axis": "10529.6",
+      "geo_tag": "39.159041,-126.937141"
+    },
+    {
+      "S.No": "25",
+      "Sample name": "Bovine Serum Albumin (BSA)",
+      "Raman Shift": "2529.04",
+      "Raman intensity": "10762.53",
+      "Shift x axis": "2529.04",
+      "Intensity y axis": "10762.53",
+      "geo_tag": "8.535944,99.066561"
+    },
+    {
+      "S.No": "26",
+      "Sample name": "Gold Nanoparticles (AuNPs)",
+      "Raman Shift": "2332.55",
+      "Raman intensity": "5921.61",
+      "Shift x axis": "2332.55",
+      "Intensity y axis": "5921.61",
+      "geo_tag": "50.029067,169.1706"
+    },
+    {
+      "S.No": "27",
+      "Sample name": "Titanium Dioxide (TiO2)",
+      "Raman Shift": "1865.3",
+      "Raman intensity": "10074.05",
+      "Shift x axis": "1865.3",
+      "Intensity y axis": "10074.05",
+      "geo_tag": "66.223656,-164.475642"
+    },
+    {
+      "S.No": "28",
+      "Sample name": "Blood Plasma",
+      "Raman Shift": "1640.73",
+      "Raman intensity": "10943.39",
+      "Shift x axis": "1640.73",
+      "Intensity y axis": "10943.39",
+      "geo_tag": "-3.764626,54.142156"
+    },
+    {
+      "S.No": "29",
+      "Sample name": "Human Serum Sample (HSS)",
+      "Raman Shift": "681.45",
+      "Raman intensity": "9590.86",
+      "Shift x axis": "681.45",
+      "Intensity y axis": "9590.86",
+      "geo_tag": "46.314494,-76.730468"
+    },
+    {
+      "S.No": "30",
+      "Sample name": "Calcium Carbonate (CaCO3)",
+      "Raman Shift": "1959.83",
+      "Raman intensity": "12.09",
+      "Shift x axis": "1959.83",
+      "Intensity y axis": "12.09",
+      "geo_tag": "15.85409,117.636491"
+    },
+    {
+      "S.No": "31",
+      "Sample name": "Polystyrene (PS)",
+      "Raman Shift": "2786.81",
+      "Raman intensity": "6943.06",
+      "Shift x axis": "2786.81",
+      "Intensity y axis": "6943.06",
+      "geo_tag": "33.360862,-37.971786"
+    },
+    {
+      "S.No": "32",
+      "Sample name": "Polystyrene (PS)",
+      "Raman Shift": "2704.39",
+      "Raman intensity": "1122.49",
+      "Shift x axis": "2704.39",
+      "Intensity y axis": "1122.49",
+      "geo_tag": "34.991938,7.538761"
+    },
+    {
+      "S.No": "33",
+      "Sample name": "Titanium Dioxide (TiO2)",
+      "Raman Shift": "648.41",
+      "Raman intensity": "11405.34",
+      "Shift x axis": "648.41",
+      "Intensity y axis": "11405.34",
+      "geo_tag": "12.852861,165.273897"
+    },
+    {
+      "S.No": "34",
+      "Sample name": "Carbon Nanotubes (CNT)",
+      "Raman Shift": "149.83",
+      "Raman intensity": "5907",
+      "Shift x axis": "149.83",
+      "Intensity y axis": "5907",
+      "geo_tag": "58.539558,127.547528"
+    },
+    {
+      "S.No": "35",
+      "Sample name": "Polyaniline (PANI)",
+      "Raman Shift": "418.39",
+      "Raman intensity": "2829.93",
+      "Shift x axis": "418.39",
+      "Intensity y axis": "2829.93",
+      "geo_tag": "37.628991,-133.138389"
+    },
+    {
+      "S.No": "36",
+      "Sample name": "Reduced Graphene Oxide (rGO)",
+      "Raman Shift": "2986.81",
+      "Raman intensity": "5786.74",
+      "Shift x axis": "2986.81",
+      "Intensity y axis": "5786.74",
+      "geo_tag": "18.678307,124.625884"
+    },
+    {
+      "S.No": "37",
+      "Sample name": "Zinc Oxide (ZnO)",
+      "Raman Shift": "2345.99",
+      "Raman intensity": "4819.63",
+      "Shift x axis": "2345.99",
+      "Intensity y axis": "4819.63",
+      "geo_tag": "-1.205925,71.380612"
+    },
+    {
+      "S.No": "38",
+      "Sample name": "Polystyrene (PS)",
+      "Raman Shift": "1839.56",
+      "Raman intensity": "11372.94",
+      "Shift x axis": "1839.56",
+      "Intensity y axis": "11372.94",
+      "geo_tag": "30.27434,-137.02405"
+    },
+    {
+      "S.No": "39",
+      "Sample name": "Gold Nanoparticles (AuNPs)",
+      "Raman Shift": "2611.28",
+      "Raman intensity": "1875.5",
+      "Shift x axis": "2611.28",
+      "Intensity y axis": "1875.5",
+      "geo_tag": "17.209103,-82.175225"
+    },
+    {
+      "S.No": "40",
+      "Sample name": "Blood Plasma",
+      "Raman Shift": "1959.4",
+      "Raman intensity": "3087.22",
+      "Shift x axis": "1959.4",
+      "Intensity y axis": "3087.22",
+      "geo_tag": "-32.966288,145.735844"
+    },
+    {
+      "S.No": "41",
+      "Sample name": "PMMA (Polymethyl methacrylate)",
+      "Raman Shift": "3162.37",
+      "Raman intensity": "760.92",
+      "Shift x axis": "3162.37",
+      "Intensity y axis": "760.92",
+      "geo_tag": "40.161265,-0.99033"
+    },
+    {
+      "S.No": "42",
+      "Sample name": "WS2 (tungsten disulfide)",
+      "Raman Shift": "668.09",
+      "Raman intensity": "10759.69",
+      "Shift x axis": "668.09",
+      "Intensity y axis": "10759.69",
+      "geo_tag": "49.770823,87.437375"
+    },
+    {
+      "S.No": "43",
+      "Sample name": "Human Serum Sample (HSS)",
+      "Raman Shift": "2251.81",
+      "Raman intensity": "8065.11",
+      "Shift x axis": "2251.81",
+      "Intensity y axis": "8065.11",
+      "geo_tag": "-34.668254,-143.587876"
+    },
+    {
+      "S.No": "44",
+      "Sample name": "Graphene",
+      "Raman Shift": "1401.69",
+      "Raman intensity": "4808.6",
+      "Shift x axis": "1401.69",
+      "Intensity y axis": "4808.6",
+      "geo_tag": "-39.58828,136.988064"
+    },
+    {
+      "S.No": "45",
+      "Sample name": "Silver Nanoparticles (AgNPs)",
+      "Raman Shift": "2791.03",
+      "Raman intensity": "2887.74",
+      "Shift x axis": "2791.03",
+      "Intensity y axis": "2887.74",
+      "geo_tag": "11.922408,36.511619"
+    },
+    {
+      "S.No": "46",
+      "Sample name": "Human Serum Sample (HSS)",
+      "Raman Shift": "533.8",
+      "Raman intensity": "11200.8",
+      "Shift x axis": "533.8",
+      "Intensity y axis": "11200.8",
+      "geo_tag": "-10.428769,128.541037"
+    },
+    {
+      "S.No": "47",
+      "Sample name": "Carbon Nanotubes (CNT)",
+      "Raman Shift": "3187.19",
+      "Raman intensity": "6426.74",
+      "Shift x axis": "3187.19",
+      "Intensity y axis": "6426.74",
+      "geo_tag": "-37.574281,0.177161"
+    },
+    {
+      "S.No": "48",
+      "Sample name": "PET (Polyethylene terephthalate)",
+      "Raman Shift": "910.67",
+      "Raman intensity": "8486.77",
+      "Shift x axis": "910.67",
+      "Intensity y axis": "8486.77",
+      "geo_tag": "53.005325,101.579359"
+    },
+    {
+      "S.No": "49",
+      "Sample name": "Zinc Oxide (ZnO)",
+      "Raman Shift": "424.98",
+      "Raman intensity": "6798.2",
+      "Shift x axis": "424.98",
+      "Intensity y axis": "6798.2",
+      "geo_tag": "38.275043,-103.77191"
+    },
+    {
+      "S.No": "50",
+      "Sample name": "MoS2 (molybdenum disulfide)",
+      "Raman Shift": "2353.79",
+      "Raman intensity": "8002.06",
+      "Shift x axis": "2353.79",
+      "Intensity y axis": "8002.06",
+      "geo_tag": "32.227919,162.375538"
+    },
+    {
+      "S.No": "51",
+      "Sample name": "Graphene",
+      "Raman Shift": "2756.97",
+      "Raman intensity": "1920.99",
+      "Shift x axis": "2756.97",
+      "Intensity y axis": "1920.99",
+      "geo_tag": "-28.033238,-58.616024"
+    },
+    {
+      "S.No": "52",
+      "Sample name": "PMMA (Polymethyl methacrylate)",
+      "Raman Shift": "753.75",
+      "Raman intensity": "1965.81",
+      "Shift x axis": "753.75",
+      "Intensity y axis": "1965.81",
+      "geo_tag": "17.634643,-36.225255"
+    },
+    {
+      "S.No": "53",
+      "Sample name": "Hemoglobin",
+      "Raman Shift": "482.3",
+      "Raman intensity": "8961.31",
+      "Shift x axis": "482.3",
+      "Intensity y axis": "8961.31",
+      "geo_tag": "38.120896,-73.045909"
+    },
+    {
+      "S.No": "54",
+      "Sample name": "DNA (salmon sperm)",
+      "Raman Shift": "2099.81",
+      "Raman intensity": "10203.7",
+      "Shift x axis": "2099.81",
+      "Intensity y axis": "10203.7",
+      "geo_tag": "-7.364353,66.848491"
+    },
+    {
+      "S.No": "55",
+      "Sample name": "Bovine Serum Albumin (BSA)",
+      "Raman Shift": "221.76",
+      "Raman intensity": "5458.85",
+      "Shift x axis": "221.76",
+      "Intensity y axis": "5458.85",
+      "geo_tag": "20.32903,-126.448674"
+    },
+    {
+      "S.No": "56",
+      "Sample name": "Polypyrrole (PPy)",
+      "Raman Shift": "861.45",
+      "Raman intensity": "5488.84",
+      "Shift x axis": "861.45",
+      "Intensity y axis": "5488.84",
+      "geo_tag": "53.316664,-4.495493"
+    },
+    {
+      "S.No": "57",
+      "Sample name": "Hemoglobin",
+      "Raman Shift": "1393.15",
+      "Raman intensity": "3193.56",
+      "Shift x axis": "1393.15",
+      "Intensity y axis": "3193.56",
+      "geo_tag": "49.199306,2.665135"
+    },
+    {
+      "S.No": "58",
+      "Sample name": "Bovine Serum Albumin (BSA)",
+      "Raman Shift": "1941.64",
+      "Raman intensity": "3551.97",
+      "Shift x axis": "1941.64",
+      "Intensity y axis": "3551.97",
+      "geo_tag": "6.318178,-162.715283"
+    },
+    {
+      "S.No": "59",
+      "Sample name": "PET (Polyethylene terephthalate)",
+      "Raman Shift": "2358.31",
+      "Raman intensity": "7046.98",
+      "Shift x axis": "2358.31",
+      "Intensity y axis": "7046.98",
+      "geo_tag": "16.086325,101.040388"
+    },
+    {
+      "S.No": "60",
+      "Sample name": "Bovine Serum Albumin (BSA)",
+      "Raman Shift": "79.79",
+      "Raman intensity": "6086.8",
+      "Shift x axis": "79.79",
+      "Intensity y axis": "6086.8",
+      "geo_tag": "19.675638,-12.084272"
+    },
+    {
+      "S.No": "61",
+      "Sample name": "Pluto",
+      "Raman Shift": "1585.34",
+      "Raman intensity": "9452.78",
+      "Shift x axis": "1585.34",
+      "Intensity y axis": "9452.78",
+      "geo_tag": "19.4326,-99.1332"
+    },
+    {
+      "S.No": "62",
+      "Sample name": "Graphene",
+      "Raman Shift": "1879.34",
+      "Raman intensity": "8552.78",
+      "Shift x axis": "1879.34",
+      "Intensity y axis": "9452.25",
+      "geo_tag": "19.8857,-78.1332"
+    },
+    {
+      "S.No": "63",
+      "Sample name": "Lactic Acid",
+      "Raman Shift": "1450.27",
+      "Raman intensity": "8120.45",
+      "Shift x axis": "1450.27",
+      "Intensity y axis": "8120.45",
+      "geo_tag": "12.9716,77.5946"
+    },
+    {
+      "S.No": "64",
+      "Sample name": "thorium",
+      "Raman Shift": "1954.48",
+      "Raman intensity": "9542.87",
+      "Shift x axis": "1457.27",
+      "Intensity y axis": "9347.45",
+      "geo_tag": "12.9125,77.5745"
+    },
+    {
+      "S.No": "65",
+      "Sample name": "gold",
+      "Raman Shift": "1974.48",
+      "Raman intensity": "9642.87",
+      "Shift x axis": "1487.27",
+      "Intensity y axis": "9947.45",
+      "geo_tag": "44.9125,77.5745"
+    },
+    {
+      "S.No": "66",
+      "Sample name": "silver",
+      "Raman Shift": "1564.48",
+      "Raman intensity": "9672.87",
+      "Shift x axis": "2357.27",
+      "Intensity y axis": "9654.45",
+      "geo_tag": "12.9125,77.5745"
+    },
+    {
+      "S.No": "67",
+      "Sample name": "tungsten",
+      "Raman Shift": "753.45",
+      "Raman intensity": "475.48",
+      "Shift x axis": "1234.47",
+      "Intensity y axis": "754.26",
+      "geo_tag": "5.443057,-130.012258"
+    },
+    {
+      "S.No": "68",
+      "Sample name": "rhodium",
+      "Raman Shift": "1458.24",
+      "Raman intensity": "875.48",
+      "Shift x axis": "1842.87",
+      "Intensity y axis": "896.47",
+      "geo_tag": "-37.936889,129.586631"
+    },
+    {
+      "S.No": "69",
+      "Sample name": "iodine",
+      "Raman Shift": "963.78",
+      "Raman intensity": "457.21",
+      "Shift x axis": "1945.68",
+      "Intensity y axis": "1005.48",
+      "geo_tag": "17.329403,136.234352"
+    },
+    {
+      "S.No": "70",
+      "Sample name": "nitrogen",
+      "Raman Shift": "1246.54",
+      "Raman intensity": "754.1",
+      "Shift x axis": "1249.32",
+      "Intensity y axis": "963.14",
+      "geo_tag": "15356.78,36556.48"
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}

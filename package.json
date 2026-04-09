@@ -18,6 +18,7 @@
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.3.1",
+    "react-rnd": "^10.5.2",
     "recharts": "^3.1.2"
   },
   "devDependencies": {

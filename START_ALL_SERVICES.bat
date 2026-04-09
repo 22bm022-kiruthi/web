@@ -4,10 +4,25 @@ echo   STARTING ALL SERVICES
 echo ========================================
 echo.
 
-REM Start Backend Server
-echo [1/3] Starting Backend Server (Port 5003)...
-start "Backend Server - Port 5003" cmd /k "cd /d "%~dp0backend" && set PORT=5003 && node server.js"
-timeout /t 3 /nobreak >nul
+REM Check if Backend is already running
+echo Checking if Backend Server is already running...
+netstat -ano | findstr "5003" | findstr "LISTENING" >nul 2>&1
+if %ERRORLEVEL% EQU 0 (
+    echo ✓ Backend Server is already running on port 5003
+) else (
+    echo [1/3] Starting Backend Server (Port 5003)...
+    start "Backend Server - Port 5003" cmd /k "cd /d "%~dp0backend" && set PORT=5003 && node server.js"
+    timeout /t 5 /nobreak >nul
+    
+    REM Verify it started
+    netstat -ano | findstr "5003" | findstr "LISTENING" >nul 2>&1
+    if %ERRORLEVEL% EQU 0 (
+        echo ✓ Backend Server started successfully
+    ) else (
+        echo ✗ WARNING: Backend Server may not have started properly
+    )
+)
+echo.
 
 REM Start PCA Service  
 echo [2/3] Starting PCA Service (Port 6005)...

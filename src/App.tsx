@@ -9,6 +9,7 @@ import Sidebar from './components/Sidebar';
 import Canvas from './components/Canvas';
 import ConfigModal from './components/ConfigModal';
 import TopMenuBar from './components/TopMenuBar';
+import { BackendHealthIndicator } from './components/BackendHealthIndicator';
 import { Widget, Connection, Theme } from './types';
 import LoginPage from './LoginPage';
 
@@ -375,10 +376,13 @@ const App: React.FC = () => {
   }, [widgets, connections]);
 
   const updateWidget = (id: string, changes: Partial<Widget>) => {
-    const tableDataLength = (changes as any).data?.tableData?.length;
-    console.log('[App] updateWidget called for', id, 'with tableData length:', tableDataLength);
-    if (tableDataLength === undefined && (changes as any).data !== undefined) {
-      console.warn('[App] updateWidget clearing tableData! Stack:', new Error().stack);
+    const dataProp = (changes as any).data;
+    const providedTableData = dataProp && Object.prototype.hasOwnProperty.call(dataProp, 'tableData');
+    const tableDataLength = dataProp?.tableData?.length;
+    console.log('[App] updateWidget called for', id, 'providedTableData:', !!providedTableData, 'tableData length:', tableDataLength);
+    // Only warn if caller explicitly provided a tableData property that is undefined
+    if (providedTableData && tableDataLength === undefined) {
+      console.warn('[App] updateWidget: caller provided tableData but it is undefined — possible accidental clear. Stack:', new Error().stack);
     }
     setWidgets((prev: Widget[]) => prev.map((w: Widget) => {
       if (w.id !== id) return w;
@@ -393,9 +397,94 @@ const App: React.FC = () => {
 
   const onAddWidget = (type: string, position: { x: number; y: number }, initialData?: any) => {
     const id = `widget-${Date.now()}`;
-    setWidgets((prev: Widget[]) => [...prev, { id, type, position, data: initialData || {}, label: initialData?.widgetName || '' }]);
+    console.debug('[App] onAddWidget called:', { id, type, position });
+    setWidgets((prev: Widget[]) => {
+      const next = [...prev, { id, type, position, data: initialData || {}, label: initialData?.widgetName || '' }];
+      console.debug('[App] widgets after add (count):', next.length);
+      try { (window as any).__APP_STATE = { widgets: next, connections }; } catch (e) { /* ignore */ }
+      return next;
+    });
     return id;
   };
+
+  // One-time developer convenience: if the URL has ?loadSample=1, fetch the
+  // bundled `sample_full_spectrum.csv`, parse it, and create a File Upload widget
+  // pre-populated with parsed rows so the app works offline/demo without Supabase.
+  React.useEffect(() => {
+    try {
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      if (!params || params.get('loadSample') !== '1') return;
+      (async () => {
+        try {
+          const resp = await fetch('/sample_full_spectrum.csv');
+          if (!resp.ok) return console.warn('[App] sample loader: failed to fetch sample file', resp.status);
+          const txt = await resp.text();
+          // Very small CSV parser: first line headers, then rows split on commas.
+          const lines = txt.split(/\r?\n/).filter(l => l.trim().length > 0);
+          if (lines.length < 2) return console.warn('[App] sample loader: sample file has no rows');
+          const headers = lines[0].split(',').map(h => h.trim());
+          const rows = lines.slice(1).map(line => {
+            const parts = line.split(',');
+            const obj: Record<string, any> = {};
+            headers.forEach((h, i) => { obj[h] = parts[i] !== undefined ? parts[i].trim() : ''; });
+            return obj;
+          });
+          const pos = { x: 120, y: 160 };
+          const id = onAddWidget('file-upload', pos, { filename: 'sample_full_spectrum.csv', parsedData: rows });
+          console.info('[App] sample loader: created file-upload widget', id, 'with', rows.length, 'rows');
+        } catch (e) { console.warn('[App] sample loader failed', e); }
+      })();
+    } catch (err) { /* ignore */ }
+  }, []);
+
+  // Auto-attach: fetch server-side active upload and assign to first file-upload widget
+  const autoAttachRef = React.useRef(false);
+  React.useEffect(() => {
+    if (autoAttachRef.current) return;
+    // run once after initial widgets state is available
+    autoAttachRef.current = true;
+    (async () => {
+      try {
+        const resp = await fetch('/api/upload');
+        if (!resp.ok) return;
+        const list = await resp.json();
+        const active = Array.isArray(list) ? (list.find((u: any) => u.active) || list[0]) : list;
+        if (!active) return;
+        let parsedRows = active.parsedData || active.data?.parsedData;
+        if (!Array.isArray(parsedRows) || parsedRows.length === 0) {
+          const id = active._id || active.id || active.fileId || active.file;
+          if (id) {
+            const r = await fetch('/api/upload/' + encodeURIComponent(id));
+            if (r.ok) {
+              const body = await r.json();
+              parsedRows = body.parsedData || body.data?.parsedData || body.parsed || [];
+            }
+          }
+        }
+        if (!Array.isArray(parsedRows) || parsedRows.length === 0) return;
+        // find a file-upload widget that doesn't already have parsedData
+        const fileWidget = widgets.find((w) => w.type === 'file-upload' && (!w.data || !Array.isArray(w.data.parsedData) || w.data.parsedData.length === 0));
+        if (!fileWidget) return;
+        onUpdateWidget(fileWidget.id, {
+          data: {
+            filename: active.filename || active.name || active.file || active.fileId || 'server-upload',
+            fileId: active._id || active.id || active.fileId || active.file,
+            parsedData: parsedRows,
+          },
+        });
+        console.info('[App] auto-attached server upload to', fileWidget.id);
+      } catch (e) {
+        console.warn('[App] auto-attach active upload failed', e);
+      }
+    })();
+  }, [widgets]);
+
+  // Debug: log widgets when they change to help trace missing drops
+  React.useEffect(() => {
+    try {
+      console.debug('[App] widgets changed (count):', widgets.length, 'widgets:', widgets.map(w => ({ id: w.id, type: w.type, pos: w.position }))); 
+    } catch (e) { /* ignore */ }
+  }, [widgets.length]);
 
   const onOpenConfig = (widget: Widget) => setSelectedWidget(widget);
   const [filesModalOpen, setFilesModalOpen] = useState(false);
@@ -791,6 +880,7 @@ const App: React.FC = () => {
     <ThemeProvider theme={theme} toggleTheme={toggleTheme}>
       <DndProvider backend={HTML5Backend}>
         <ErrorBoundary>
+          <BackendHealthIndicator />
           <div className="flex flex-col h-screen">
             <Header onToggleTheme={toggleTheme} theme={theme} onOpenFiles={() => setFilesModalOpen(true)} />
             <TopMenuBar />

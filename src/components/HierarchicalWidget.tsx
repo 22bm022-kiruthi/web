@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import OrangeStyleWidget from './OrangeStyleWidget';
 import ParametersModal from './ParametersModal';
@@ -65,20 +65,44 @@ function computeLinkage(features: number[][], linkageMethod: 'single' | 'complet
     if (linkageMethod === 'ward') {
       // approximate Ward by using average linkage on squared euclidean distances
       let sum = 0; let cnt = 0;
-      for (const i of c1) for (const j of c2) { const key = `${i}_${j}`; let d = distCache.get(key); if (d === undefined) { d = distFunc(features[i], features[j]); distCache.set(key, d); } sum += d * d; cnt++; }
+      for (const i of c1) for (const j of c2) { 
+        const key = `${i}_${j}`; 
+        let d = distCache.get(key); 
+        if (d === undefined) { 
+          d = distFunc(features[i], features[j]); 
+          distCache.set(key, d); 
+        } 
+        sum += d * d; 
+        cnt++; 
+      }
       return Math.sqrt(sum / Math.max(1, cnt));
     }
+    
     let best = linkageMethod === 'complete' ? -Infinity : Infinity;
     let sum = 0; let cnt = 0;
-    for (const i of c1) for (const j of c2) {
-      const key = `${i}_${j}`;
-      let d = distCache.get(key);
-      if (d === undefined) { d = distFunc(features[i], features[j]); distCache.set(key, d); }
-      if (linkageMethod === 'single') best = Math.min(best, d);
-      else if (linkageMethod === 'complete') best = Math.max(best, d);
-      else { sum += d; cnt++; }
+    for (const i of c1) {
+      for (const j of c2) {
+        const key = `${i}_${j}`;
+        let d = distCache.get(key);
+        if (d === undefined) { 
+          d = distFunc(features[i], features[j]); 
+          distCache.set(key, d); 
+        }
+        if (linkageMethod === 'single') {
+          best = Math.min(best, d);
+        } else if (linkageMethod === 'complete') {
+          best = Math.max(best, d);
+        } else if (linkageMethod === 'average') {
+          sum += d; 
+          cnt++;
+        }
+      }
     }
-    if (linkageMethod === 'average') return sum / Math.max(1, cnt);
+    
+    if (linkageMethod === 'average') {
+      return sum / Math.max(1, cnt);
+    }
+    return best;
   };
 
   while (clusters.length > 1) {
@@ -86,12 +110,13 @@ function computeLinkage(features: number[][], linkageMethod: 'single' | 'complet
     for (let i = 0; i < clusters.length; i++) {
       for (let j = i + 1; j < clusters.length; j++) {
         const d = clusterDist(clusters[i].members, clusters[j].members);
-        if (d < bestD) { bestD = d; bestI = i; bestJ = j; }
+        if (d !== undefined && d < bestD) { bestD = d; bestI = i; bestJ = j; }
       }
     }
     const a = clusters[bestI];
     const b = clusters[bestJ];
     const mergedMembers = a.members.concat(b.members);
+    console.log(`[computeLinkage] Merging cluster ${a.id} (${a.members.length} items) with ${b.id} (${b.members.length} items) at distance ${bestD}`);
     linkage.push([a.id, b.id, bestD, mergedMembers.length]);
     if (bestJ > bestI) { clusters.splice(bestJ, 1); clusters.splice(bestI, 1); }
     else { clusters.splice(bestI, 1); clusters.splice(bestJ, 1); }
@@ -100,6 +125,8 @@ function computeLinkage(features: number[][], linkageMethod: 'single' | 'complet
 
   const order = Array.from({ length: n }, (_, i) => i);
   const heights = linkage.map(l => l[2]);
+  console.log('[computeLinkage] Final linkage:', linkage);
+  console.log('[computeLinkage] Heights:', heights);
   return { linkage, order, heights };
 }
 // Bisecting k-means (simple) for divisive clustering
@@ -237,6 +264,10 @@ const HierarchicalWidget: React.FC<HierarchicalWidgetProps> = ({ widget, onUpdat
   const [showScatter, setShowScatter] = useState(false);
   const [showTable, setShowTable] = useState(false);
   const [showCombined, setShowCombined] = useState(false);
+  const [showFullScatterInline, setShowFullScatterInline] = useState(false);
+  const [scatterChartVisible, setScatterChartVisible] = useState(true);
+  const scatterModalRef = useRef<HTMLDivElement>(null);
+  const divisiveDendroRef = useRef<HTMLDivElement>(null);
   const [lastResult, setLastResult] = useState<any>(null);
   const [requestedUpstream, setRequestedUpstream] = useState<boolean>(false);
   const [upstreamMessage, setUpstreamMessage] = useState<string | null>(null);
@@ -385,6 +416,24 @@ const HierarchicalWidget: React.FC<HierarchicalWidgetProps> = ({ widget, onUpdat
     window.addEventListener('openWidgetParameters', paramsHandler as EventListener);
     return () => window.removeEventListener('openWidgetParameters', paramsHandler as EventListener);
   }, [widget.id]);
+
+  // Memoize scatter data to prevent re-creating array on every render
+  const scatterData = useMemo(() => {
+    if (!lastResult || !lastResult.features) return [];
+    const MAX_POINTS = 500;
+    let data = lastResult.features.map((f: number[], i: number) => ({ 
+      x: f[0], 
+      y: f[1], 
+      index: i, 
+      cluster: lastResult.labels[i] 
+    }));
+    if (data.length > MAX_POINTS) {
+      const step = Math.ceil(data.length / MAX_POINTS);
+      data = data.filter((_: any, i: number) => i % step === 0);
+    }
+    console.log('[HierarchicalWidget] Memoized scatter data with', data.length, 'points');
+    return data;
+  }, [lastResult]);
 
   const run = async (autoOpen?: 'table' | 'dendrogram' | 'scatter') => {
     console.log('[HierarchicalWidget] RUN FUNCTION CALLED!', { widgetId: widget.id, method, k: hierK });
@@ -610,6 +659,13 @@ const HierarchicalWidget: React.FC<HierarchicalWidgetProps> = ({ widget, onUpdat
     console.debug('[HierarchicalWidget] showCombined ->', showCombined, 'showDendrogram ->', showDendrogram, 'showScatter ->', showScatter, 'showTable ->', showTable);
   }, [showCombined, showDendrogram, showScatter, showTable, widget.id]);
 
+  // Reset scatter chart visibility when modal opens
+  useEffect(() => {
+    if (showFullScatterInline) {
+      setScatterChartVisible(true);
+    }
+  }, [showFullScatterInline]);
+
   // Expose lastResult for debugging in DevTools
   useEffect(() => {
     try { (window as any).__HIER = (window as any).__HIER || {}; (window as any).__HIER.lastResult = lastResult; } catch (e) { /* ignore */ }
@@ -729,7 +785,20 @@ const HierarchicalWidget: React.FC<HierarchicalWidgetProps> = ({ widget, onUpdat
               >
                 Dendrogram
               </button>
-              <button onClick={async (e) => { e.stopPropagation(); if (!lastResult) { run('scatter'); } else setShowScatter(true); }} className="px-3 py-1 text-xs rounded" style={{ backgroundColor: colors.light, color: colors.main }}>Clustered Scatter</button>
+              <button 
+                onClick={async (e) => { 
+                  e.stopPropagation(); 
+                  if (!lastResult) { 
+                    run('scatter'); 
+                  } else {
+                    setShowFullScatterInline(!showFullScatterInline);
+                  }
+                }} 
+                className="px-3 py-1 text-xs rounded" 
+                style={{ backgroundColor: showFullScatterInline ? colors.main : colors.light, color: showFullScatterInline ? 'white' : colors.main }}
+              >
+                {showFullScatterInline ? 'Hide' : 'Full'} Scatter
+              </button>
               <button onClick={async (e) => { e.stopPropagation(); if (!lastResult) { run('table'); } else setShowTable(true); }} className="px-3 py-1 text-xs rounded" style={{ backgroundColor: '#f3f4f6' }}>Labels Table</button>
               <button onClick={async (e) => { e.stopPropagation(); if (!lastResult) { run(); } setShowCombined(true); }} className="px-3 py-1 text-xs rounded" style={{ backgroundColor: '#e0f2fe' }}>Show All Outputs</button>
               <button onClick={(e) => { e.stopPropagation(); exportCSV(); }} className="px-3 py-1 text-xs rounded" style={{ backgroundColor: '#f3f4f6' }}>Export CSV</button>
@@ -753,41 +822,45 @@ const HierarchicalWidget: React.FC<HierarchicalWidgetProps> = ({ widget, onUpdat
           </div>
         ) : console.log('[HierarchicalWidget] NOT RENDERING:', { showResultsInline, hasLastResult: !!lastResult })}
         {showResultsInline && lastResult && (
-          <div className="mt-3 p-3 bg-white rounded border max-h-96 overflow-auto pointer-events-auto" style={{ minWidth: '280px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-            <div className="flex justify-between items-center mb-2">
-              <div className="text-xs font-medium text-gray-700">
-                Clustering Results ({lastResult.labels.length} samples, {Math.max(...lastResult.labels) + 1} clusters)
+          <div className="mt-2 p-2 bg-white rounded border overflow-visible pointer-events-auto" style={{ minWidth: '280px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+            <div className="flex justify-between items-center mb-1">
+              <div className="text-gray-700" style={{ fontSize: '10px', fontWeight: 500 }}>
+                Results ({lastResult.labels.length} samples, {Math.max(...lastResult.labels) + 1} clusters)
               </div>
               <button 
                 onClick={(e) => { 
                   e.stopPropagation(); 
                   setShowResultsInline(false); 
                 }} 
-                className="text-xs text-red-600 hover:text-red-800"
+                className="text-red-600 hover:text-red-800"
+                style={{ fontSize: '10px' }}
               >
                 Hide
               </button>
             </div>
             
             {/* Mini scatter plot */}
-            <div className="mb-3">
-              <div className="text-xs font-medium mb-1">Clustered Scatter Plot</div>
-              <div style={{ width: '100%', height: 120 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart>
+            <div className="mb-2">
+              <div className="font-medium mb-1" style={{ fontSize: '10px' }}>Clustered Scatter Plot</div>
+              <div style={{ width: '100%', minWidth: '450px', display: 'flex', justifyContent: 'center' }}>
+                <div style={{ width: '450px', height: '250px' }}>
+                  <ScatterChart width={450} height={250} margin={{ top: 25, right: 25, bottom: 40, left: 60 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="x" 
                       type="number" 
-                      fontSize={10}
+                      tick={{ fontSize: 9 }}
                       domain={['auto', 'auto']}
                       allowDataOverflow={false}
+                      label={{ value: "PC1", position: "insideBottom", offset: -8, fontSize: 10 }}
                     />
                     <YAxis 
                       dataKey="y" 
-                      fontSize={10}
+                      tick={{ fontSize: 9 }}
                       domain={['auto', 'auto']}
                       allowDataOverflow={false}
+                      label={{ value: "PC2", angle: -90, position: "insideLeft", fontSize: 10 }}
+                      width={50}
                     />
                     <Tooltip />
                     {(() => {
@@ -808,38 +881,38 @@ const HierarchicalWidget: React.FC<HierarchicalWidgetProps> = ({ widget, onUpdat
                       ));
                     })()}
                   </ScatterChart>
-                </ResponsiveContainer>
+                </div>
               </div>
             </div>
 
             {/* Cluster summary table */}
-            <div className="mb-2">
-              <div className="text-xs font-medium mb-1">Cluster Summary (first 10 samples)</div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs border-collapse">
+            <div className="mb-1">
+              <div className="font-medium mb-1" style={{ fontSize: '10px' }}>Cluster Summary (first 10 samples)</div>
+              <div className="overflow-x-auto" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                <table className="w-full border-collapse" style={{ fontSize: '9px' }}>
                   <thead>
                     <tr className="bg-gray-50">
-                      <th className="border border-gray-200 px-2 py-1 text-left">Index</th>
-                      <th className="border border-gray-200 px-2 py-1 text-left">Cluster</th>
+                      <th className="border border-gray-200 px-1 py-0.5 text-left">Index</th>
+                      <th className="border border-gray-200 px-1 py-0.5 text-left">Cluster</th>
                       {lastResult.featKeys.map((key: string, idx: number) => (
-                        <th key={idx} className="border border-gray-200 px-2 py-1 text-left">{key}</th>
+                        <th key={idx} className="border border-gray-200 px-1 py-0.5 text-left">{key}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {lastResult.features.slice(0, 10).map((feature: number[], idx: number) => (
                       <tr key={idx} className="hover:bg-gray-50">
-                        <td className="border border-gray-200 px-2 py-1">{idx}</td>
-                        <td className="border border-gray-200 px-2 py-1">{lastResult.labels[idx]}</td>
+                        <td className="border border-gray-200 px-1 py-0.5">{idx}</td>
+                        <td className="border border-gray-200 px-1 py-0.5">{lastResult.labels[idx]}</td>
                         {feature.map((value: number, fIdx: number) => (
-                          <td key={fIdx} className="border border-gray-200 px-2 py-1">{value.toFixed(2)}</td>
+                          <td key={fIdx} className="border border-gray-200 px-1 py-0.5">{value.toFixed(2)}</td>
                         ))}
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 {lastResult.features.length > 10 && (
-                  <div className="text-xs text-gray-500 mt-1 text-center">
+                  <div className="text-gray-500 mt-1 text-center" style={{ fontSize: '9px' }}>
                     Showing first 10 of {lastResult.features.length} samples
                   </div>
                 )}
@@ -887,6 +960,82 @@ const HierarchicalWidget: React.FC<HierarchicalWidgetProps> = ({ widget, onUpdat
             </div>
           </div>
         )}
+
+        {/* Full Scatter Plot in Canvas */}
+        {showFullScatterInline && lastResult && (
+          <>
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-50 z-40"
+              onMouseDown={(e) => { 
+                e.stopPropagation();
+                setShowFullScatterInline(false);
+              }}
+            />
+            
+            {/* Popup */}
+            <div 
+              ref={scatterModalRef}
+              className="fixed p-6 bg-white rounded-lg border-2 shadow-2xl pointer-events-auto overflow-hidden"
+              style={{ 
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '1200px',
+                height: '800px',
+                zIndex: 9999
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-lg font-semibold text-gray-800">
+                  Clustered Scatter Plot ({lastResult.labels.length} samples, {Math.max(...lastResult.labels) + 1} clusters)
+                </div>
+                <button 
+                  onMouseDown={(e) => { 
+                    e.stopPropagation(); 
+                    e.preventDefault();
+                    setShowFullScatterInline(false);
+                  }}
+                  type="button"
+                  className="px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded font-medium cursor-pointer"
+                  style={{ pointerEvents: 'auto', zIndex: 10000, position: 'relative' }}
+                >
+                  ✕ Close
+                </button>
+              </div>
+              
+              <div 
+                style={{ 
+                  width: '100%',
+                  height: 'calc(100% - 60px)',
+                  overflow: 'auto'
+                }}
+              >
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="border p-2">Index</th>
+                      <th className="border p-2">Cluster</th>
+                      <th className="border p-2">PC1 (x)</th>
+                      <th className="border p-2">PC2 (y)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lastResult.features.map((f: number[], i: number) => (
+                      <tr key={i} className="hover:bg-gray-50">
+                        <td className="border p-2 text-center">{i}</td>
+                        <td className="border p-2 text-center">{lastResult.labels[i]}</td>
+                        <td className="border p-2 text-right">{f[0]?.toFixed(3)}</td>
+                        <td className="border p-2 text-right">{f[1]?.toFixed(3)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {showTable && lastResult && (() => {
@@ -902,24 +1051,15 @@ const HierarchicalWidget: React.FC<HierarchicalWidgetProps> = ({ widget, onUpdat
         );
       })()}
 
-      {showScatter && lastResult && (() => {
-        // Downsample scatter data for large datasets to prevent freezing
-        const MAX_POINTS = 500; // Reduced from 2000 to prevent freezing
-        let scatterData = lastResult.features.map((f: number[], i: number) => ({ x: f[0], y: f[1], index: i, cluster: lastResult.labels[i] }));
-        if (scatterData.length > MAX_POINTS) {
-          const step = Math.ceil(scatterData.length / MAX_POINTS);
-          scatterData = scatterData.filter((_, i: number) => i % step === 0);
-        }
-        console.log('[HierarchicalWidget] Rendering scatter with', scatterData.length, 'points');
-        return (
-          <ScatterPlotModal 
-            isOpen={showScatter} 
-            onClose={() => setShowScatter(false)} 
-            data={scatterData} 
-            columns={['y']} 
-          />
-        );
-      })()}
+      {showScatter && lastResult && createPortal(
+        <ScatterPlotModal 
+          isOpen={showScatter} 
+          onClose={() => setShowScatter(false)} 
+          data={scatterData} 
+          columns={['y']} 
+        />,
+        document.body
+      )}
 
       {showDendrogram && lastResult && method === 'agglomerative' && createPortal(
             <DendrogramModalComponent
@@ -1054,13 +1194,33 @@ const HierarchicalWidget: React.FC<HierarchicalWidgetProps> = ({ widget, onUpdat
                 </div>
               </div>
               <div className="col-span-5">
-                <div className="mb-2 font-medium">Clustered Scatter</div>
-                <div style={{ width: '100%', height: 320 }} className="mb-2">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart margin={{ top: 20, right: 80, bottom: 20, left: 20 }}>
-                      <CartesianGrid />
-                      <XAxis dataKey="x" name="X" type="number" />
-                      <YAxis dataKey="y" name="Y" />
+                <div className="mb-2 font-medium">Clustered Scatter Plot</div>
+                <div style={{ width: '100%', height: 450, overflow: 'hidden' }} className="mb-2">
+                  <ScatterChart 
+                    width={900} 
+                    height={450} 
+                    margin={{ top: 30, right: 80, bottom: 50, left: 70 }}
+                  >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="x" 
+                        name="PC1" 
+                        type="number" 
+                        tick={{ fontSize: 12 }}
+                        label={{ value: "PC1", position: "insideBottom", offset: -10, fontSize: 14, fontWeight: 600 }}
+                        domain={['dataMin', 'dataMax']}
+                        allowDataOverflow={false}
+                      />
+                      <YAxis 
+                        dataKey="y" 
+                        name="PC2" 
+                        type="number" 
+                        tick={{ fontSize: 12 }}
+                        label={{ value: "PC2", angle: -90, position: "insideLeft", fontSize: 14, fontWeight: 600 }}
+                        domain={['dataMin', 'dataMax']}
+                        allowDataOverflow={false}
+                        width={70}
+                      />
                       <Tooltip />
                       {(() => {
                         const labels = lastResult.labels || [];
@@ -1115,7 +1275,6 @@ const HierarchicalWidget: React.FC<HierarchicalWidgetProps> = ({ widget, onUpdat
                         ];
                       })()}
                     </ScatterChart>
-                  </ResponsiveContainer>
                 </div>
 
                 <div className="mb-2 font-medium">Cluster Labels (first 200 rows)</div>
@@ -1167,12 +1326,22 @@ const HierarchicalWidget: React.FC<HierarchicalWidgetProps> = ({ widget, onUpdat
       )}
 
       {showDendrogram && lastResult && method === 'divisive' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+        <div ref={divisiveDendroRef} className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
           <div className="bg-white rounded-lg shadow-lg p-4 min-w-[400px] max-w-[90vw] max-h-[80vh] overflow-auto">
             <div className="flex justify-between items-center mb-2">
               <h3 className="font-semibold">Dendrogram (not available for divisive)</h3>
               <div>
-                <button className="mr-2 px-2 py-1 text-sm" onClick={() => setShowDendrogram(false)}>Close</button>
+                <button 
+                  className="mr-2 px-2 py-1 text-sm" 
+                  onMouseDown={() => {
+                    if (divisiveDendroRef.current) {
+                      divisiveDendroRef.current.style.display = 'none';
+                    }
+                    setTimeout(() => setShowDendrogram(false), 0);
+                  }}
+                >
+                  Close
+                </button>
               </div>
             </div>
             <div className="text-sm text-gray-600">Divisive clustering (bisecting k-means) does not produce a classic linkage dendrogram in this lightweight implementation. Use the Clustered Scatter and Labels Table to inspect results.</div>
@@ -1284,8 +1453,25 @@ function DendrogramModalComponent({
   allowRenderFull?: boolean;
   onOpenScatter?: () => void;
 }) {
+  const modalRef = React.useRef<HTMLDivElement>(null);
   const [k, setK] = useState<number>(initialK || Math.max(2, Math.min(n, 3)));
+  
+  const handleClose = React.useCallback(() => {
+    if (modalRef.current) {
+      modalRef.current.style.display = 'none';
+    }
+    setTimeout(() => onClose(), 0);
+  }, [onClose]);
+  
+  // Debug: check linkage distances
+  console.log('[Dendrogram] n=', n, 'linkage length=', linkage?.length, 'heights=', heights);
+  if (linkage && linkage.length > 0) {
+    console.log('[Dendrogram] First 3 linkages:', linkage.slice(0, 3));
+    console.log('[Dendrogram] All distances:', linkage.map(l => l[2]));
+  }
+  
   const maxH = heights && heights.length ? Math.max(...heights) : 1;
+  console.log('[Dendrogram] maxH=', maxH);
   const width = Math.min(1200, Math.max(600, n * 12));
   const height = Math.max(240, (heights?.length || 0) * 12 + 120);
 
@@ -1342,7 +1528,7 @@ function DendrogramModalComponent({
 
   if (!canRenderFull) {
     return (
-      <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-black bg-opacity-40">
+      <div ref={modalRef} className="fixed inset-0 z-[10050] flex items-center justify-center bg-black bg-opacity-40">
       <div 
         className="bg-white rounded-lg shadow-lg p-4 min-w-[480px] max-w-[95vw] max-h-[90vh] overflow-auto z-[10051]"
         style={{ pointerEvents: 'auto' }}
@@ -1354,9 +1540,9 @@ function DendrogramModalComponent({
                 type="button"
                 className="px-2 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200 cursor-pointer" 
                 style={{ pointerEvents: 'auto' }}
-                onClick={(e) => {
+                onMouseDown={(e) => {
                   e.stopPropagation();
-                  onClose();
+                  handleClose();
                 }}
               >
                 Close
@@ -1376,7 +1562,7 @@ function DendrogramModalComponent({
               onMouseUp={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                onClose();
+                handleClose();
                 alert('✓ Clustering Complete!\n\n' +
                       'Your data has been clustered into ' + (initialK || 3) + ' groups.\n\n' +
                       'To view the results:\n' +
@@ -1414,7 +1600,7 @@ function DendrogramModalComponent({
                     alert('Failed to download linkage'); 
                   }
                 }, 50);
-                onClose();
+                handleClose();
               }}
             >
               Download JSON
@@ -1426,11 +1612,7 @@ function DendrogramModalComponent({
               onMouseDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-              }}
-              onMouseUp={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onClose();
+                handleClose();
               }}
             >
               Close
@@ -1442,11 +1624,12 @@ function DendrogramModalComponent({
   }
   return (
     <div 
+      ref={modalRef}
       className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40"
       style={{ zIndex: 999999 }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
-          onClose();
+          handleClose();
         }
       }}
     >
@@ -1475,7 +1658,7 @@ function DendrogramModalComponent({
               onClick={(e) => {
                 e.stopPropagation();
                 const selectedK = k;
-                onClose();
+                handleClose();
                 setTimeout(() => {
                   try {
                     onCut(selectedK);
@@ -1489,9 +1672,9 @@ function DendrogramModalComponent({
             </button>
             <button 
               className="px-4 py-2 text-sm font-semibold bg-gray-500 text-white rounded hover:bg-gray-600" 
-              onClick={(e) => {
+              onMouseDown={(e) => {
                 e.stopPropagation();
-                onClose();
+                handleClose();
               }}
             >
               Close

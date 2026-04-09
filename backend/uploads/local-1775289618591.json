@@ -1,0 +1,17 @@
+{
+  "filename": "test_upload_sample.csv",
+  "parsedData": [
+    {
+      "Sample name": "TestSample",
+      "wavenumber": "100",
+      "intensity": "123"
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}

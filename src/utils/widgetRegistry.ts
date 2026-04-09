@@ -2,7 +2,7 @@ import { WidgetType } from '../types';
 
 export const widgetRegistry: WidgetType[] = [
   { id: 'file-upload', name: 'File Upload', icon: 'Upload', description: 'Upload CSV/XLS files', category: 'input' },
-  { id: 'supabase', name: 'Supabase Source', icon: 'Database', description: 'Fetch data from Supabase (test_raman)', category: 'input' },
+  { id: 'supabase', name: 'Supabase Source', icon: 'Database', description: 'Fetch data from Supabase (raman_data)', category: 'input' },
   { id: 'data-table', name: 'Data Table', icon: 'Database', description: 'View and edit data', category: 'input' },
   { id: 'line-chart', name: 'Line Chart', icon: 'LineChart', description: 'Spectral line visualization', category: 'visualization' },
   { id: 'scatter-plot', name: 'Scatter Plot', icon: 'Scatter3D', description: 'Correlation analysis', category: 'visualization' },

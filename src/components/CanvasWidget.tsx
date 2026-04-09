@@ -316,17 +316,9 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           const r = el.getBoundingClientRect();
           const ic = { left: Math.round(r.left + r.width / 2), top: Math.round(r.top + r.height / 2) };
           setIconCenter(ic);
-          try {
-            // Persist icon center into widget data so the parent Canvas can align connection ports
-            if (onUpdateWidget) {
-              const existing = (widget.data && (widget.data as any).iconCenter) || null;
-              if (!existing || existing.left !== ic.left || existing.top !== ic.top) {
-                onUpdateWidget({ data: { iconCenter: ic } });
-              }
-            }
-          } catch (err) {
-            // swallow
-          }
+          // NOTE: do not persist iconCenter back into widget.data on every measurement —
+          // writing it causes frequent widget state updates and can create a re-render loop
+          // due to small DOM measurement fluctuations. Keep iconCenter as local state only.
         } else {
           setIconCenter(null);
         }
@@ -500,22 +492,27 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadingLocal, setUploadingLocal] = useState(false);
   const [uploadErrorLocal, setUploadErrorLocal] = useState<string | null>(null);
+  const [uploadSuccessLocal, setUploadSuccessLocal] = useState<boolean>(false);
   // Local file upload handler (moved here to avoid JSX parsing issues)
   const handleLocalFile = async (file: any) => {
     if (!file) return;
     setUploadingLocal(true);
+    setUploadSuccessLocal(false);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '';
-      const uploadUrl = apiUrl ? `${apiUrl}/upload` : '/api/upload';
+      // Use fetchToBackend helper which retries the Vite proxy and direct backend hosts
       const fd = new FormData();
       fd.append('file', file);
-      const res = await fetch(uploadUrl, { method: 'POST', body: fd });
+      const res = await fetchToBackend('/api/upload', { method: 'POST', body: fd });
       if (!res.ok) {
-        setUploadErrorLocal(`Upload failed (status ${res.status})`);
+        const txt = await res.text().catch(() => `status ${res.status}`);
+        setUploadErrorLocal(`Upload failed (${txt})`);
         return;
       }
       const body = await res.json().catch(() => ({}));
-      if (onUpdateWidget) onUpdateWidget({ data: { filename: file.name, fileId: body.fileId, type: file.type, parsedData: body.parsedData } });
+      // Update widget with returned parsedData/fileId so UI reflects authoritative state
+      if (onUpdateWidget) onUpdateWidget({ data: { filename: file.name, fileId: body.fileId || body._id || body.id || null, type: file.type, parsedData: body.parsedData || body.data?.parsedData || body.parsed || [] } });
+      // mark success so UI can display confirmation
+      setUploadSuccessLocal(true);
     } catch (err: any) {
       setUploadErrorLocal(String(err?.message || err));
       console.error('handleLocalFile error:', err);
@@ -586,7 +583,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
   // Dragging is only available via the in-circle drag handle (attach `drag` to the handle).
 
   const IconComponent = iconMap[widget.type] || Upload;
-  const showUploadStatus = widget.type === 'supabase';
+  const showUploadStatus = widget.type === 'supabase' || widget.type === 'file-upload';
   const customIconPath = `/${widget.type}.svg`;
   const isSupabase = widget.type === 'supabase';
 
@@ -726,6 +723,10 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
   // Mean/Average modal data and selection are handled inside the modal.
 
   const renderWidgetContent = () => {
+    // Common computed flags for upload status used across widget types
+    const widgetHasFile = Boolean(widget.data?.fileId || (Array.isArray(widget.data?.parsedData) && widget.data.parsedData.length > 0));
+    const hasUploadedNow = widgetHasFile || uploadSuccessLocal;
+
     if (widget.type === 'data-table') {
       const hasData = (widget.data?.tableData && widget.data.tableData.length > 0) || 
                       (widget.data?.parsedData && widget.data.parsedData.length > 0);
@@ -772,6 +773,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           />
         </>
       );
+
 
       return (
         <OrangeStyleWidget
@@ -1036,8 +1038,9 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           label="File Upload"
           iconRef={iconRef}
           portElements={fileUploadPorts}
-          statusText={hasData ? 'File loaded' : uploadingLocal ? 'Uploading...' : 'No file'}
-          statusColor={hasData ? 'green' : uploadingLocal ? 'orange' : 'gray'}
+              // Status: prefer authoritative widget data (parsedData/fileId); fall back to local upload state
+              statusText={uploadErrorLocal ? 'not uploaded' : hasUploadedNow ? 'file uploaded successfully' : (uploadingLocal ? 'Uploading...' : 'not uploaded')}
+              statusColor={uploadErrorLocal ? 'red' : hasUploadedNow ? 'green' : (uploadingLocal ? 'orange' : 'red')}
           mainColor={colors.main}
           lightColor={colors.light}
           bgColor={colors.bg}
@@ -1053,6 +1056,10 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
             >
               {hasData ? 'Change File' : 'Select File'}
             </button>
+            {/* Explicit textual status under the widget for clarity */}
+            <div className="text-xs text-center mt-1" style={{ color: uploadErrorLocal ? '#842029' : hasUploadedNow ? '#0f5132' : '#842029' }}>
+              {uploadErrorLocal ? (uploadErrorLocal) : (hasUploadedNow ? 'file uploaded successfully' : (uploadingLocal ? 'Uploading...' : 'not uploaded'))}
+            </div>
             {uploadErrorLocal && (
               <div className="text-xs text-red-600 text-center">{uploadErrorLocal}</div>
             )}
@@ -3095,76 +3102,44 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       const colors = getWidgetColors('kmeans-analysis');
       const hasResults = !!widget.data?.kmeansResults;
 
-      // Inline panel: compact 3-row results list (Clustered Scatter, Data table, Centroids)
-      const KMeansInlinePanel = () => {
+      // Define handlers for viewing results
+      const handleViewScatter = (e: any) => {
+        e.stopPropagation();
+        try { setInlineSuppressOpen(false); } catch (err) {}
+        try { positionInlineBelowWidget(); } catch (err) {}
         const results = widget.data?.kmeansResults || localKmeansResults;
-        const handleViewGraph = (e: any) => {
-          e.stopPropagation();
-          try { setInlineSuppressOpen(false); } catch (err) {}
-          try { positionInlineBelowWidget(); } catch (err) {}
-          const results = widget.data?.kmeansResults || localKmeansResults;
-          const projection = results?.projection_2d || [];
-            if (projection && projection.length > 0) {
-            setShowKmeansGraphModal(true);
-          } else {
-            // fallback: open data table modal so user sees some output
-            if (widget.data?.tableDataProcessed) setLocalAugmentedTable(widget.data.tableDataProcessed);
-            else if (widget.data?.tableData) setLocalAugmentedTable(widget.data.tableData);
-            openTableModal();
-          }
-        };
-
-        const handleViewData = (e: any) => {
-          e.stopPropagation();
-          // show full table modal using augmented table if available
+        const projection = results?.projection_2d || [];
+        if (projection && projection.length > 0) {
+          setShowKmeansGraphModal(true);
+        } else {
           if (widget.data?.tableDataProcessed) setLocalAugmentedTable(widget.data.tableDataProcessed);
           else if (widget.data?.tableData) setLocalAugmentedTable(widget.data.tableData);
           openTableModal();
-        };
-
-        const handleViewCentroids = (e: any) => {
-          e.stopPropagation();
-          // transform centroids to a table-like array for viewing
-          const centroids = results?.centroids || [];
-          const centroidTable = centroids.map((c: any, i: number) => {
-            const obj: any = { Cluster: i };
-            (c || []).forEach((v: any, idx: number) => { obj[`dim${idx}`] = v; });
-            return obj;
-          });
-          const tableToShow = (centroidTable && centroidTable.length > 0)
-            ? centroidTable
-            : [{ Cluster: 'N/A', note: 'No centroid data available' }];
-          setLocalAugmentedTable(tableToShow);
-          openTableModal();
-        };
-
-        // Create the panel node and portal it into document.body so it layers above canvas
-        const panelNode = (
-          <div className="kmeans-inline-panel" onClick={(e) => e.stopPropagation()} style={{ pointerEvents: 'auto' }}>
-            <div className="bg-white shadow rounded p-2 text-xs w-64" style={{ position: 'fixed', left: inlinePos.left, top: inlinePos.top, zIndex: 30, pointerEvents: 'auto' }}>
-              <div className="flex items-center justify-between p-1 border-b">
-                <div className="font-semibold">Clustered Scatter Plot</div>
-                <button type="button" onClick={(e) => { console.log('[KMeansInline] View Graph clicked'); handleViewGraph(e); }} className="text-blue-600 px-2">View</button>
-              </div>
-              <div className="flex items-center justify-between p-1 border-b">
-                <div className="">Data Table</div>
-                <button type="button" onClick={(e) => { console.log('[KMeansInline] View Data clicked'); handleViewData(e); }} className="text-blue-600 px-2">View</button>
-              </div>
-              <div className="flex items-center justify-between p-1">
-                <div className="">Centroids</div>
-                <button type="button" onClick={(e) => { console.log('[KMeansInline] View Centroids clicked'); handleViewCentroids(e); }} className="text-blue-600 px-2">View</button>
-              </div>
-            </div>
-          </div>
-        );
-        try {
-          return createPortal(panelNode, document.body as any);
-        } catch (e) {
-          return panelNode;
         }
       };
 
-      const kmeansResultPanel = showKmeansResultList ? <KMeansInlinePanel /> : null;
+      const handleViewData = (e: any) => {
+        e.stopPropagation();
+        if (widget.data?.tableDataProcessed) setLocalAugmentedTable(widget.data.tableDataProcessed);
+        else if (widget.data?.tableData) setLocalAugmentedTable(widget.data.tableData);
+        openTableModal();
+      };
+
+      const handleViewCentroids = (e: any) => {
+        e.stopPropagation();
+        const results = widget.data?.kmeansResults || localKmeansResults;
+        const centroids = results?.centroids || [];
+        const centroidTable = centroids.map((c: any, i: number) => {
+          const obj: any = { Cluster: i };
+          (c || []).forEach((v: any, idx: number) => { obj[`dim${idx}`] = v; });
+          return obj;
+        });
+        const tableToShow = (centroidTable && centroidTable.length > 0)
+          ? centroidTable
+          : [{ Cluster: 'N/A', note: 'No centroid data available' }];
+        setLocalAugmentedTable(tableToShow);
+        openTableModal();
+      };
 
       return (
         <>
@@ -3183,6 +3158,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
               icon={Scatter3D}
               label={getWidgetLabel('kmeans-analysis')}
               iconRef={iconRef}
+              alwaysShowControls={true}
               portElements={(
                 <>
                   <div
@@ -3217,33 +3193,6 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
               bgColor={colors.bg}
             >
               <div className="mt-2 flex flex-col items-center gap-2">
-                    <button onClick={(e) => { e.stopPropagation(); setShowParameters(true); const hasResultsLocal = !!(widget.data && widget.data.kmeansResults); if (hasResultsLocal) { try { setInlineSuppressOpen(false); } catch (err) {} try { positionInlineBelowWidget(); } catch (err) {} setShowInlineResults(true); } }} className="px-3 py-1.5 text-xs font-medium rounded transition-colors text-white" style={{ backgroundColor: colors.main }}>
-                  Configure KMeans
-                </button>
-                {hasResults && (
-                  <>
-                    <button onClick={(e) => { e.stopPropagation(); try { setInlineSuppressOpen(false); } catch (err) {} try { positionInlineBelowWidget(); } catch (err) {} setShowInlineResults(true); }} className="px-3 py-1.5 text-xs font-medium rounded transition-colors" style={{ backgroundColor: colors.light, color: colors.main }}>
-                      View Results
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); openTableModal(); }} className="px-3 py-1.5 text-xs font-medium rounded transition-colors" style={{ backgroundColor: colors.light, color: colors.main }}>
-                      View Data
-                    </button>
-                  </>
-                )}
-                <button
-                  onClick={async (e) => {
-                    console.log('[KMeans UI] inline Run button clicked for widget', widget.id);
-                    e.stopPropagation();
-                    try { setKmeansRunning(true); await runKMeans(); }
-                    catch (err) { console.error('[KMeans] run button error', err); alert('KMeans run failed: ' + (err?.message || String(err))); }
-                    finally { setKmeansRunning(false); }
-                  }}
-                  disabled={kmeansRunning}
-                  className={`px-3 py-1.5 text-xs font-medium rounded text-white ${kmeansRunning ? 'bg-gray-400' : ''}`}
-                  style={{ backgroundColor: colors.main }}
-                >
-                  {kmeansRunning ? 'Running…' : 'Run KMeans'}
-                </button>
               </div>
             </OrangeStyleWidget>
           </div>
@@ -3403,9 +3352,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
             </ParametersModal>
           )}
 
-          {/* Inline results panel (portal + fallback) */}
-          {kmeansResultPanel}
-              {/* no transient banner: we show inline graph only after Run */}
+          {/* no transient banner: we show inline graph only after Run */}
         </>
       );
     }
@@ -4288,6 +4235,8 @@ else:
                     lastExecuted: new Date().toISOString()
                   }
                 });
+                // Keep a local preview copy so the Data Table modal can show immediately
+                try { setLocalAugmentedTable(result.output_data); } catch (err) { /* ignore */ }
               }
 
               // CREATE A NEW WIDGET when Execute Code is clicked from the editor and a widget name is provided
@@ -4332,6 +4281,9 @@ else:
 
                   // Show success message
                   setExecutionOutput(`✅ Widget "${widgetName}" created successfully!\n\nLook to the right of this widget on the canvas.\nConnect it to data sources to see it in action.`);
+                  // Make the output immediately available in the editor preview/modal
+                  try { setLocalAugmentedTable(result.output_data); } catch (err) { /* ignore */ }
+                  try { openTableModal(); } catch (err) { /* ignore */ }
                 } catch (error: any) {
                   console.error('❌ Error creating widget:', error);
                   setExecutionOutput(`❌ Error creating widget: ${error.message}`);
@@ -4484,14 +4436,21 @@ else:
 
                 {/* Action buttons */}
                 <div className="flex gap-2 pt-2">
-                  <button 
-                    type="button" 
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); console.log('[CustomCode] Execute clicked'); handleExecuteCode(); }} 
-                    disabled={isExecuting || !customCode}
-                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm disabled:bg-gray-400 cursor-pointer"
-                  >
-                    {isExecuting ? 'Running...' : 'Execute'}
-                  </button>
+                      <button 
+                        type="button" 
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); console.log('[CustomCode] Execute clicked'); handleExecuteCode(); }} 
+                        disabled={isExecuting || !customCode}
+                        className="px-3 py-1 bg-blue-600 text-white rounded text-sm disabled:bg-gray-400 cursor-pointer"
+                      >
+                        {isExecuting ? 'Running...' : 'Execute'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); console.log('[CustomCode] View Data clicked'); openTableModal(); }}
+                        className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 cursor-pointer"
+                      >
+                        View Data
+                      </button>
                   <button 
                     type="button" 
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); console.log('[CustomCode] Save & Close clicked'); if (onUpdateWidget) { onUpdateWidget({ data: { ...(widget.data || {}), widgetName, widgetDescription, customCode } }); } setShowParameters(false); }} 
