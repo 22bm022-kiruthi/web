@@ -1,3 +1,6 @@
+flask
+numpy
+scipy
 Flask==2.3.2
 Flask-Cors==4.0.0
 numpy==1.26.4

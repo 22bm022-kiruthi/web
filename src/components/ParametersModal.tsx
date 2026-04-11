@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
@@ -15,61 +15,55 @@ const ParametersModal: React.FC<ParametersModalProps> = ({
   title,
   children,
 }) => {
-  const [mountNode, setMountNode] = useState<HTMLElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+  const [overlayStyle, setOverlayStyle] = useState<React.CSSProperties | null>(null);
 
   useEffect(() => {
-    setMountNode(document.body);
-    console.debug('[ParametersModal] mounted, initial isOpen=', isOpen, 'title=', title);
+    const compute = () => {
+      try {
+        const canvasEl = document.querySelector('.orange-canvas') as HTMLElement | null;
+        if (!canvasEl) {
+          setOverlayStyle({ position: 'fixed', left: 0, top: 0, width: '100%', height: '100%', zIndex: 10050 });
+          return;
+        }
+        const rect = canvasEl.getBoundingClientRect();
+        setOverlayStyle({ position: 'fixed', left: rect.left, top: rect.top, width: rect.width, height: rect.height, zIndex: 10050 });
+      } catch (e) {
+        setOverlayStyle({ position: 'fixed', left: 0, top: 0, width: '100%', height: '100%', zIndex: 10050 });
+      }
+    };
+    compute();
+    window.addEventListener('resize', compute);
+    window.addEventListener('scroll', compute, true);
+    return () => {
+      window.removeEventListener('resize', compute);
+      window.removeEventListener('scroll', compute, true);
+    };
   }, []);
 
-  if (!isOpen || !mountNode) {
-    console.debug('[ParametersModal] not rendering (isOpen, mountNode)=', isOpen, !!mountNode, 'title=', title);
-    return null;
-  }
-  console.debug('[ParametersModal] rendering modal (title)=', title);
+  if (!isOpen) return null;
 
   const modal = (
-    <div
-      className="fixed inset-0 z-[10050] flex items-center justify-center bg-black bg-opacity-40"
-      onClick={(e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        console.log('[Modal] Backdrop clicked');
-        onClose();
-      }}
-    >
+    <div ref={overlayRef} style={overlayStyle || { position: 'fixed', left: 0, top: 0, width: '100%', height: '100%', zIndex: 10050 }}>
       <div
-        className="bg-white rounded-lg shadow-lg p-6 min-w-[420px] max-w-[480px] max-h-[80vh] overflow-auto relative z-[10051]"
-        onClick={(e) => {
-          console.log('[Modal] Content area clicked');
-          e.stopPropagation();
-        }}
+        style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.35)' }}
+        onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClose(); }}
       >
-        {/* Header */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">{title}</h2>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log('[Modal] Close button clicked');
-              onClose();
-            }}
-            className="text-gray-500 hover:text-red-500 text-2xl font-bold leading-none"
-            aria-label="Close"
-          >
-            ×
-          </button>
-        </div>
-
-        {/* Content */}
-        <div>
-          {children}
+        <div
+          className="bg-white rounded-lg shadow-lg p-6 min-w-[420px] max-w-[480px] max-h-[80vh] overflow-auto relative"
+          onClick={(e) => { e.stopPropagation(); }}
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">{title}</h2>
+            <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-gray-500 hover:text-red-500 text-2xl font-bold leading-none" aria-label="Close">×</button>
+          </div>
+          <div>{children}</div>
         </div>
       </div>
     </div>
   );
 
-  return createPortal(modal, mountNode);
+  return createPortal(modal, document.body);
 };
 
 export default ParametersModal;

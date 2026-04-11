@@ -1,0 +1,42 @@
+{
+  "filename": "dataset1.csv",
+  "parsedData": [
+    {
+      "﻿peaks": "2",
+      "avg": "1668.5",
+      "max": "15822",
+      "label": "Normal"
+    },
+    {
+      "﻿peaks": "2",
+      "avg": "977.4",
+      "max": "8817",
+      "label": "Abnormal"
+    },
+    {
+      "﻿peaks": "1",
+      "avg": "1896.5",
+      "max": "12319",
+      "label": "Abnormal"
+    },
+    {
+      "﻿peaks": "3",
+      "avg": "1005.8",
+      "max": "5084",
+      "label": "Abnormal"
+    },
+    {
+      "﻿peaks": "1",
+      "avg": "1298.1",
+      "max": "16797",
+      "label": "Normal"
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}

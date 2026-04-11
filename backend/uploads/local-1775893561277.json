@@ -1,0 +1,518 @@
+{
+  "filename": "peak_dataset_5.csv",
+  "parsedData": [
+    {
+      "Raman Shift": "400",
+      "Raman intensity": "836.3306",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "420",
+      "Raman intensity": "818.6049",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "440",
+      "Raman intensity": "813.3908",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "460",
+      "Raman intensity": "852.9332",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "480",
+      "Raman intensity": "900.2577",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "500",
+      "Raman intensity": "843.3634",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "520",
+      "Raman intensity": "772.6414",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "540",
+      "Raman intensity": "872.2279",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "560",
+      "Raman intensity": "820.0619",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "580",
+      "Raman intensity": "836.5142",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "600",
+      "Raman intensity": "930.703",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "620",
+      "Raman intensity": "972.67",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "640",
+      "Raman intensity": "870.0771",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "660",
+      "Raman intensity": "887.9573",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "680",
+      "Raman intensity": "768.0941",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "700",
+      "Raman intensity": "907.1704",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "720",
+      "Raman intensity": "769.4284",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "740",
+      "Raman intensity": "838.3507",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "760",
+      "Raman intensity": "863.0628",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "780",
+      "Raman intensity": "810.6612",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "800",
+      "Raman intensity": "744.1096",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "820",
+      "Raman intensity": "834.5999",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "840",
+      "Raman intensity": "861.4833",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "860",
+      "Raman intensity": "727.0565",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "880",
+      "Raman intensity": "805.8842",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "900",
+      "Raman intensity": "884.735",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "920",
+      "Raman intensity": "991.1215",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "940",
+      "Raman intensity": "1776.1488",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "960",
+      "Raman intensity": "5276.5348",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "980",
+      "Raman intensity": "12445.1978",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1000",
+      "Raman intensity": "16797.5091",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1020",
+      "Raman intensity": "12510.083",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1040",
+      "Raman intensity": "5168.281",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1060",
+      "Raman intensity": "1686.225",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1080",
+      "Raman intensity": "905.0295",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1100",
+      "Raman intensity": "793.8837",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1120",
+      "Raman intensity": "705.3629",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1140",
+      "Raman intensity": "776.9284",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1160",
+      "Raman intensity": "774.2465",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1180",
+      "Raman intensity": "721.8309",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1200",
+      "Raman intensity": "744.7683",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1220",
+      "Raman intensity": "776.5385",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1240",
+      "Raman intensity": "724.1897",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1260",
+      "Raman intensity": "769.6274",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1280",
+      "Raman intensity": "852.051",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1300",
+      "Raman intensity": "699.5412",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1320",
+      "Raman intensity": "744.7318",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1340",
+      "Raman intensity": "829.2119",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1360",
+      "Raman intensity": "703.0896",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1380",
+      "Raman intensity": "708.5368",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1400",
+      "Raman intensity": "761.9064",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1420",
+      "Raman intensity": "731.2793",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1440",
+      "Raman intensity": "820.9395",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1460",
+      "Raman intensity": "756.5177",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1480",
+      "Raman intensity": "797.9433",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1500",
+      "Raman intensity": "676.3938",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1520",
+      "Raman intensity": "634.515",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1540",
+      "Raman intensity": "813.9982",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1560",
+      "Raman intensity": "724.7198",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1580",
+      "Raman intensity": "692.1042",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1600",
+      "Raman intensity": "772.2383",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1620",
+      "Raman intensity": "719.8087",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1640",
+      "Raman intensity": "659.3683",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1660",
+      "Raman intensity": "678.9068",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1680",
+      "Raman intensity": "749.883",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1700",
+      "Raman intensity": "673.8519",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1720",
+      "Raman intensity": "702.1344",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1740",
+      "Raman intensity": "906.366",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1760",
+      "Raman intensity": "778.2841",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1780",
+      "Raman intensity": "813.7571",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1800",
+      "Raman intensity": "828.6997",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1820",
+      "Raman intensity": "713.7126",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1840",
+      "Raman intensity": "693.5738",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1860",
+      "Raman intensity": "804.2448",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1880",
+      "Raman intensity": "711.6273",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1900",
+      "Raman intensity": "919.2428",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1920",
+      "Raman intensity": "910.6708",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1940",
+      "Raman intensity": "793.9375",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1960",
+      "Raman intensity": "746.4424",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "1980",
+      "Raman intensity": "810.3953",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2000",
+      "Raman intensity": "901.2826",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2020",
+      "Raman intensity": "897.8444",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2040",
+      "Raman intensity": "896.3141",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2060",
+      "Raman intensity": "855.4772",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2080",
+      "Raman intensity": "815.4326",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2100",
+      "Raman intensity": "821.5587",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2120",
+      "Raman intensity": "785.6571",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2140",
+      "Raman intensity": "839.5962",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2160",
+      "Raman intensity": "759.6203",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2180",
+      "Raman intensity": "783.259",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2200",
+      "Raman intensity": "805.6888",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2220",
+      "Raman intensity": "887.0629",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2240",
+      "Raman intensity": "853.192",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2260",
+      "Raman intensity": "843.4764",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2280",
+      "Raman intensity": "791.3717",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2300",
+      "Raman intensity": "827.752",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2320",
+      "Raman intensity": "811.7351",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2340",
+      "Raman intensity": "803.1026",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2360",
+      "Raman intensity": "815.8126",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2380",
+      "Raman intensity": "928.8739",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    },
+    {
+      "Raman Shift": "2400",
+      "Raman intensity": "865.0512",
+      "Sample name": "Dataset E - Low baseline, strong isolated peak"
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]",
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}

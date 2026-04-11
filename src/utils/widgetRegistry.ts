@@ -17,6 +17,7 @@ export const widgetRegistry: WidgetType[] = [
   { id: 'hierarchical-clustering', name: 'Hierarchical Clustering', icon: 'Search', description: 'Agglomerative / Divisive clustering', category: 'processing' },
   { id: 'kmeans-analysis', name: 'KMeans Clustering', icon: 'Scatter3D', description: 'KMeans clustering (unsupervised)', category: 'processing' },
   { id: 'future-extraction', name: 'Future Extraction', icon: 'Filter', description: 'Simple forecasting (linear/naive)', category: 'processing' },
+  { id: 'predict', name: 'Predict', icon: 'Shield', description: 'Predict normal/abnormal', category: 'processing' },
   { id: 'spectral-segmentation', name: 'Spectral Segmentation', icon: 'Filter', description: 'K-means or threshold-based segmentation', category: 'processing' },
   { id: 'blank-remover', name: 'Blank Remover', icon: 'Filter', description: 'Data cleaning', category: 'processing' },
   { id: 'custom-code', name: 'Custom Code', icon: 'Code', description: 'Write and execute custom Python code', category: 'processing' },

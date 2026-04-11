@@ -38,6 +38,7 @@ const noiseRouter = require('./routes/noise');
 const pcaRouter = require('./routes/pca');
 const kmeansRouter = require('./routes/kmeans');
 const customCodeRouter = require('./routes/customCode');
+const pyExtractRouter = require('./routes/py_extract');
 
 const app = express();
 // Use PORT env if set, otherwise default to 5003 which our frontend expects
@@ -96,6 +97,12 @@ app.use('/api/noise-filter', noiseRouter);
 app.use('/api/custom-code', customCodeRouter);
 app.use('/api/pca', pcaRouter);
 app.use('/api/analytics', kmeansRouter);
+// Python extraction proxy: POST /api/extract -> forwarded to Python service
+app.use('/api/extract', pyExtractRouter);
+
+// Prediction router (forwards to Python service)
+const predictRouter = require('./routes/predict');
+app.use('/api/predict', predictRouter);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));

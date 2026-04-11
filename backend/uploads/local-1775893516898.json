@@ -1,0 +1,518 @@
+{
+  "filename": "peak_dataset_4.csv",
+  "parsedData": [
+    {
+      "Raman Shift": "400",
+      "Raman intensity": "827.6862",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "420",
+      "Raman intensity": "822.1778",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "440",
+      "Raman intensity": "820.3401",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "460",
+      "Raman intensity": "982.0398",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "480",
+      "Raman intensity": "2111.4362",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "500",
+      "Raman intensity": "3817.2937",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "520",
+      "Raman intensity": "2191.2987",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "540",
+      "Raman intensity": "924.2208",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "560",
+      "Raman intensity": "832.9946",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "580",
+      "Raman intensity": "850.0937",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "600",
+      "Raman intensity": "895.2791",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "620",
+      "Raman intensity": "817.2964",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "640",
+      "Raman intensity": "765.6272",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "660",
+      "Raman intensity": "823.3348",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "680",
+      "Raman intensity": "873.9787",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "700",
+      "Raman intensity": "829.3807",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "720",
+      "Raman intensity": "859.0715",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "740",
+      "Raman intensity": "798.8001",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "760",
+      "Raman intensity": "846.4785",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "780",
+      "Raman intensity": "802.0884",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "800",
+      "Raman intensity": "1920.6392",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "820",
+      "Raman intensity": "5084.2532",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "840",
+      "Raman intensity": "1783.2083",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "860",
+      "Raman intensity": "805.5022",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "880",
+      "Raman intensity": "778.0134",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "900",
+      "Raman intensity": "774.5666",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "920",
+      "Raman intensity": "755.4541",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "940",
+      "Raman intensity": "803.2273",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "960",
+      "Raman intensity": "858.6856",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "980",
+      "Raman intensity": "874.8352",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1000",
+      "Raman intensity": "782.6112",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1020",
+      "Raman intensity": "802.4234",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1040",
+      "Raman intensity": "862.3415",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1060",
+      "Raman intensity": "839.2572",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1080",
+      "Raman intensity": "752.1303",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1100",
+      "Raman intensity": "763.985",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1120",
+      "Raman intensity": "810.6549",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1140",
+      "Raman intensity": "791.6324",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1160",
+      "Raman intensity": "715.3826",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1180",
+      "Raman intensity": "727.3241",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1200",
+      "Raman intensity": "810.3507",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1220",
+      "Raman intensity": "724.1559",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1240",
+      "Raman intensity": "722.4525",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1260",
+      "Raman intensity": "750.2261",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1280",
+      "Raman intensity": "739.5298",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1300",
+      "Raman intensity": "709.5809",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1320",
+      "Raman intensity": "723.5638",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1340",
+      "Raman intensity": "740.1864",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1360",
+      "Raman intensity": "715.6174",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1380",
+      "Raman intensity": "770.8447",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1400",
+      "Raman intensity": "637.8609",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1420",
+      "Raman intensity": "777.6062",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1440",
+      "Raman intensity": "795.5543",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1460",
+      "Raman intensity": "778.7208",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1480",
+      "Raman intensity": "641.1217",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1500",
+      "Raman intensity": "718.0342",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1520",
+      "Raman intensity": "755.795",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1540",
+      "Raman intensity": "817.1058",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1560",
+      "Raman intensity": "1712.6156",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1580",
+      "Raman intensity": "4553.9427",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1600",
+      "Raman intensity": "1679.9994",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1620",
+      "Raman intensity": "785.4691",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1640",
+      "Raman intensity": "778.677",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1660",
+      "Raman intensity": "699.3308",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1680",
+      "Raman intensity": "744.7311",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1700",
+      "Raman intensity": "844.3143",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1720",
+      "Raman intensity": "732.2665",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1740",
+      "Raman intensity": "823.0228",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1760",
+      "Raman intensity": "849.8225",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1780",
+      "Raman intensity": "818.7051",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1800",
+      "Raman intensity": "758.5774",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1820",
+      "Raman intensity": "829.196",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1840",
+      "Raman intensity": "780.1772",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1860",
+      "Raman intensity": "777.7427",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1880",
+      "Raman intensity": "765.4731",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1900",
+      "Raman intensity": "753.7216",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1920",
+      "Raman intensity": "820.4724",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1940",
+      "Raman intensity": "798.3776",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1960",
+      "Raman intensity": "822.3567",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "1980",
+      "Raman intensity": "811.348",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2000",
+      "Raman intensity": "841.4128",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2020",
+      "Raman intensity": "778.5279",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2040",
+      "Raman intensity": "874.9026",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2060",
+      "Raman intensity": "776.869",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2080",
+      "Raman intensity": "848.4696",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2100",
+      "Raman intensity": "819.6412",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2120",
+      "Raman intensity": "805.1382",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2140",
+      "Raman intensity": "817.5728",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2160",
+      "Raman intensity": "850.1563",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2180",
+      "Raman intensity": "797.9179",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2200",
+      "Raman intensity": "805.8512",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2220",
+      "Raman intensity": "896.698",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2240",
+      "Raman intensity": "841.9456",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2260",
+      "Raman intensity": "843.18",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2280",
+      "Raman intensity": "770.9207",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2300",
+      "Raman intensity": "1141.0905",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2320",
+      "Raman intensity": "3361.1915",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2340",
+      "Raman intensity": "1155.1452",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2360",
+      "Raman intensity": "893.4979",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2380",
+      "Raman intensity": "856.3616",
+      "Sample name": "Dataset D - Multiple small peaks"
+    },
+    {
+      "Raman Shift": "2400",
+      "Raman intensity": "771.6689",
+      "Sample name": "Dataset D - Multiple small peaks"
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]",
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}

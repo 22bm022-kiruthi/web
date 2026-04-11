@@ -15,6 +15,7 @@ import {
   Code,
   Table,
   Search,
+  ShieldCheck,
 } from 'lucide-react';
 import widgetRegistry from '../utils/widgetRegistry';
 import DataTableModal from './DataTableModal';
@@ -565,6 +566,46 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
   const data: Record<string, any>[] = widget.data?.tableData || [];
   const columns: string[] = data.length > 0 ? Object.keys(data[0]) : [];
 
+  // Auto-predict: when a Predict widget receives new data, compute basic features and call backend
+  useEffect(() => {
+    // Only run for Predict widgets and when there's data
+    if (widget.type !== 'predict') return;
+    const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
+    const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.parsedData || widget.data?.tableData || widget.data?.tableDataProcessed || widget.data?.tableDataForecast || []);
+    const tableData = Array.isArray(best) ? best : [];
+    if (!tableData || tableData.length === 0) return;
+
+    // choose intensity column
+    const cols = Object.keys(tableData[0] || {});
+    let intensityKey = cols.find(c => /raman.*intens|intens.*raman|intensity/i.test(c)) || cols.find(c => !isNaN(Number(tableData[0][c])));
+    if (!intensityKey) return;
+    const vals = tableData.map(r => Number(r[intensityKey])).filter(v => !isNaN(v));
+    if (vals.length === 0) return;
+    const mx = Math.max(...vals);
+    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+    // simple peaks count
+    let peaks = 0;
+    for (let i = 1; i < vals.length - 1; i++) if (vals[i] > vals[i - 1] && vals[i] > vals[i + 1]) peaks++;
+
+    const payload = { peaks, max: mx, avg };
+    (async () => {
+      try {
+        const resp = await fetchToBackend('/api/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!resp.ok) {
+          console.warn('[Predict auto] backend returned error', resp.status);
+          return;
+        }
+        const body = await resp.json().catch(() => null);
+        const pred = body?.prediction || body?.result || null;
+        if (pred && onUpdateWidget) {
+          onUpdateWidget({ data: { ...(widget.data || {}), prediction: pred, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload, lastResponse: body } } });
+        }
+      } catch (err) {
+        console.warn('[Predict auto] error calling /api/predict', err && err.message ? err.message : err);
+      }
+    })();
+  }, [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast]);
+
   // Reset selections when mode or data changes
   useEffect(() => {
     setSelectedRows([]);
@@ -711,6 +752,75 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
     window.addEventListener('fetchSupabase', handler as EventListener);
     return () => window.removeEventListener('fetchSupabase', handler as EventListener);
   }, [widget.id, isSupabase, sbTableName]);
+
+  // Listen for programmatic prediction requests from the global Config modal
+  useEffect(() => {
+    const onPredictNow = (ev: any) => {
+      try {
+        const id = ev?.detail?.widgetId;
+        if (!id || id !== widget.id) return;
+        if (widget.type !== 'predict') return;
+
+        // compute same payload as auto-predict
+        const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
+        const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.parsedData || widget.data?.tableData || widget.data?.tableDataProcessed || widget.data?.tableDataForecast || []);
+        const tableData = Array.isArray(best) ? best : [];
+        if (!tableData || tableData.length === 0) {
+          console.warn('[predictNow] no data available for prediction for widget', widget.id);
+          return;
+        }
+        const cols = Object.keys(tableData[0] || {});
+        let intensityKey = cols.find(c => /raman.*intens|intens.*raman|intensity/i.test(c)) || cols.find(c => !isNaN(Number(tableData[0][c])));
+        if (!intensityKey) {
+          console.warn('[predictNow] no intensity column found for widget', widget.id);
+          return;
+        }
+        const vals = tableData.map(r => Number(r[intensityKey])).filter(v => !isNaN(v));
+        if (vals.length === 0) return;
+        const mx = Math.max(...vals);
+        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+        let peaks = 0;
+        for (let i = 1; i < vals.length - 1; i++) if (vals[i] > vals[i - 1] && vals[i] > vals[i + 1]) peaks++;
+
+        const payload = { peaks, max: mx, avg };
+        // Compute a local label using widget predictionMeta so UI gets immediate feedback
+        try {
+          const pm = widget.data?.predictionMeta || {};
+          const ruleLocal = pm.rule || 'max_threshold';
+          const maxThresholdLocal = typeof pm.maxThreshold === 'number' ? pm.maxThreshold : 5000;
+          const minPeaksLocal = typeof pm.minPeaks === 'number' ? pm.minPeaks : 1;
+          let localLabel = 'Normal';
+          if (ruleLocal === 'max_threshold') {
+            if (mx > maxThresholdLocal) localLabel = 'Abnormal';
+          } else {
+            if (peaks >= minPeaksLocal) localLabel = 'Abnormal';
+          }
+          try { if (onUpdateWidget) onUpdateWidget({ data: { ...(widget.data || {}), prediction: localLabel, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload } } }); } catch (e) { /* ignore */ }
+          try { window.dispatchEvent(new CustomEvent('predictDone', { detail: { widgetId: widget.id, prediction: localLabel, payload, source: 'local' } })); } catch (e) { /* ignore */ }
+        } catch (e) { /* ignore local label */ }
+
+        (async () => {
+          try {
+            const resp = await fetchToBackend('/api/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!resp.ok) {
+              console.warn('[predictNow] backend error', resp.status);
+              return;
+            }
+            const body = await resp.json().catch(() => null);
+            const pred = body?.prediction || body?.result || null;
+            if (pred && onUpdateWidget) {
+              onUpdateWidget({ data: { ...(widget.data || {}), prediction: pred, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload, lastResponse: body } } });
+            }
+            try { window.dispatchEvent(new CustomEvent('predictDone', { detail: { widgetId: widget.id, prediction: pred, raw: body, payload, source: 'server' } })); } catch (e) { /* ignore */ }
+          } catch (err) {
+            console.warn('[predictNow] request failed', err && err.message ? err.message : err);
+          }
+        })();
+      } catch (e) { console.error('[predictNow] handler error', e); }
+    };
+    window.addEventListener('predictNow', onPredictNow as EventListener);
+    return () => window.removeEventListener('predictNow', onPredictNow as EventListener);
+  }, [widget.id, widget.type, widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast]);
 
   // Connection handlers are provided by Canvas via props (onStartConnection/onEndConnection)
 
@@ -1456,14 +1566,26 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       const [threshold, setThreshold] = useState<number>(0.3);
       const [numPeaks, setNumPeaks] = useState<number>(5);
 
-      const runForecast = () => {
-        const tableData: Record<string, any>[] = widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || [];
+      const runForecast = async () => {
+        // Select the most complete data source (largest available array)
+        const candidateSources: Array<{ key: string; arr?: Record<string, any>[] }> = [
+          { key: 'parsedData', arr: widget.data?.parsedData },
+          { key: 'tableData', arr: widget.data?.tableData },
+          { key: 'tableDataProcessed', arr: widget.data?.tableDataProcessed },
+          { key: 'tableDataForecast', arr: widget.data?.tableDataForecast }
+        ];
+        const best = candidateSources.reduce((bestSoFar, cur) => {
+          const lenCur = Array.isArray(cur.arr) ? cur.arr.length : 0;
+          const lenBest = Array.isArray(bestSoFar.arr) ? bestSoFar.arr.length : 0;
+          return lenCur > lenBest ? cur : bestSoFar;
+        }, candidateSources[0]);
+        const tableData: Record<string, any>[] = best.arr || [];
         if (!tableData || tableData.length === 0) {
           alert('⚠️ No data available for forecasting!\n\nPlease connect a data source first.');
           return;
         }
 
-        console.log(`[Future Extraction] Starting ${method} with ${tableData.length} data points`);
+        console.log('[Future Extraction] data source lengths:', candidateSources.map(c => ({ k: c.key, len: Array.isArray(c.arr) ? c.arr.length : 0 })), 'using', best.key, 'len', tableData.length);
 
         // Feature Extraction Methods (Peak Detection, Statistical Features, Spectral Fingerprinting)
         if (method === 'peak_detection' || method === 'statistical_features' || method === 'spectral_fingerprint') {
@@ -1471,19 +1593,41 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           const intensityKeys = ['intensity', 'Raman intensity', 'Raman Intensity', 'raman intensity', 'Intensity', 'y', 'Y'];
           const shiftKeys = ['shift', 'Raman shift', 'Raman Shift', 'raman shift', 'Shift', 'x', 'X', 'wavenumber', 'Wavenumber'];
           
-          let intensityKey = intensityKeys.find(key => tableData[0] && tableData[0][key] !== undefined);
-          let shiftKey = shiftKeys.find(key => tableData[0] && tableData[0][key] !== undefined);
-          
+          // Robust column matching (case-insensitive, trim)
+          const normalizeKey = (candidates: string[], obj: Record<string, any>) => {
+            if (!obj) return undefined;
+            const keys = Object.keys(obj);
+            // exact match first
+            for (const cand of candidates) {
+              const found = keys.find(k => k === cand);
+              if (found) return found;
+            }
+            // case-insensitive / trimmed match
+            const lowerMap: Record<string, string> = {};
+            for (const k of keys) lowerMap[k.trim().toLowerCase()] = k;
+            for (const cand of candidates) {
+              const fk = lowerMap[cand.trim().toLowerCase()];
+              if (fk) return fk;
+            }
+            return undefined;
+          };
+
+          let intensityKey = normalizeKey(intensityKeys, tableData[0]);
+          let shiftKey = normalizeKey(shiftKeys, tableData[0]);
+
           if (!intensityKey) {
-            // Fallback: find first numeric column
             const cols = Object.keys(tableData[0] || {});
             intensityKey = cols.find(col => !isNaN(Number(tableData[0][col])));
           }
-          
+
           console.log(`[Future Extraction] Using columns: intensity="${intensityKey}", shift="${shiftKey}"`);
-          
-          const intensities = tableData.map(r => Number(r[intensityKey as string] || 0));
-          const shifts = tableData.map((r, i) => shiftKey ? Number(r[shiftKey] || i) : i);
+
+          const intensities = tableData.map(r => {
+            const v = intensityKey ? (r[intensityKey] ?? r[intensityKey]) : undefined;
+            const num = Number(v);
+            return isNaN(num) ? NaN : num;
+          });
+          const shifts = tableData.map((r, i) => shiftKey ? Number(r[shiftKey] ?? i) : i);
           
           // Validate data
           const validIntensities = intensities.filter(v => !isNaN(v) && v !== 0);
@@ -1497,127 +1641,191 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           
           let resultData: any[] = [];
           
+          
           if (method === 'peak_detection') {
-            // Peak Detection
-            console.log('[Peak Detection] Starting peak detection...');
-            console.log(`[Peak Detection] Parameters: threshold=${threshold}, minDistance=${minDistance}`);
-            console.log(`[Peak Detection] Data points: ${intensities.length}`);
-            console.log(`[Peak Detection] Intensity range: ${Math.min(...intensities)} to ${Math.max(...intensities)}`);
-            console.log(`[Peak Detection] Sample intensities (first 10):`, intensities.slice(0, 10));
-            
-            const peaks: any[] = [];
-            
-            for (let i = minDistance; i < intensities.length - minDistance; i++) {
-              let is_peak = true;
-              
-              if (intensities[i] <= threshold) continue;
-              
-              // Check left side
-              for (let j = 1; j <= minDistance; j++) {
-                if (intensities[i] <= intensities[i - j]) {
-                  is_peak = false;
-                  break;
-                }
-              }
-              
-              if (!is_peak) continue;
-              
-              // Check right side
-              for (let j = 1; j <= minDistance; j++) {
-                if (intensities[i] <= intensities[i + j]) {
-                  is_peak = false;
-                  break;
-                }
-              }
-              
-              if (is_peak) {
-                peaks.push({
-                  peak_number: peaks.length + 1,
-                  position: shifts[i],
-                  intensity: intensities[i],
-                  index: i
-                });
-                console.log(`[Peak Detection] Found peak #${peaks.length}: intensity=${intensities[i]} at position=${shifts[i]}`);
-              }
-            }
-            
-            // Sort by intensity
-            resultData = peaks.sort((a, b) => b.intensity - a.intensity);
-            console.log(`[Peak Detection] Found ${resultData.length} peaks`);
-            console.log('[Peak Detection] Final results:', resultData);
-            
-            if (resultData.length === 0) {
-              const dataMax = Math.max(...intensities);
-              const suggestedThreshold = dataMax > 10 ? (dataMax * 0.1).toFixed(2) : '0.3';
-              alert(`⚠️ No peaks found!\n\n` +
-                    `Current Settings:\n` +
-                    `• Threshold: ${threshold}\n` +
-                    `• Min Distance: ${minDistance}\n\n` +
-                    `Data Info:\n` +
-                    `• Range: ${Math.min(...intensities).toFixed(2)} to ${dataMax.toFixed(2)}\n` +
-                    `• Data points: ${intensities.length}\n\n` +
-                    `💡 SUGGESTIONS:\n` +
-                    `${dataMax > 10 ? `• Your data appears to be raw (not normalized)\n• Try threshold: ${suggestedThreshold}` : '• Lower threshold or minDistance'}`);
-              return;
-            }
-            
-            alert(`✅ Peak Detection Complete!\n\n` +
-                  `Found ${resultData.length} peaks\n\n` +
-                  `Strongest peak:\n` +
-                  `• Position: ${resultData[0].position.toFixed(2)}\n` +
-                  `• Intensity: ${resultData[0].intensity.toFixed(4)}\n\n` +
-                  `Check Data Table for all peaks!`);
+              // Peak Detection via backend service (with local fallback)
+              console.log('[Peak Detection] Starting peak detection (remote) ...');
+              console.log(`[Peak Detection] Parameters: threshold=${threshold}, minDistance=${minDistance}`);
 
-            
-          } else if (method === 'statistical_features') {
-            // Statistical Features
-            console.log('[Statistical Features] Calculating statistics...');
-            const mean_intensity = intensities.reduce((a, b) => a + b, 0) / intensities.length;
-            const sorted_intensities = [...intensities].sort((a, b) => a - b);
-            const median_intensity = sorted_intensities[Math.floor(sorted_intensities.length / 2)];
-            const variance = intensities.reduce((a, b) => a + Math.pow(b - mean_intensity, 2), 0) / intensities.length;
-            const std_intensity = Math.sqrt(variance);
-            const max_intensity = Math.max(...intensities);
-            const min_intensity = Math.min(...intensities);
-            const percentile_25 = sorted_intensities[Math.floor(sorted_intensities.length * 0.25)];
-            const percentile_75 = sorted_intensities[Math.floor(sorted_intensities.length * 0.75)];
-            const iqr = percentile_75 - percentile_25;
-            const skewness = std_intensity > 0 ? intensities.reduce((a, b) => a + Math.pow((b - mean_intensity) / std_intensity, 3), 0) / intensities.length : 0;
-            const kurtosis = std_intensity > 0 ? intensities.reduce((a, b) => a + Math.pow((b - mean_intensity) / std_intensity, 4), 0) / intensities.length : 0;
-            
-            // Calculate area using trapezoidal rule
-            let total_area = 0;
-            for (let i = 1; i < intensities.length; i++) {
-              total_area += (shifts[i] - shifts[i-1]) * (intensities[i] + intensities[i-1]) / 2;
+              const numericAll = intensities.filter(v => !isNaN(v));
+              const dataMinLog = numericAll.length > 0 ? Math.min(...numericAll) : 0;
+              const dataMaxLog = numericAll.length > 0 ? Math.max(...numericAll) : 0;
+              // If threshold is fraction (0-1), treat as fraction of max; otherwise use absolute
+              const effectiveThreshold = (threshold > 0 && threshold <= 1) ? (dataMaxLog * threshold) : threshold;
+
+              console.log('[Peak Detection] sample intensities (first 10):', intensities.slice(0, 10));
+              console.log('[Peak Detection] numeric count:', numericAll.length, 'min:', dataMinLog, 'max:', dataMaxLog, 'effectiveThreshold:', effectiveThreshold);
+
+              let apiResult: any = null;
+              try {
+                const resp = await fetch('/api/extract', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ signal: intensities, shifts: shifts, threshold: threshold, min_distance: minDistance })
+                });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                apiResult = await resp.json();
+                console.log('[Peak Detection] Remote result:', apiResult);
+              } catch (err) {
+                console.error('[Peak Detection] Remote API failed, falling back to local detection:', err);
+              }
+
+              if (apiResult && apiResult.peaks && apiResult.peaks.length > 0) {
+                resultData = apiResult.peaks.map((p: any, idx: number) => ({
+                  peak_number: idx + 1,
+                  position: p.position,
+                  intensity: p.intensity,
+                  index: p.index
+                }));
+              } else if (!apiResult) {
+                // Local fallback detection (improved)
+                const peaks: any[] = [];
+                const len = intensities.length;
+                const valid = intensities.map(v => (isNaN(v) ? 0 : v));
+                // compute local maxima using neighborhood
+                for (let i = minDistance; i < len - minDistance; i++) {
+                  const val = valid[i];
+                  if (val <= effectiveThreshold) continue;
+                  let leftOk = true;
+                  for (let j = 1; j <= minDistance; j++) {
+                    if (valid[i - j] >= val) { leftOk = false; break; }
+                  }
+                  if (!leftOk) continue;
+                  let rightOk = true;
+                  for (let j = 1; j <= minDistance; j++) {
+                    if (valid[i + j] >= val) { rightOk = false; break; }
+                  }
+                  if (!rightOk) continue;
+                  peaks.push({ peak_number: peaks.length + 1, position: shifts[i], intensity: val, index: i });
+                }
+
+                // If none found, try a relaxed search using 1-sample neighbors and lower threshold (10% of max)
+                if (peaks.length === 0 && dataMaxLog > 0) {
+                  const relaxedThreshold = Math.max(effectiveThreshold * 0.5, dataMaxLog * 0.05);
+                  for (let i = 1; i < len - 1; i++) {
+                    const val = valid[i];
+                    if (val <= relaxedThreshold) continue;
+                    if (valid[i] > valid[i - 1] && valid[i] > valid[i + 1]) {
+                      peaks.push({ peak_number: peaks.length + 1, position: shifts[i], intensity: val, index: i });
+                    }
+                  }
+                }
+
+                resultData = peaks.sort((a, b) => b.intensity - a.intensity);
+              } else {
+                resultData = [];
+              }
+
+              console.log(`[Peak Detection] Found ${resultData.length} peaks`);
+
+              if (resultData.length === 0) {
+                const numeric = validIntensities.length > 0 ? validIntensities : intensities.filter(v => !isNaN(v));
+                const dataMax = numeric.length > 0 ? Math.max(...numeric) : 0;
+                const dataMin = numeric.length > 0 ? Math.min(...numeric) : 0;
+                const suggestedThreshold = dataMax > 10 ? (dataMax * 0.1).toFixed(2) : '0.3';
+                    alert(`⚠️ No peaks found!\n\n` +
+                      `Current Settings:\n` +
+                      `• Threshold: ${threshold}\n` +
+                      `• Min Distance: ${minDistance}\n\n` +
+                      `Data Info:\n` +
+                      `• Range: ${dataMin.toFixed(2)} to ${dataMax.toFixed(2)}\n` +
+                      `• Data points: ${intensities.length}\n\n` +
+                      `💡 SUGGESTIONS:\n` +
+                      (dataMax > 10 ? ('• Your data appears to be raw (not normalized)\n• Try threshold: ' + suggestedThreshold) : '• Lower threshold or minDistance'));
+                return;
+              }
+
+              alert(`✅ Peak Detection Complete!\n\n` +
+                    `Found ${resultData.length} peaks\n\n` +
+                    `Strongest peak:\n` +
+                    `• Position: ${resultData[0].position.toFixed(2)}\n` +
+                    `• Intensity: ${resultData[0].intensity.toFixed(4)}\n\n` +
+                    `Check Data Table for all peaks!`);
+
+            } else if (method === 'statistical_features') {
+            // Compute statistical features
+            // Prefer explicit Raman intensity-like column if available
+            const colsTop = Object.keys(tableData[0] || {});
+            let preferredKey: string | undefined = intensityKey as any;
+            if (colsTop.length) {
+              const found = colsTop.find(k => /raman.*intens|intens.*raman/i.test(k));
+              if (found) preferredKey = found;
             }
-            
-            const features = {
-              mean_intensity,
-              median_intensity,
-              std_intensity,
-              variance,
-              max_intensity,
-              min_intensity,
-              intensity_range: max_intensity - min_intensity,
-              percentile_25,
-              percentile_75,
-              iqr,
-              skewness,
-              kurtosis,
-              total_area,
-              num_points: intensities.length,
-              shift_range: `${shifts[0].toFixed(1)} - ${shifts[shifts.length-1].toFixed(1)}`
+            console.log('[Statistical Features] chosen intensity key=', preferredKey, 'detected key=', intensityKey);
+            // Build numericAll from the preferredKey to avoid accidental column picks
+            const numericAll = tableData.map(r => {
+              const v = preferredKey ? r[preferredKey] : (intensityKey ? r[intensityKey] : undefined);
+              const n = Number(v);
+              return isNaN(n) ? null : n;
+            }).filter((v: number | null) => v !== null) as number[];
+            console.log('[Statistical Features] sample intensities (first 20)=', numericAll.slice(0, 20));
+            const n = numericAll.length;
+            const sum = numericAll.reduce((a, b) => a + b, 0);
+            const mean_intensity = n ? sum / n : 0;
+            const sorted = numericAll.slice().sort((a, b) => a - b);
+            const median_intensity = n ? (n % 2 === 1 ? sorted[(n - 1) / 2] : (sorted[n / 2 - 1] + sorted[n / 2]) / 2) : 0;
+            const variance = n ? numericAll.reduce((acc, v) => acc + Math.pow(v - mean_intensity, 2), 0) / n : 0;
+            const std_intensity = Math.sqrt(variance);
+            const min_intensity = n ? Math.min(...numericAll) : 0;
+            const max_intensity = n ? Math.max(...numericAll) : 0;
+            const range_intensity = max_intensity - min_intensity;
+            const percentile = (arr: number[], p: number) => {
+              if (!arr.length) return 0;
+              const idx = (arr.length - 1) * p;
+              const lo = Math.floor(idx);
+              const hi = Math.ceil(idx);
+              if (lo === hi) return arr[lo];
+              return arr[lo] + (arr[hi] - arr[lo]) * (idx - lo);
             };
-            
-            resultData = Object.entries(features).map(([key, value]) => ({
-              feature: key,
-              value: typeof value === 'number' ? parseFloat(value.toFixed(4)) : value,
-              category: 'statistics'
-            }));
-            
-            console.log(`[Statistical Features] Extracted ${resultData.length} features`);
-            alert(`📊 Statistical Features Extracted!\n\nTotal features: ${resultData.length}\nMean: ${mean_intensity.toFixed(4)}\nStd Dev: ${std_intensity.toFixed(4)}\nRange: ${(max_intensity - min_intensity).toFixed(4)}`);
-            
+            const p25 = percentile(sorted, 0.25);
+            const p75 = percentile(sorted, 0.75);
+            const iqr = p75 - p25;
+            // Skewness & kurtosis (population moments)
+            const m2 = n ? numericAll.reduce((acc, v) => acc + Math.pow(v - mean_intensity, 2), 0) / n : 0;
+            const m3 = n ? numericAll.reduce((acc, v) => acc + Math.pow(v - mean_intensity, 3), 0) / n : 0;
+            const m4 = n ? numericAll.reduce((acc, v) => acc + Math.pow(v - mean_intensity, 4), 0) / n : 0;
+            const skewness = m2 > 0 ? m3 / Math.pow(m2, 1.5) : 0;
+            const kurtosis = m2 > 0 ? (m4 / (m2 * m2) - 3) : 0; // excess kurtosis
+            // Total area (trapezoidal integration if shifts available)
+            let total_area = 0;
+            try {
+              for (let i = 0; i < Math.max(0, Math.min(shifts.length, intensities.length) - 1); i++) {
+                const dx = (Number(shifts[i + 1]) - Number(shifts[i]));
+                total_area += ((Number(intensities[i]) + Number(intensities[i + 1])) / 2) * dx;
+              }
+            } catch (e) {
+              total_area = numericAll.reduce((a, b) => a + b, 0);
+            }
+            const data_density = intensities.length > 0 ? (numericAll.length / intensities.length) : 0;
+            const rms = n ? Math.sqrt(numericAll.reduce((a, b) => a + b * b, 0) / n) : 0;
+
+            console.log('[Statistical Features] computed: n=', n, 'sum=', sum, 'mean=', mean_intensity, 'min=', min_intensity, 'max=', max_intensity, 'std=', std_intensity);
+            const stats = [
+              { feature: 'mean_intensity', value: Number(mean_intensity), category: 'statistics' },
+              { feature: 'average_intensity', value: Number(mean_intensity), category: 'statistics' },
+              { feature: 'median_intensity', value: Number(median_intensity), category: 'statistics' },
+              { feature: 'std_intensity', value: Number(std_intensity), category: 'statistics' },
+              { feature: 'variance_intensity', value: Number(variance), category: 'statistics' },
+              { feature: 'min_intensity', value: Number(min_intensity), category: 'statistics' },
+              { feature: 'max_intensity', value: Number(max_intensity), category: 'statistics' },
+              { feature: 'maximum_intensity', value: Number(max_intensity), category: 'statistics' },
+              { feature: 'range_intensity', value: Number(range_intensity), category: 'statistics' },
+              { feature: 'iqr_intensity', value: Number(iqr), category: 'statistics' },
+              { feature: 'percentile_25', value: Number(p25), category: 'statistics' },
+              { feature: 'percentile_75', value: Number(p75), category: 'statistics' },
+              { feature: 'skewness', value: Number(skewness), category: 'statistics' },
+              { feature: 'kurtosis', value: Number(kurtosis), category: 'statistics' },
+              { feature: 'total_area', value: Number(total_area), category: 'statistics' },
+              { feature: 'data_density', value: Number(data_density), category: 'statistics' },
+              { feature: 'rms_intensity', value: Number(rms), category: 'statistics' },
+              { feature: 'num_points', value: Number(n), category: 'statistics' },
+              { feature: 'sum_intensity', value: Number(sum), category: 'statistics' }
+            ];
+
+            resultData = stats.map((s, i) => ({ feature: s.feature, value: Number(s.value), category: s.category }));
+
+            alert(`📊 Statistical Features Extracted!\n\nTotal features: ${resultData.length}\nMean (Average): ${mean_intensity.toFixed(4)}\nMaximum: ${max_intensity.toFixed(4)}\nStd Dev: ${std_intensity.toFixed(4)}\nRange: ${range_intensity.toFixed(4)}`);
+
           } else if (method === 'spectral_fingerprint') {
             // Spectral Fingerprinting
             console.log('[Spectral Fingerprint] Creating fingerprint...');
@@ -1685,11 +1893,14 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
             console.log('[Spectral Fingerprint] Final results:', resultData);
             
             if (fingerprint_peaks.length === 0) {
+              const numeric = validIntensities.length > 0 ? validIntensities : intensities.filter(v => !isNaN(v));
+              const dataMax = numeric.length > 0 ? Math.max(...numeric) : 0;
+              const dataMin = numeric.length > 0 ? Math.min(...numeric) : 0;
               alert(`⚠️ No peaks found for fingerprint!\n\n` +
                     `Total peaks detected: ${peaks.length}\n` +
                     `Requested top: ${numPeaks}\n` +
-                    `Data range: ${Math.min(...intensities).toFixed(2)} to ${Math.max(...intensities).toFixed(2)}\n\n` +
-                    `� Try lowering minDistance (currently ${minDistance})`);
+                    `Data range: ${dataMin.toFixed(2)} to ${dataMax.toFixed(2)}\n\n` +
+                    `• Try lowering minDistance (currently ${minDistance})`);
               return;
             }
             
@@ -1877,6 +2088,34 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
         alert(`✅ Forecast Complete!\n\nMethod: ${method}\nGenerated: ${forecastRows.length} future points\n\nConnect to Line Chart to visualize!`);
       };
 
+      // Preview statistics for the Parameters modal when Statistical Features is selected
+      const getBestTableData = () => {
+        const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
+        let best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.parsedData || widget.data?.tableData || widget.data?.tableDataProcessed || widget.data?.tableDataForecast || []);
+        return Array.isArray(best) ? best : [];
+      };
+
+      const getPreviewStats = () => {
+        const tableDataLive = getBestTableData();
+        if (!tableDataLive || tableDataLive.length === 0) return null;
+        const intensityKeys = ['intensity', 'Raman intensity', 'Raman Intensity', 'raman intensity', 'Intensity', 'y', 'Y'];
+        const cols = Object.keys(tableDataLive[0] || {});
+        let intensityKey = intensityKeys.find(k => tableDataLive[0] && tableDataLive[0][k] !== undefined);
+        if (!intensityKey) intensityKey = cols.find(col => !isNaN(Number(tableDataLive[0][col])));
+        if (!intensityKey) return null;
+        const vals = tableDataLive.map(r => {
+          const v = r[intensityKey];
+          const n = Number(v);
+          return isNaN(n) ? null : n;
+        }).filter((v: number | null) => v !== null) as number[];
+        if (vals.length === 0) return null;
+        const sum = vals.reduce((a, b) => a + b, 0);
+        const mean = sum / vals.length;
+        const max = Math.max(...vals);
+        console.log('[Preview Stats] source length=', tableDataLive.length, 'intensityKey=', intensityKey, 'count=', vals.length);
+        return { mean, max, count: vals.length };
+      };
+
       const colors = getWidgetColors('future-extraction');
       const hasData = widget.data?.tableDataProcessed || widget.data?.tableDataForecast;
 
@@ -2000,6 +2239,25 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                     <p className="text-xs text-gray-500">Min points between peaks</p>
                   </div>
                 </>
+              )}
+
+              {method === 'statistical_features' && (
+                <div className="p-3 bg-gray-50 rounded border">
+                  <div className="text-sm font-medium">Dataset statistics preview</div>
+                  <div className="mt-2 text-sm">
+                    {(() => {
+                      const ps = getPreviewStats();
+                      if (!ps) return <div className="text-xs text-gray-500">No numeric intensity data available to preview.</div>;
+                      return (
+                        <div className="space-y-1">
+                          <div><strong>Mean:</strong> {ps.mean.toFixed(2)}</div>
+                          <div><strong>Maximum:</strong> {ps.max.toFixed(2)}</div>
+                          <div className="text-xs text-gray-500">Data points: {ps.count}</div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
               )}
 
               {method === 'spectral_fingerprint' && (
@@ -2828,6 +3086,128 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
             </button>
           </div>
         </OrangeStyleWidget>
+      );
+    }
+    if (widget.type === 'predict') {
+        const [showPredictParams, setShowPredictParams] = useState(false);
+        const [rule, setRule] = useState<'max_threshold' | 'peaks_count'>('max_threshold');
+        const [maxThreshold, setMaxThreshold] = useState<number>(5000);
+        const [minPeaks, setMinPeaks] = useState<number>(1);
+        const [predictionResult, setPredictionResult] = useState<string | null>((widget.data && widget.data.prediction) || null);
+
+        // Keep local predictionResult in sync with external widget.data.prediction
+        useEffect(() => {
+          try {
+            const p = widget.data?.prediction || null;
+            if (p && p !== predictionResult) setPredictionResult(p);
+          } catch (e) { /* ignore */ }
+        }, [widget.data?.prediction]);
+
+      const runPrediction = () => {
+        const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
+        const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.parsedData || widget.data?.tableData || widget.data?.tableDataProcessed || widget.data?.tableDataForecast || []);
+        const tableData = Array.isArray(best) ? best : [];
+        if (!tableData || tableData.length === 0) { alert('No data available to predict'); return; }
+
+        // find intensity column
+        const cols = Object.keys(tableData[0] || {});
+        let intensityKey = cols.find(c => /raman.*intens|intens.*raman|intensity/i.test(c)) || cols.find(c => !isNaN(Number(tableData[0][c])));
+        if (!intensityKey) { alert('No numeric intensity column found'); return; }
+        const vals = tableData.map(r => Number(r[intensityKey])).filter(v => !isNaN(v));
+        const mx = vals.length ? Math.max(...vals) : 0;
+        // detect peaks simple
+        const peaksIdx: number[] = [];
+        for (let i = 1; i < vals.length-1; i++) if (vals[i] > vals[i-1] && vals[i] > vals[i+1]) peaksIdx.push(i);
+
+        let label = 'Normal';
+        if (rule === 'max_threshold') {
+          if (mx > maxThreshold) label = 'Abnormal';
+        } else {
+          if (peaksIdx.length >= minPeaks) label = 'Abnormal';
+        }
+
+        const avg = vals.length ? (vals.reduce((a,b) => a + b, 0) / vals.length) : 0;
+        setPredictionResult(label);
+        const meta = { rule, maxThreshold, minPeaks, maxValue: mx, numPeaks: peaksIdx.length, avg };
+        if (onUpdateWidget) onUpdateWidget({ data: { ...(widget.data || {}), prediction: label, predictionMeta: meta } });
+        // Send prediction to backend (peaks/max/avg) and update widget with response
+        (async () => {
+          try {
+            const payload = { peaks: peaksIdx.length, max: mx, avg };
+            const resp = await fetchToBackend('/api/predict', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            if (!resp.ok) {
+              console.warn('[Predict] backend returned error', resp.status);
+            }
+            const j = await resp.json().catch(() => null);
+            console.log('[Predict] backend response:', resp.status, j);
+            const serverPred = j?.prediction || null;
+            if (serverPred) {
+              setPredictionResult(serverPred);
+              try { setShowPredictParams(false); } catch (e) { /* ignore */ }
+              if (onUpdateWidget) onUpdateWidget({ data: { ...(widget.data || {}), prediction: serverPred, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload, lastResponse: j } } });
+              try { window.dispatchEvent(new CustomEvent('predictDone', { detail: { widgetId: widget.id, prediction: serverPred, raw: j, payload } })); } catch (e) { /* ignore */ }
+            }
+          } catch (err) {
+            console.warn('[Predict] failed to POST prediction to backend:', err && err.message ? err.message : err);
+          }
+        })();
+        try { setShowPredictParams(false); } catch (e) { /* ignore */ }
+        try { window.dispatchEvent(new CustomEvent('predictDone', { detail: { widgetId: widget.id, prediction: label, payload } })); } catch (e) { /* ignore */ }
+        alert(`Prediction: ${label}\nMax: ${mx.toFixed(2)}\nPeaks: ${peaksIdx.length}`);
+      };
+
+      const colors = getWidgetColors('predict');
+
+      return (
+        <>
+          <div onClick={(e) => { try { e.stopPropagation(); if (widget.type === 'predict') { onOpenConfig && onOpenConfig(); } else { onOpenConfig && onOpenConfig(); } } catch (err) { console.warn('[CanvasWidget] click handler error', err); } }}>
+          <OrangeStyleWidget
+            icon={ShieldCheck}
+            label="Predict"
+            statusText={predictionResult || ''}
+            statusColor={predictionResult === 'Abnormal' ? 'orange' : (predictionResult ? 'green' : 'gray')}
+            mainColor={colors.main}
+            lightColor={colors.light}
+            bgColor={colors.bg}
+            alwaysShowControls={true}
+          />
+          </div>
+
+          <ParametersModal isOpen={showPredictParams} onClose={() => setShowPredictParams(false)} title="Predict Parameters">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium">Rule</label>
+                <select value={rule} onChange={(e) => setRule(e.target.value as any)} className="w-full px-3 py-2 border rounded">
+                  <option value="max_threshold">Max value greater than threshold — Abnormal</option>
+                  <option value="peaks_count">Number of peaks greater-or-equal to minimum — Abnormal</option>
+                </select>
+              </div>
+
+              {rule === 'max_threshold' && (
+                <div>
+                  <label className="block text-sm font-medium">Max Threshold</label>
+                  <input type="number" value={maxThreshold} onChange={(e) => setMaxThreshold(Number(e.target.value))} className="w-full px-3 py-2 border rounded" />
+                </div>
+              )}
+
+              {rule === 'peaks_count' && (
+                <div>
+                  <label className="block text-sm font-medium">Min Peaks</label>
+                  <input type="number" value={minPeaks} onChange={(e) => setMinPeaks(Number(e.target.value))} className="w-full px-3 py-2 border rounded" />
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button onClick={(e) => { e.stopPropagation(); runPrediction(); }} className="px-3 py-1 bg-blue-600 text-white rounded">Compute</button>
+                <button onClick={(e) => { e.stopPropagation(); runPrediction(); setShowPredictParams(false); }} className="px-3 py-1 bg-green-600 text-white rounded">Apply & Close</button>
+              </div>
+            </div>
+          </ParametersModal>
+        </>
       );
     }
     if (widget.type === 'line-chart') {
