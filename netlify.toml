@@ -8,6 +8,13 @@
 # The frontend will use `VITE_API_URL` when available; otherwise it falls back
 # to relative paths (dev proxy) and localhost for local testing.
 
+# Proxy API routes to Netlify Functions (functions will live under netlify/functions)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+  force = false
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
