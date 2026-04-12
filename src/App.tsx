@@ -386,14 +386,43 @@ const App: React.FC = () => {
     }
     setWidgets((prev: Widget[]) => prev.map((w: Widget) => {
       if (w.id !== id) return w;
+      // Preserve existing type unless caller explicitly changed it
+      const safeType = (changes as any).type || w.type;
       // Deep merge the 'data' property to avoid overwriting existing fields like tableData
-      const merged = { ...w, ...changes };
+      const merged = { ...w, ...changes, type: safeType } as Widget;
       if (changes.data) {
         merged.data = { ...(w.data || {}), ...changes.data };
+      }
+      // Clamp/validate position if provided to avoid NaN or off-canvas moves
+      if ((merged as any).position) {
+        const pos = (merged as any).position as any;
+        const x = Number(pos.x);
+        const y = Number(pos.y);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) {
+          // fallback to previous position
+          merged.position = { ...(w.position || {}) };
+        } else {
+          merged.position = { x: Math.max(0, x), y: Math.max(0, y) };
+        }
       }
       return merged;
     }));
   };
+
+  // Enhanced removal debug: log when widgets are removed so we can trace unexpected disappearance
+  const prevWidgetsRef = React.useRef<Widget[] | null>(null);
+  React.useEffect(() => {
+    const prev = prevWidgetsRef.current;
+    if (prev) {
+      const prevIds = new Set(prev.map(w => w.id));
+      const curIds = new Set(widgets.map(w => w.id));
+      const removed = prev.filter(w => !curIds.has(w.id));
+      if (removed.length > 0) {
+        console.warn('[App] Widgets removed:', removed.map(r => ({ id: r.id, type: r.type })), 'Current widgets:', widgets.map(w => ({ id: w.id, type: w.type })) );
+      }
+    }
+    prevWidgetsRef.current = widgets.slice();
+  }, [widgets]);
 
   const onAddWidget = (type: string, position: { x: number; y: number }, initialData?: any) => {
     const id = `widget-${Date.now()}`;
