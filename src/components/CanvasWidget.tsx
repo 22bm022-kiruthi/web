@@ -32,6 +32,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import OrangeStyleWidget from './OrangeStyleWidget';
 import { getWidgetColors, getWidgetLabel, getWidgetCategory } from '../config/orangeColors';
 import ParametersModal from './ParametersModal';
+import { computeSignalMetrics } from '../utils/signalMetrics';
 
 const iconMap: Record<string, React.ComponentType<any>> = {
   'file-upload': Upload,
@@ -394,8 +395,19 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
     // Try the relative path first so Vite dev server proxy (if configured) can forward the request.
     // Fallback candidates include IPv4 localhost and hostname. Increase timeout slightly for local services.
     const perCandidateTimeout = 5000; // ms
-    // Try the relative path first (Vite proxy). If that fails try explicit backend hosts.
-    const candidates = [path, `http://127.0.0.1:5003${path}`, `http://localhost:5003${path}`];
+    // Build candidate backend endpoints.
+    // Priority order:
+    // 1) Explicit production backend from `VITE_API_URL` (set at build time)
+    // 2) Relative path (allows Vite dev proxy to forward requests locally)
+    // 3) Direct IPv4/localhost fallbacks (useful for local dev without proxy)
+    const envApi = (import.meta.env.VITE_API_URL || '').toString().trim();
+    const candidates = [] as string[];
+    if (envApi) {
+      // allow either a base URL (e.g. https://api.example.com) or already include /api
+      const base = envApi.replace(/\/$/, '');
+      candidates.push(`${base}${path}`);
+    }
+    candidates.push(path, `http://127.0.0.1:5003${path}`, `http://localhost:5003${path}`);
     let lastError: any = null;
     for (const url of candidates) {
       // use AbortController to avoid long hanging fetches
@@ -1481,6 +1493,34 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
               )}
 
               {/* Action buttons */}
+              {/* Computed metrics preview */}
+              {(method === 'peak_detection' || method === 'statistical_features' || method === 'spectral_fingerprint') && computedMetrics && (
+                <div className="p-3 bg-white rounded border mb-2">
+                  <div className="text-sm font-medium">Computed Metrics</div>
+                  <div className="mt-2 text-sm space-y-1">
+                    <div><strong>Std Dev:</strong> {typeof computedMetrics.std === 'number' ? computedMetrics.std.toFixed(4) : String(computedMetrics.std)}</div>
+                    <div><strong>AUC:</strong> {typeof computedMetrics.auc === 'number' ? computedMetrics.auc.toFixed(4) : String(computedMetrics.auc)}</div>
+                    <div><strong>Peaks:</strong></div>
+                    <div className="text-xs text-gray-600">
+                      {computedMetrics.peaks && computedMetrics.peaks.length ? (
+                        computedMetrics.peaks.map((p: any, i: number) => (
+                          <div key={i}>#{i + 1}: pos={Number(p.position).toFixed(3)} val={Number(p.value).toFixed(3)} {p.fwhm ? `(fwhm=${Number(p.fwhm).toFixed(3)})` : ''}</div>
+                        ))
+                      ) : (
+                        <div>No peaks detected</div>
+                      )}
+                    </div>
+                    {/* Raw debug JSON for computed metrics (helps inspect AUC, fwhm values) */}
+                    <div className="mt-2">
+                      <details>
+                        <summary className="text-xs text-gray-700">Show raw metrics JSON</summary>
+                        <pre className="text-xs p-2 bg-gray-100 rounded max-h-48 overflow-auto">{JSON.stringify(computedMetrics, null, 2)}</pre>
+                      </details>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-2 pt-2">
                 <button 
                   type="button" 
@@ -1565,6 +1605,80 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       const [minDistance, setMinDistance] = useState<number>(5);
       const [threshold, setThreshold] = useState<number>(0.3);
       const [numPeaks, setNumPeaks] = useState<number>(5);
+      const [computedMetrics, setComputedMetrics] = useState<any>(widget.data?.featureExtractionMetrics ?? null);
+      // Auto-compute metrics when modal opens or parameters that affect detection change
+      useEffect(() => {
+        const shouldCompute = showParameters && ['peak_detection', 'statistical_features', 'spectral_fingerprint'].includes(method);
+        if (!shouldCompute) return;
+
+        // Select best table data like runForecast
+        const candidateSources: Array<{ key: string; arr?: Record<string, any>[] }> = [
+          { key: 'parsedData', arr: widget.data?.parsedData },
+          { key: 'tableData', arr: widget.data?.tableData },
+          { key: 'tableDataProcessed', arr: widget.data?.tableDataProcessed },
+          { key: 'tableDataForecast', arr: widget.data?.tableDataForecast }
+        ];
+        const best = candidateSources.reduce((bestSoFar, cur) => {
+          const lenCur = Array.isArray(cur.arr) ? cur.arr.length : 0;
+          const lenBest = Array.isArray(bestSoFar.arr) ? bestSoFar.arr.length : 0;
+          return lenCur > lenBest ? cur : bestSoFar;
+        }, candidateSources[0]);
+        const tableData: Record<string, any>[] = best.arr || [];
+        if (!tableData || tableData.length === 0) return;
+
+        // column heuristics same as runForecast
+        const intensityKeys = ['intensity', 'Raman intensity', 'Raman Intensity', 'raman intensity', 'Intensity', 'y', 'Y'];
+        const shiftKeys = ['shift', 'Raman shift', 'Raman Shift', 'raman shift', 'Shift', 'x', 'X', 'wavenumber', 'Wavenumber'];
+        const normalizeKey = (candidates: string[], obj: Record<string, any>) => {
+          if (!obj) return undefined;
+          const keys = Object.keys(obj);
+          for (const cand of candidates) {
+            const found = keys.find(k => k === cand);
+            if (found) return found;
+          }
+          const lowerMap: Record<string, string> = {};
+          for (const k of keys) lowerMap[k.trim().toLowerCase()] = k;
+          for (const cand of candidates) {
+            const fk = lowerMap[cand.trim().toLowerCase()];
+            if (fk) return fk;
+          }
+          return undefined;
+        };
+        let intensityKey = normalizeKey(intensityKeys, tableData[0]);
+        let shiftKey = normalizeKey(shiftKeys, tableData[0]);
+        if (!intensityKey) {
+          const cols = Object.keys(tableData[0] || {});
+          intensityKey = cols.find(col => !isNaN(Number(tableData[0][col])));
+        }
+
+        const intensities = tableData.map(r => {
+          const v = intensityKey ? (r[intensityKey] ?? r[intensityKey]) : undefined;
+          const num = Number(v);
+          return isNaN(num) ? NaN : num;
+        });
+        const shifts = tableData.map((r, i) => shiftKey ? Number(r[shiftKey] ?? i) : i);
+
+        const xArr: number[] = [];
+        const yArr: number[] = [];
+        for (let i = 0; i < intensities.length; i++) {
+          const v = intensities[i];
+          if (!isNaN(v)) {
+            xArr.push(shifts[i]);
+            yArr.push(v);
+          }
+        }
+
+        const numericAll = yArr.length > 0 ? yArr : intensities.filter(v => !isNaN(v));
+        const dataMaxLog = numericAll.length > 0 ? Math.max(...numericAll) : 0;
+        const effectiveThreshold = (threshold > 0 && threshold <= 1) ? (dataMaxLog * threshold) : threshold;
+
+        try {
+          const metrics = computeSignalMetrics(xArr, yArr, { minDistance: minDistance, minProminence: effectiveThreshold });
+          setComputedMetrics(metrics);
+        } catch (e) {
+          console.warn('[Future Extraction] auto computeSignalMetrics failed:', e);
+        }
+      }, [showParameters, method, minDistance, threshold, widget.data]);
 
       const runForecast = async () => {
         // Select the most complete data source (largest available array)
@@ -1637,6 +1751,32 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           if (validIntensities.length === 0) {
             alert(`⚠️ No valid intensity data found!\n\nPossible issues:\n1. Wrong data source\n2. Column names don't match\n3. Data not loaded\n\nAvailable columns: ${Object.keys(tableData[0] || {}).join(', ')}`);
             return;
+          }
+
+          // Build filtered x/y arrays for metric computations
+          const xArr: number[] = [];
+          const yArr: number[] = [];
+          for (let i = 0; i < intensities.length; i++) {
+            const v = intensities[i];
+            if (!isNaN(v)) {
+              xArr.push(shifts[i]);
+              yArr.push(v);
+            }
+          }
+
+          // Effective threshold for prominence (used by metrics/peak finding)
+          const numericAll = yArr.length > 0 ? yArr : intensities.filter(v => !isNaN(v));
+          const dataMaxLog = numericAll.length > 0 ? Math.max(...numericAll) : 0;
+          const effectiveThreshold = (threshold > 0 && threshold <= 1) ? (dataMaxLog * threshold) : threshold;
+
+          // Compute signal-level metrics (peaks, std, auc, peak widths)
+          let featureExtractionMetrics: any = null;
+          try {
+            featureExtractionMetrics = computeSignalMetrics(xArr, yArr, { minDistance: minDistance, minProminence: effectiveThreshold });
+            console.log('[Future Extraction] Computed signal metrics:', featureExtractionMetrics);
+            setComputedMetrics(featureExtractionMetrics);
+          } catch (e) {
+            console.warn('[Future Extraction] computeSignalMetrics failed:', e);
           }
           
           let resultData: any[] = [];
@@ -1734,13 +1874,29 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                       (dataMax > 10 ? ('• Your data appears to be raw (not normalized)\n• Try threshold: ' + suggestedThreshold) : '• Lower threshold or minDistance'));
                 return;
               }
+              // Build extra details if metrics present
+              let extraDetails = '';
+              try {
+                if (featureExtractionMetrics) {
+                  if (typeof featureExtractionMetrics.auc === 'number') {
+                    extraDetails += `• AUC: ${featureExtractionMetrics.auc.toFixed(4)}\n`;
+                  }
+                  if (featureExtractionMetrics.peaks && featureExtractionMetrics.peaks.length > 0) {
+                    const top = featureExtractionMetrics.peaks[0];
+                    if (top.fwhm) extraDetails += `• Top peak width (FWHM): ${Number(top.fwhm).toFixed(4)}\n`;
+                  }
+                }
+              } catch (e) {
+                // ignore
+              }
 
               alert(`✅ Peak Detection Complete!\n\n` +
                     `Found ${resultData.length} peaks\n\n` +
                     `Strongest peak:\n` +
                     `• Position: ${resultData[0].position.toFixed(2)}\n` +
-                    `• Intensity: ${resultData[0].intensity.toFixed(4)}\n\n` +
-                    `Check Data Table for all peaks!`);
+                    `• Intensity: ${resultData[0].intensity.toFixed(4)}\n` +
+                    (extraDetails ? `\n${extraDetails}` : '') +
+                    `\nCheck Data Table for all peaks!`);
 
             } else if (method === 'statistical_features') {
             // Compute statistical features
@@ -1824,7 +1980,53 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
 
             resultData = stats.map((s, i) => ({ feature: s.feature, value: Number(s.value), category: s.category }));
 
-            alert(`📊 Statistical Features Extracted!\n\nTotal features: ${resultData.length}\nMean (Average): ${mean_intensity.toFixed(4)}\nMaximum: ${max_intensity.toFixed(4)}\nStd Dev: ${std_intensity.toFixed(4)}\nRange: ${range_intensity.toFixed(4)}`);
+            // Compute and include AUC / peak widths summary in the alert
+            let statsExtra = '';
+            try {
+              const xArr: number[] = [];
+              const yArr: number[] = [];
+              for (let i = 0; i < intensities.length; i++) {
+                const v = Number(intensities[i]);
+                if (!isNaN(v)) {
+                  xArr.push(shifts[i]);
+                  yArr.push(v);
+                }
+              }
+              const dataMaxLog = yArr.length > 0 ? Math.max(...yArr) : 0;
+              const effectiveThreshold = (threshold > 0 && threshold <= 1) ? (dataMaxLog * threshold) : threshold;
+              const metrics = computeSignalMetrics(xArr, yArr, { minDistance: minDistance, minProminence: effectiveThreshold });
+              if (typeof metrics.auc === 'number') statsExtra += `\nAUC: ${metrics.auc.toFixed(4)}`;
+              if (metrics.peaks && metrics.peaks.length > 0) {
+                const top = metrics.peaks[0];
+                if (top.fwhm) statsExtra += `\nTop peak width (FWHM): ${Number(top.fwhm).toFixed(4)}`;
+                statsExtra += `\nDetected peaks: ${metrics.peaks.length}`;
+              }
+              // expose into UI state as well
+              setComputedMetrics({ std: std_intensity, auc: total_area, peaks: metrics.peaks });
+            } catch (e) {
+              console.warn('[Statistical Features] failed to compute display metrics', e);
+            }
+
+            alert(`📊 Statistical Features Extracted!\n\nTotal features: ${resultData.length}\nMean (Average): ${mean_intensity.toFixed(4)}\nMaximum: ${max_intensity.toFixed(4)}\nStd Dev: ${std_intensity.toFixed(4)}\nRange: ${range_intensity.toFixed(4)}${statsExtra}`);
+
+            // Also compute and expose metrics (AUC, peaks, peak widths) for UI display
+            try {
+              const xArr: number[] = [];
+              const yArr: number[] = [];
+              for (let i = 0; i < intensities.length; i++) {
+                const v = Number(intensities[i]);
+                if (!isNaN(v)) {
+                  xArr.push(shifts[i]);
+                  yArr.push(v);
+                }
+              }
+              const dataMaxLog = yArr.length > 0 ? Math.max(...yArr) : 0;
+              const effectiveThreshold = (threshold > 0 && threshold <= 1) ? (dataMaxLog * threshold) : threshold;
+              const metrics = computeSignalMetrics(xArr, yArr, { minDistance: minDistance, minProminence: effectiveThreshold });
+              setComputedMetrics({ std: std_intensity, auc: total_area, peaks: metrics.peaks });
+            } catch (e) {
+              console.warn('[Statistical Features] failed to compute display metrics', e);
+            }
 
           } else if (method === 'spectral_fingerprint') {
             // Spectral Fingerprinting
@@ -1918,7 +2120,8 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                 ...(widget.data || {}),
                 tableDataProcessed: resultData,
                 featureExtractionMethod: method,
-                featureExtractionParams: { threshold, minDistance, numPeaks }
+                featureExtractionParams: { threshold, minDistance, numPeaks },
+                featureExtractionMetrics: featureExtractionMetrics
               }
             });
           }

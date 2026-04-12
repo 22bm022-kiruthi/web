@@ -1,0 +1,518 @@
+{
+  "filename": "peak_dataset_1.csv",
+  "parsedData": [
+    {
+      "Raman Shift": "400",
+      "Raman intensity": "983.9394",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "420",
+      "Raman intensity": "880.6791",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "440",
+      "Raman intensity": "895.1276",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "460",
+      "Raman intensity": "875.1562",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "480",
+      "Raman intensity": "882.5346",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "500",
+      "Raman intensity": "833.8045",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "520",
+      "Raman intensity": "806.9371",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "540",
+      "Raman intensity": "878.9906",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "560",
+      "Raman intensity": "746.919",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "580",
+      "Raman intensity": "883.7561",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "600",
+      "Raman intensity": "871.9055",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "620",
+      "Raman intensity": "814.5277",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "640",
+      "Raman intensity": "851.73",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "660",
+      "Raman intensity": "802.4812",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "680",
+      "Raman intensity": "791.7129",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "700",
+      "Raman intensity": "883.9071",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "720",
+      "Raman intensity": "843.3129",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "740",
+      "Raman intensity": "930.1798",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "760",
+      "Raman intensity": "958.8704",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "780",
+      "Raman intensity": "859.9505",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "800",
+      "Raman intensity": "837.9969",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "820",
+      "Raman intensity": "904.5368",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "840",
+      "Raman intensity": "731.4451",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "860",
+      "Raman intensity": "755.618",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "880",
+      "Raman intensity": "803.6405",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "900",
+      "Raman intensity": "830.6079",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "920",
+      "Raman intensity": "945.396",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "940",
+      "Raman intensity": "2433.6615",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "960",
+      "Raman intensity": "8115.8345",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "980",
+      "Raman intensity": "12797.4106",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1000",
+      "Raman intensity": "8100.7789",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1020",
+      "Raman intensity": "2427.7287",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1040",
+      "Raman intensity": "892.4838",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1060",
+      "Raman intensity": "747.2322",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1080",
+      "Raman intensity": "730.7484",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1100",
+      "Raman intensity": "799.1739",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1120",
+      "Raman intensity": "766.271",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1140",
+      "Raman intensity": "864.4948",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1160",
+      "Raman intensity": "778.7468",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1180",
+      "Raman intensity": "864.2537",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1200",
+      "Raman intensity": "712.4967",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1220",
+      "Raman intensity": "769.9067",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1240",
+      "Raman intensity": "701.3188",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1260",
+      "Raman intensity": "756.4395",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1280",
+      "Raman intensity": "806.1842",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1300",
+      "Raman intensity": "745.7194",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1320",
+      "Raman intensity": "750.8409",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1340",
+      "Raman intensity": "783.9932",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1360",
+      "Raman intensity": "858.5417",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1380",
+      "Raman intensity": "719.8025",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1400",
+      "Raman intensity": "712.286",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1420",
+      "Raman intensity": "732.69",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1440",
+      "Raman intensity": "757.5431",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1460",
+      "Raman intensity": "726.6215",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1480",
+      "Raman intensity": "779.1539",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1500",
+      "Raman intensity": "803.2943",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1520",
+      "Raman intensity": "706.8116",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1540",
+      "Raman intensity": "847.518",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1560",
+      "Raman intensity": "699.4164",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1580",
+      "Raman intensity": "793.0418",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1600",
+      "Raman intensity": "836.6238",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1620",
+      "Raman intensity": "1294.0452",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1640",
+      "Raman intensity": "2774.765",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1660",
+      "Raman intensity": "6944.1247",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1680",
+      "Raman intensity": "12813.5582",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1700",
+      "Raman intensity": "15822.8463",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1720",
+      "Raman intensity": "12783.375",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1740",
+      "Raman intensity": "7040.4509",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1760",
+      "Raman intensity": "2759.5409",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1780",
+      "Raman intensity": "1174.2551",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1800",
+      "Raman intensity": "853.3743",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1820",
+      "Raman intensity": "757.6481",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1840",
+      "Raman intensity": "723.6694",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1860",
+      "Raman intensity": "869.9803",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1880",
+      "Raman intensity": "847.2472",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1900",
+      "Raman intensity": "695.4457",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1920",
+      "Raman intensity": "855.4561",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1940",
+      "Raman intensity": "868.7347",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1960",
+      "Raman intensity": "760.0384",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "1980",
+      "Raman intensity": "880.2153",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2000",
+      "Raman intensity": "745.3319",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2020",
+      "Raman intensity": "797.0502",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2040",
+      "Raman intensity": "816.5789",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2060",
+      "Raman intensity": "851.8371",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2080",
+      "Raman intensity": "849.8897",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2100",
+      "Raman intensity": "843.9239",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2120",
+      "Raman intensity": "792.5277",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2140",
+      "Raman intensity": "914.6684",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2160",
+      "Raman intensity": "872.9994",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2180",
+      "Raman intensity": "814.7098",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2200",
+      "Raman intensity": "814.9458",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2220",
+      "Raman intensity": "915.3023",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2240",
+      "Raman intensity": "878.3866",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2260",
+      "Raman intensity": "802.1966",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2280",
+      "Raman intensity": "828.8382",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2300",
+      "Raman intensity": "900.54",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2320",
+      "Raman intensity": "751.0063",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2340",
+      "Raman intensity": "806.5829",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2360",
+      "Raman intensity": "886.0354",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2380",
+      "Raman intensity": "788.6886",
+      "Sample name": "Dataset A - Polystyrene-like"
+    },
+    {
+      "Raman Shift": "2400",
+      "Raman intensity": "929.8069",
+      "Sample name": "Dataset A - Polystyrene-like"
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]",
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}

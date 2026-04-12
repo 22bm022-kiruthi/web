@@ -1,0 +1,518 @@
+{
+  "filename": "peak_dataset_3.csv",
+  "parsedData": [
+    {
+      "Raman Shift": "400",
+      "Raman intensity": "786.133",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "420",
+      "Raman intensity": "836.2559",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "440",
+      "Raman intensity": "868.9188",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "460",
+      "Raman intensity": "830.6918",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "480",
+      "Raman intensity": "795.7218",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "500",
+      "Raman intensity": "966.1313",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "520",
+      "Raman intensity": "870.8806",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "540",
+      "Raman intensity": "870.3082",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "560",
+      "Raman intensity": "798.8269",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "580",
+      "Raman intensity": "815.1517",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "600",
+      "Raman intensity": "874.337",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "620",
+      "Raman intensity": "837.7399",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "640",
+      "Raman intensity": "891.2426",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "660",
+      "Raman intensity": "920.1709",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "680",
+      "Raman intensity": "778.2776",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "700",
+      "Raman intensity": "767.3359",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "720",
+      "Raman intensity": "886.4906",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "740",
+      "Raman intensity": "829.3",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "760",
+      "Raman intensity": "862.589",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "780",
+      "Raman intensity": "892.2442",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "800",
+      "Raman intensity": "887.0734",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "820",
+      "Raman intensity": "732.064",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "840",
+      "Raman intensity": "847.8654",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "860",
+      "Raman intensity": "890.5878",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "880",
+      "Raman intensity": "803.8936",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "900",
+      "Raman intensity": "775.0339",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "920",
+      "Raman intensity": "778.3113",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "940",
+      "Raman intensity": "862.3056",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "960",
+      "Raman intensity": "878.1346",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "980",
+      "Raman intensity": "1014.0761",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1000",
+      "Raman intensity": "1170.4688",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1020",
+      "Raman intensity": "1597.7749",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1040",
+      "Raman intensity": "2089.9957",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1060",
+      "Raman intensity": "2851.3927",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1080",
+      "Raman intensity": "4064.9281",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1100",
+      "Raman intensity": "5315.6569",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1120",
+      "Raman intensity": "6815.5928",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1140",
+      "Raman intensity": "8320.167",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1160",
+      "Raman intensity": "9579.283",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1180",
+      "Raman intensity": "10466.4497",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1200",
+      "Raman intensity": "10839.8782",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1220",
+      "Raman intensity": "11078.5985",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1240",
+      "Raman intensity": "12061.9269",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1260",
+      "Raman intensity": "12319.4482",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1280",
+      "Raman intensity": "9205.0893",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1300",
+      "Raman intensity": "5878.2748",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1320",
+      "Raman intensity": "4055.8168",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1340",
+      "Raman intensity": "3001.261",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1360",
+      "Raman intensity": "2085.3026",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1380",
+      "Raman intensity": "1440.978",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1400",
+      "Raman intensity": "1159.2739",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1420",
+      "Raman intensity": "952.0074",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1440",
+      "Raman intensity": "750.6444",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1460",
+      "Raman intensity": "781.1518",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1480",
+      "Raman intensity": "758.2656",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1500",
+      "Raman intensity": "774.4789",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1520",
+      "Raman intensity": "733.5154",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1540",
+      "Raman intensity": "778.7548",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1560",
+      "Raman intensity": "704.849",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1580",
+      "Raman intensity": "766.2246",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1600",
+      "Raman intensity": "789.0552",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1620",
+      "Raman intensity": "745.9645",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1640",
+      "Raman intensity": "717.3782",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1660",
+      "Raman intensity": "730.7847",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1680",
+      "Raman intensity": "819.109",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1700",
+      "Raman intensity": "847.5207",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1720",
+      "Raman intensity": "800.1758",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1740",
+      "Raman intensity": "861.2101",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1760",
+      "Raman intensity": "780.3991",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1780",
+      "Raman intensity": "824.8954",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1800",
+      "Raman intensity": "781.4891",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1820",
+      "Raman intensity": "840.8665",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1840",
+      "Raman intensity": "816.7473",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1860",
+      "Raman intensity": "776.3464",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1880",
+      "Raman intensity": "794.0747",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1900",
+      "Raman intensity": "894.8912",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1920",
+      "Raman intensity": "839.5581",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1940",
+      "Raman intensity": "739.483",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1960",
+      "Raman intensity": "783.4283",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "1980",
+      "Raman intensity": "803.152",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2000",
+      "Raman intensity": "792.5587",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2020",
+      "Raman intensity": "845.2535",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2040",
+      "Raman intensity": "778.6854",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2060",
+      "Raman intensity": "826.0353",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2080",
+      "Raman intensity": "834.3486",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2100",
+      "Raman intensity": "884.6268",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2120",
+      "Raman intensity": "773.3577",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2140",
+      "Raman intensity": "832.7848",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2160",
+      "Raman intensity": "755.0823",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2180",
+      "Raman intensity": "874.6008",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2200",
+      "Raman intensity": "861.6703",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2220",
+      "Raman intensity": "847.9634",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2240",
+      "Raman intensity": "874.2522",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2260",
+      "Raman intensity": "761.4455",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2280",
+      "Raman intensity": "868.9245",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2300",
+      "Raman intensity": "818.2652",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2320",
+      "Raman intensity": "930.6861",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2340",
+      "Raman intensity": "862.5025",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2360",
+      "Raman intensity": "938.9029",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2380",
+      "Raman intensity": "936.5059",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    },
+    {
+      "Raman Shift": "2400",
+      "Raman intensity": "825.9981",
+      "Sample name": "Dataset C - Broad peak + shoulder"
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]",
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}

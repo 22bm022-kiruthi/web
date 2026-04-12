@@ -2,11 +2,11 @@
   command = "npm run build"
   publish = "dist"
 
-[[redirects]]
-  from = "/api/*"
-  to = "https://your-backend-url.com/api/:splat"
-  status = 200
-  force = true
+# NOTE: removed placeholder `/api/*` redirect. Configure your production backend
+# url as `VITE_API_URL` in Netlify build environment variables, e.g.:
+# VITE_API_URL = https://api.yoursite.com
+# The frontend will use `VITE_API_URL` when available; otherwise it falls back
+# to relative paths (dev proxy) and localhost for local testing.
 
 [[redirects]]
   from = "/*"

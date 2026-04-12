@@ -1,0 +1,518 @@
+{
+  "filename": "peak_dataset_2.csv",
+  "parsedData": [
+    {
+      "Raman Shift": "400",
+      "Raman intensity": "932.0003",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "420",
+      "Raman intensity": "895.5656",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "440",
+      "Raman intensity": "902.629",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "460",
+      "Raman intensity": "803.948",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "480",
+      "Raman intensity": "914.9661",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "500",
+      "Raman intensity": "866.3295",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "520",
+      "Raman intensity": "823.8487",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "540",
+      "Raman intensity": "803.5375",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "560",
+      "Raman intensity": "843.3394",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "580",
+      "Raman intensity": "1546.8515",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "600",
+      "Raman intensity": "6894.1231",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "620",
+      "Raman intensity": "1654.7802",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "640",
+      "Raman intensity": "820.0616",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "660",
+      "Raman intensity": "784.9617",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "680",
+      "Raman intensity": "810.4261",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "700",
+      "Raman intensity": "888.2736",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "720",
+      "Raman intensity": "748.16",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "740",
+      "Raman intensity": "838.048",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "760",
+      "Raman intensity": "805.3498",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "780",
+      "Raman intensity": "828.3241",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "800",
+      "Raman intensity": "895.2586",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "820",
+      "Raman intensity": "849.5075",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "840",
+      "Raman intensity": "778.9686",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "860",
+      "Raman intensity": "782.2155",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "880",
+      "Raman intensity": "854.5396",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "900",
+      "Raman intensity": "815.1919",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "920",
+      "Raman intensity": "678.6022",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "940",
+      "Raman intensity": "820.9525",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "960",
+      "Raman intensity": "833.5188",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "980",
+      "Raman intensity": "795.2196",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1000",
+      "Raman intensity": "775.919",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1020",
+      "Raman intensity": "802.9376",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1040",
+      "Raman intensity": "833.8905",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1060",
+      "Raman intensity": "952.3383",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1080",
+      "Raman intensity": "748.9456",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1100",
+      "Raman intensity": "764.728",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1120",
+      "Raman intensity": "678.7512",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1140",
+      "Raman intensity": "841.5788",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1160",
+      "Raman intensity": "787.0095",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1180",
+      "Raman intensity": "729.8829",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1200",
+      "Raman intensity": "820.7742",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1220",
+      "Raman intensity": "681.5103",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1240",
+      "Raman intensity": "798.2506",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1260",
+      "Raman intensity": "727.8226",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1280",
+      "Raman intensity": "832.5547",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1300",
+      "Raman intensity": "788.6103",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1320",
+      "Raman intensity": "803.1695",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1340",
+      "Raman intensity": "745.5999",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1360",
+      "Raman intensity": "700.2885",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1380",
+      "Raman intensity": "1891.8323",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1400",
+      "Raman intensity": "8817.4332",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1420",
+      "Raman intensity": "1792.9782",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1440",
+      "Raman intensity": "688.8783",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1460",
+      "Raman intensity": "778.4316",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1480",
+      "Raman intensity": "748.7953",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1500",
+      "Raman intensity": "763.772",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1520",
+      "Raman intensity": "703.9223",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1540",
+      "Raman intensity": "809.0151",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1560",
+      "Raman intensity": "693.2625",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1580",
+      "Raman intensity": "831.5659",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1600",
+      "Raman intensity": "747.9689",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1620",
+      "Raman intensity": "758.1728",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1640",
+      "Raman intensity": "754.7524",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1660",
+      "Raman intensity": "657.2898",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1680",
+      "Raman intensity": "688.9888",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1700",
+      "Raman intensity": "706.441",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1720",
+      "Raman intensity": "746.5004",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1740",
+      "Raman intensity": "776.3301",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1760",
+      "Raman intensity": "755.844",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1780",
+      "Raman intensity": "764.8939",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1800",
+      "Raman intensity": "816.4868",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1820",
+      "Raman intensity": "841.1931",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1840",
+      "Raman intensity": "797.4776",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1860",
+      "Raman intensity": "740.3547",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1880",
+      "Raman intensity": "761.4549",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1900",
+      "Raman intensity": "853.3616",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1920",
+      "Raman intensity": "718.3322",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1940",
+      "Raman intensity": "741.594",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1960",
+      "Raman intensity": "814.073",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "1980",
+      "Raman intensity": "836.7994",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2000",
+      "Raman intensity": "797.2374",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2020",
+      "Raman intensity": "810.5965",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2040",
+      "Raman intensity": "836.2851",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2060",
+      "Raman intensity": "782.7777",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2080",
+      "Raman intensity": "780.2273",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2100",
+      "Raman intensity": "891.3178",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2120",
+      "Raman intensity": "874.6305",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2140",
+      "Raman intensity": "865.7192",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2160",
+      "Raman intensity": "776.1801",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2180",
+      "Raman intensity": "827.3798",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2200",
+      "Raman intensity": "856.8019",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2220",
+      "Raman intensity": "807.41",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2240",
+      "Raman intensity": "870.2964",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2260",
+      "Raman intensity": "944.3525",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2280",
+      "Raman intensity": "813.1863",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2300",
+      "Raman intensity": "837.6134",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2320",
+      "Raman intensity": "848.9608",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2340",
+      "Raman intensity": "825.3975",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2360",
+      "Raman intensity": "857.8083",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2380",
+      "Raman intensity": "829.7183",
+      "Sample name": "Dataset B - Two narrow peaks"
+    },
+    {
+      "Raman Shift": "2400",
+      "Raman intensity": "863.415",
+      "Sample name": "Dataset B - Two narrow peaks"
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]",
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}
