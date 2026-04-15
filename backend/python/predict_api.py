@@ -1,6 +1,33 @@
 from flask import Flask, request, jsonify
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
+import os
+import json
+import time
+try:
+    import firebase_admin
+    from firebase_admin import credentials, firestore
+    FIREBASE_AVAILABLE = True
+except Exception:
+    FIREBASE_AVAILABLE = False
+
+# Initialize Firestore client if configured
+db = None
+if FIREBASE_AVAILABLE:
+    cred_path = os.environ.get('FIREBASE_CRED_PATH')
+    cred_json = os.environ.get('FIREBASE_CRED_JSON')
+    try:
+        if cred_path:
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred)
+            db = firestore.client()
+        elif cred_json:
+            cred_dict = json.loads(cred_json)
+            cred = credentials.Certificate(cred_dict)
+            firebase_admin.initialize_app(cred)
+            db = firestore.client()
+    except Exception:
+        db = None
 
 app = Flask(__name__)
 
@@ -72,6 +99,20 @@ def predict():
                 resp['sample_prediction'] = sample_pred
         except Exception:
             pass
+        # Optionally push prediction and features to Firestore
+        try:
+            if db is not None:
+                coll = os.environ.get('FIRESTORE_COLLECTION_PREDICT', 'predictions')
+                doc = {
+                    'timestamp': int(time.time()),
+                    'features': new_data.to_dict(orient='records')[0],
+                    'prediction': result,
+                    'request': data
+                }
+                db.collection(coll).add(doc)
+        except Exception:
+            pass
+
         return jsonify(resp)
     except Exception as e:
         return jsonify({"error": "Prediction failed", "detail": str(e)}), 500

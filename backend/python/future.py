@@ -1,5 +1,33 @@
 from flask import Flask, request, jsonify
 import numpy as np
+import os
+import json
+import time
+try:
+    import firebase_admin
+    from firebase_admin import credentials, firestore
+    FIREBASE_AVAILABLE = True
+except Exception:
+    FIREBASE_AVAILABLE = False
+
+# Initialize Firestore client if configured
+db = None
+if FIREBASE_AVAILABLE:
+    cred_path = os.environ.get('FIREBASE_CRED_PATH')
+    cred_json = os.environ.get('FIREBASE_CRED_JSON')
+    try:
+        if cred_path:
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred)
+            db = firestore.client()
+        elif cred_json:
+            # cred_json should be full service account JSON string
+            cred_dict = json.loads(cred_json)
+            cred = credentials.Certificate(cred_dict)
+            firebase_admin.initialize_app(cred)
+            db = firestore.client()
+    except Exception:
+        db = None
 
 app = Flask(__name__)
 
@@ -71,6 +99,20 @@ def extract():
         'avg': float(np.mean(arr)),
         'effective_threshold': float(eff_threshold)
     }
+
+    # Optionally push extraction result to Firestore
+    try:
+        if db is not None:
+            coll = os.environ.get('FIRESTORE_COLLECTION_EXTRACT', 'extractions')
+            doc = {
+                'timestamp': int(time.time()),
+                'request': body,
+                'result': result
+            }
+            db.collection(coll).add(doc)
+    except Exception:
+        # Do not block response on Firestore errors
+        pass
 
     return jsonify(result)
 
