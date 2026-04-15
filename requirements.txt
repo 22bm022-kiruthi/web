@@ -1,0 +1,4 @@
+flask
+numpy
+scipys
+firebase-admin
