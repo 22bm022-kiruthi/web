@@ -65,3 +65,4 @@ Then refresh your browser.
 - ✓ Auto-restart: Enabled
 
 **Enjoy!** 🎉
+

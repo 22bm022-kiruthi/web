@@ -20,7 +20,7 @@ model = DecisionTreeClassifier()
 model.fit(X, y)
 
 # Step 4: Test prediction
-test_data = [[5, 20]]
+test_data = [[5, 200]]
 prediction = model.predict(test_data)
 
 print("Prediction:", prediction)

@@ -1,0 +1,32 @@
+{
+  "filename": "basic_normal_dataset.csv",
+  "parsedData": [
+    {
+      "num_peaks": "2",
+      "max_val": "14000",
+      "avg_val": "5000"
+    },
+    {
+      "num_peaks": "3",
+      "max_val": "13500",
+      "avg_val": "4800"
+    },
+    {
+      "num_peaks": "2",
+      "max_val": "14500",
+      "avg_val": "5100"
+    },
+    {
+      "num_peaks": "3",
+      "max_val": "13800",
+      "avg_val": "4950"
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}

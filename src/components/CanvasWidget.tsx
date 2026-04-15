@@ -526,6 +526,12 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       if (onUpdateWidget) onUpdateWidget({ data: { filename: file.name, fileId: body.fileId || body._id || body.id || null, type: file.type, parsedData: body.parsedData || body.data?.parsedData || body.parsed || [] } });
       // mark success so UI can display confirmation
       setUploadSuccessLocal(true);
+      // After successful upload, trigger app-level data forward so connected Predict widgets receive the data
+      try {
+        setTimeout(() => {
+          try { window.dispatchEvent(new CustomEvent('triggerDataForward', { detail: { sourceWidgetId: widget.id } })); } catch (e) { /* ignore */ }
+        }, 80);
+      } catch (e) { /* ignore */ }
     } catch (err: any) {
       setUploadErrorLocal(String(err?.message || err));
       console.error('handleLocalFile error:', err);

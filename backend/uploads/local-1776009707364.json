@@ -1,0 +1,40 @@
+{
+  "filename": "normal_dataset.csv",
+  "parsedData": [
+    {
+      "num_peaks": "2",
+      "peak_position": "1600",
+      "intensity": "14000",
+      "auc": "3200000",
+      "peak_width": "48"
+    },
+    {
+      "num_peaks": "3",
+      "peak_position": "1500",
+      "intensity": "13500",
+      "auc": "3000000",
+      "peak_width": "50"
+    },
+    {
+      "num_peaks": "2",
+      "peak_position": "1700",
+      "intensity": "14500",
+      "auc": "3100000",
+      "peak_width": "47"
+    },
+    {
+      "num_peaks": "3",
+      "peak_position": "1550",
+      "intensity": "13800",
+      "auc": "3050000",
+      "peak_width": "49"
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}

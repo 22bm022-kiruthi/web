@@ -1,0 +1,32 @@
+{
+  "filename": "basic_abnormal_dataset.csv",
+  "parsedData": [
+    {
+      "num_peaks": "5",
+      "max_val": "26000",
+      "avg_val": "9000"
+    },
+    {
+      "num_peaks": "6",
+      "max_val": "28000",
+      "avg_val": "9500"
+    },
+    {
+      "num_peaks": "4",
+      "max_val": "24000",
+      "avg_val": "8700"
+    },
+    {
+      "num_peaks": "5",
+      "max_val": "27000",
+      "avg_val": "9200"
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}

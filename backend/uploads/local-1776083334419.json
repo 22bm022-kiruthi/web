@@ -1,0 +1,40 @@
+{
+  "filename": "abnormal_dataset.csv",
+  "parsedData": [
+    {
+      "num_peaks": "5",
+      "peak_position": "2100",
+      "intensity": "26000",
+      "auc": "5200000",
+      "peak_width": "70"
+    },
+    {
+      "num_peaks": "6",
+      "peak_position": "2200",
+      "intensity": "28000",
+      "auc": "5500000",
+      "peak_width": "75"
+    },
+    {
+      "num_peaks": "4",
+      "peak_position": "2000",
+      "intensity": "24000",
+      "auc": "5000000",
+      "peak_width": "68"
+    },
+    {
+      "num_peaks": "5",
+      "peak_position": "2300",
+      "intensity": "27000",
+      "auc": "5300000",
+      "peak_width": "72"
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}
