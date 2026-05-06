@@ -21,34 +21,45 @@ const LoginPage: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
       return;
     }
 
+    try {
+      localStorage.setItem('loggedIn', 'true');
+    } catch (e) {
+      // ignore
+    }
     onLogin();
+    try {
+      if (typeof window !== 'undefined') {
+        // ensure the URL is the app root so App shows the main page
+        try { window.history.replaceState({}, '', '/'); } catch (e) { }
+      }
+    } catch (e) {}
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen">
-      {/* Slideshow background (place bg1.jpg/bg2.jpg/bg3.jpg into public/) */}
-      <div className="absolute inset-0 pointer-events-none">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black">
+      {/* Fullscreen slideshow background */}
+      <div className="absolute inset-0 overflow-hidden">
         <div
-          className="login-slide"
+          className="absolute inset-0 bg-cover bg-center login-slide"
           style={{ backgroundImage: "url('/bg11.png')" }}
           aria-hidden="true"
         />
         <div
-          className="login-slide"
+          className="absolute inset-0 bg-cover bg-center login-slide"
           style={{ backgroundImage: "url('/bg12.jpg')", animationDelay: '4s' }}
           aria-hidden="true"
         />
         <div
-          className="login-slide"
+          className="absolute inset-0 bg-cover bg-center login-slide"
           style={{ backgroundImage: "url('/bg13.jpg')", animationDelay: '8s' }}
           aria-hidden="true"
         />
-        <div className="absolute inset-0 bg-black/40" aria-hidden="true" />
+        <div className="absolute inset-0 bg-black/50" aria-hidden="true" />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center bg-white rounded-lg shadow-lg p-8 w-96">
+      <div className="relative z-10 flex flex-col items-center bg-white rounded-lg shadow-lg p-8 w-full max-w-md mx-4">
         {/* Company Logo */}
-        <img src="/logo.jpg" alt="Company Logo" className="h-20 mb-4" />
+        <img src="/logo_final.png" alt="Company Logo" className="h-20 mb-4" />
         {/* Company Name */}
   <h1 className="text-3xl font-bold mb-2 text-blue-700">DeepSpectrum Pvt Ltd</h1>
         {/* Welcome Message */}

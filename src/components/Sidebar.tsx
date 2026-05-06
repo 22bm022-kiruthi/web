@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { useDrag } from 'react-dnd';
-import { Upload, BarChart3, ScatterChart as Scatter3D, Box, Calculator, Filter, Database, LineChart, Search, Code } from 'lucide-react';
+import { Upload, BarChart3, ScatterChart as Scatter3D, Box, Calculator, Filter, Database, LineChart, Search, Code, ShieldCheck } from 'lucide-react';
 import { WidgetType } from '../types';
 import widgetRegistry from '../utils/widgetRegistry';
 import { useTheme } from '../contexts/ThemeContext';
-// removed unused extra lucide-react imports
 
 // Use central registry so sidebar shows all available widgets
 const widgetTypes: WidgetType[] = widgetRegistry;
@@ -19,7 +18,7 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   Calculator,
   Filter,
   Code,
-  Search
+  Search,
 };
 
 interface DraggableWidgetProps {
@@ -43,9 +42,7 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = ({ widgetType }) => {
     }),
   }));
 
-  const IconComponent = iconMap[widgetType.icon];
-  const [showFallback, setShowFallback] = useState<boolean>(true);
-  const svgPath = `/${widgetType.id}.svg`;
+  const IconComponent = iconMap[widgetType.icon] || Upload;
 
   return (
     <div
@@ -54,31 +51,14 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = ({ widgetType }) => {
         isDragging ? 'opacity-50 scale-95' : 'hover:scale-105'
       }`}
     >
-      <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${
-        theme === 'dark'
-          ? 'bg-gray-200 border-2 border-blue-200'
-          : 'bg-white border-2 border-blue-200'
-      }`}>
-        <div className="icon-outer">
-            <img
-              src={svgPath}
-              alt={widgetType.name}
-              className="h-5 w-5 icon"
-              style={{ display: showFallback ? 'none' : 'block' }}
-              onLoad={() => setShowFallback(false)}
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; setShowFallback(true); }}
-              draggable={false}
-              onDragStart={(e) => { e.preventDefault(); }}
-            />
-            <IconComponent style={{ display: showFallback ? 'block' : 'none' }} className={`h-5 w-5 icon transition-colors duration-300`} />
-        </div>
+      <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 bg-blue-500 shadow-sm`}>
+        <IconComponent className="h-6 w-6 text-white" />
       </div>
-        {/* Always show widget name below icon */}
-        <span className={`mt-2 text-xs font-medium text-center ${
-          theme === 'dark' ? 'text-blue-900' : 'text-blue-700'
-        }`}>
-          {widgetType.name}
-        </span>
+      <span className={`mt-2 text-xs font-medium text-center ${
+        theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+      }`}>
+        {widgetType.name}
+      </span>
     </div>
   );
 };
@@ -105,9 +85,6 @@ const SmallWidgetItem: React.FC<{ widgetType: WidgetType }> = ({ widgetType }) =
     }),
   }));
 
-  // HTML5 drag for React Flow
-  // React DnD handles drag; avoid native HTML5 drag to prevent conflicts with drop handling
-
   return (
     <li
       ref={drag as any}
@@ -117,16 +94,10 @@ const SmallWidgetItem: React.FC<{ widgetType: WidgetType }> = ({ widgetType }) =
       role="option"
       aria-label={widgetType.name}
     >
-      <div className={`w-14 h-14 rounded flex items-center justify-center ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-        <div className="icon-outer">
-          {!iconLoadFailed ? (
-            <img src={`/${widgetType.id}.svg`} alt={widgetType.name} className="h-5 w-5 icon" onError={() => setIconLoadFailed(true)} draggable={false} onDragStart={(e) => e.preventDefault()} />
-          ) : (
-            <IconComponent className={`h-5 w-5 icon`} />
-          )}
-        </div>
+      <div className={`w-16 h-16 rounded-full flex items-center justify-center bg-blue-500 shadow-sm`}>
+        <IconComponent className="h-6 w-6 text-white" />
       </div>
-      <span className={`text-xs mt-1 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{widgetType.name}</span>
+      <span className={`text-xs mt-2 text-center text-gray-700`}>{widgetType.name}</span>
     </li>
   );
 };
@@ -137,9 +108,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ onAddWidget }) => {
   const { theme } = useTheme();
-  // ensure onAddWidget is referenced to avoid unused var linting
   void onAddWidget;
-  // Start collapsed after login; user must click section headers to open
   const [showInputOpen, setShowInputOpen] = useState<boolean>(false);
   const [showProcessingOpen, setShowProcessingOpen] = useState<boolean>(false);
   const [showVisualizationOpen, setShowVisualizationOpen] = useState<boolean>(false);
@@ -150,8 +119,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onAddWidget }) => {
     processing: widgetTypes.filter(w => w.category === 'processing'),
     visualization: widgetTypes.filter(w => w.category === 'visualization')
   };
-
-  // drag start handled via react-dnd; keep function removed to avoid unused var warnings
 
   return (
     <aside className={`w-96 transition-colors duration-300 ${
@@ -178,7 +145,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onAddWidget }) => {
               aria-label="Clear search"
               onClick={() => {
                 setSearch('');
-                // refocus the input after clearing
                 const el = document.getElementById('widget-search') as HTMLInputElement | null;
                 el?.focus();
               }}
@@ -200,7 +166,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onAddWidget }) => {
               className={`w-full flex items-center gap-3 p-2 rounded hover:bg-blue-50 transition text-left ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}
               aria-label="Toggle Data Input"
             >
-              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-blue-100 text-blue-700">📤</div>
+              <div className="w-9 h-9 rounded-full flex items-center justify-center bg-blue-100 text-white">
+                <Upload className="h-5 w-5 text-blue-700" />
+              </div>
               <div className="flex-1">
                 <div className="text-sm font-medium">Data Input</div>
                 <div className="text-xs text-gray-500">{categories.input.length} widgets</div>
@@ -230,7 +198,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onAddWidget }) => {
               className={`w-full flex items-center gap-3 p-2 rounded hover:bg-blue-50 transition text-left ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}
               aria-label="Toggle Processing"
             >
-              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-pink-100 text-pink-700">🧹</div>
+              <div className="w-9 h-9 rounded-full flex items-center justify-center bg-pink-100 text-white">
+                <Filter className="h-5 w-5 text-pink-700" />
+              </div>
               <div className="flex-1">
                 <div className="text-sm font-medium">Processing</div>
                 <div className="text-xs text-gray-500">{categories.processing.length} widgets</div>
@@ -260,7 +230,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onAddWidget }) => {
               className={`w-full flex items-center gap-3 p-2 rounded hover:bg-blue-50 transition text-left ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}
               aria-label="Toggle Visualization"
             >
-              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-green-100 text-green-700">📈</div>
+              <div className="w-9 h-9 rounded-full flex items-center justify-center bg-green-100 text-white">
+                <LineChart className="h-5 w-5 text-green-700" />
+              </div>
               <div className="flex-1">
                 <div className="text-sm font-medium">Visualization</div>
                 <div className="text-xs text-gray-500">{categories.visualization.length} widgets</div>

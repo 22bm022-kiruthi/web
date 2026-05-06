@@ -62,6 +62,12 @@ export const WIDGET_COLORS: Record<string, WidgetColors> = {
     bg: '#E3F2FD',
     accent: '#1e88e5'
   },
+  'hierarchical-clustering': {
+    main: '#2196F3',
+    light: '#BBDEFB',
+    bg: '#E3F2FD',
+    accent: '#2196F3'
+  },
   'blank-remover': {
     main: '#2196F3',
     light: '#BBDEFB',
@@ -120,6 +126,12 @@ export const WIDGET_COLORS: Record<string, WidgetColors> = {
     bg: '#E3F2FD',
     accent: '#2196F3'
   },
+  'predict': {
+    main: '#2196F3',
+    light: '#BBDEFB',
+    bg: '#E3F2FD',
+    accent: '#2196F3'
+  },
   
   // SPECIAL - Light Blue
   'spectral-segmentation': {
@@ -171,6 +183,8 @@ export const WIDGET_LABELS: Record<string, string> = {
   'kmeans-analysis': 'KMeans',
   'peak-detection': 'Peaks',
   'spectral-segmentation': 'Segment',
+  'hierarchical-clustering': 'Hierarchical Clustering',
+  'predict': 'Predict',
   'future-extraction': 'Extract'
 };
 
@@ -183,7 +197,7 @@ export function getWidgetLabel(widgetType: string): string {
  */
 export function getWidgetCategory(widgetType: string): 'data' | 'processing' | 'analysis' | 'visualization' | 'utility' {
   const dataTypes = ['supabase', 'file-upload'];
-  const processingTypes = ['noise-filter', 'baseline-correction', 'smoothing', 'normalization', 'blank-remover', 'pca-analysis', 'kmeans-analysis'];
+  const processingTypes = ['noise-filter', 'baseline-correction', 'smoothing', 'normalization', 'blank-remover', 'pca-analysis', 'kmeans-analysis', 'hierarchical-clustering', 'predict'];
   const analysisTypes = ['custom-code', 'mean-average', 'peak-detection'];
   const visualizationTypes = ['line-chart', 'scatter-plot', 'bar-chart', 'box-plot', 'data-table'];
   

@@ -33,12 +33,12 @@ const WidgetSelectorModal: React.FC<WidgetSelectorModalProps> = ({ isOpen, onClo
             placeholder="Search widgets..."
             className="flex-1 px-2 py-1 border rounded"
           />
-          <button 
-            onClick={onClose} 
-            className="text-gray-500 hover:text-red-500 text-2xl font-bold leading-none"
+          <button
+            onClick={(e) => { e.stopPropagation(); onClose(); }}
+            className="px-3 py-1 bg-gray-200 rounded text-sm text-gray-700 hover:bg-gray-300"
             aria-label="Close"
           >
-            ×
+            Close
           </button>
         </div>
 

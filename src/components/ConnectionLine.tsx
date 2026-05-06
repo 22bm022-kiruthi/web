@@ -19,7 +19,6 @@ const ConnectionLine: React.FC<ConnectionLineProps> = ({
   // Calculate control points for smooth cubic bezier curve - Orange Data Mining style
   const dx = to.x - from.x;
   const dy = to.y - from.y;
-  
   // Horizontal bezier curve with smooth transitions
   const controlOffset = Math.min(Math.abs(dx) * 0.5, 150);
   const controlPoint1 = { x: from.x + controlOffset, y: from.y };

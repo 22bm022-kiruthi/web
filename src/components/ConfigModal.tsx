@@ -146,8 +146,92 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, widget, onClose, onUp
     }
   };
 
-  const handleSave = () => {
-    onClose();
+  const handleSave = async () => {
+    // Attempt to save prediction or extraction results to backend which may forward to Firebase
+    try {
+      const apiBase = (import.meta.env.VITE_API_URL || '').toString().replace(/\/$/, '') || '';
+      const postTo = async (path: string, body: any) => {
+        const url = apiBase ? `${apiBase}${path}` : path;
+        const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (!resp.ok) {
+          const txt = await resp.text().catch(() => String(resp.status));
+          throw new Error(txt || `Request failed ${resp.status}`);
+        }
+        return await resp.json().catch(() => ({}));
+      };
+
+      // Predict widget: send the last computed payload (peaks/max/avg) to /api/predict
+      if (widget.type === 'predict') {
+        const payload = widget.data?.predictionMeta?.lastPayload || null;
+        let finalPayload = payload;
+        if (!finalPayload) {
+          // derive simple features from available table data
+          const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
+          const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || widget.data?.tableDataForecast || []);
+          const tableData = Array.isArray(best) ? best : [];
+          if (!tableData || tableData.length === 0) { alert('No input data available to save prediction.'); onClose(); return; }
+          const cols = Object.keys(tableData[0] || {});
+          const normalizeIntensityKeyLocal = (cols: string[], firstRow: any) => {
+            const intensityPattern = /raman.*intens|intens.*raman|intensity|^value$|^y$/i;
+            const positionPattern = /pos|shift|position|x|wavenumber|raman shift/i;
+            let key = cols.find(c => intensityPattern.test(c));
+            if (key) return key;
+            key = cols.find(c => !positionPattern.test(c) && !isNaN(Number(firstRow?.[c])));
+            if (key) return key;
+            return cols.find(c => !isNaN(Number(firstRow?.[c]))) || null;
+          };
+          let intensityKey = normalizeIntensityKeyLocal(cols, tableData[0]);
+          if (!intensityKey) { alert('Could not determine intensity column to compute features.'); onClose(); return; }
+          const vals = tableData.map((r: any) => Number(r[intensityKey])).filter((v: any) => !isNaN(v));
+          if (vals.length === 0) { alert('No numeric intensity values available to compute features.'); onClose(); return; }
+          const mx = Math.max(...vals);
+          const avg = vals.reduce((a: number, b: number) => a + b, 0) / vals.length;
+          let peaks = 0;
+          for (let i = 1; i < vals.length - 1; i++) if (vals[i] > vals[i - 1] && vals[i] > vals[i + 1]) peaks++;
+          // send the full signal so the backend spectral model can classify into compound names
+          finalPayload = { signal: vals, peaks, max: mx, avg };
+        }
+
+        await postTo('/api/predict', finalPayload);
+        alert('✅ Prediction sent to backend (will be stored if backend is configured).');
+        onClose();
+        return;
+      }
+
+      // Future-extraction (forecast) or other extraction-like widgets: send the raw signal to /api/extract
+      if (widget.type === 'future-extraction' || widget.type === 'extract' || widget.type === 'peak-extraction') {
+        const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
+        const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || widget.data?.tableDataForecast || []);
+        const tableData = Array.isArray(best) ? best : [];
+        if (!tableData || tableData.length === 0) { alert('No input data available to save extraction.'); onClose(); return; }
+        const cols = Object.keys(tableData[0] || {});
+        const normalizeIntensityKeyLocal = (cols: string[], firstRow: any) => {
+          const intensityPattern = /raman.*intens|intens.*raman|intensity|^value$|^y$/i;
+          const positionPattern = /pos|shift|position|x|wavenumber|raman shift/i;
+          let key = cols.find(c => intensityPattern.test(c));
+          if (key) return key;
+          key = cols.find(c => !positionPattern.test(c) && !isNaN(Number(firstRow?.[c])));
+          if (key) return key;
+          return cols.find(c => !isNaN(Number(firstRow?.[c]))) || null;
+        };
+        let intensityKey = normalizeIntensityKeyLocal(cols, tableData[0]);
+        if (!intensityKey) { alert('Could not determine intensity column to extract peaks.'); onClose(); return; }
+        const signal = tableData.map((r: any) => Number(r[intensityKey]));
+        const shifts = tableData.map((r: any) => (r.position !== undefined ? Number(r.position) : null)).filter((v: any, i: number) => v !== null && i < signal.length);
+        const body = { signal, shifts };
+        await postTo('/api/extract', body);
+        alert('✅ Extraction request sent to backend (will be stored if backend is configured).');
+        onClose();
+        return;
+      }
+
+      // Fallback: simply close
+      onClose();
+    } catch (err: any) {
+      console.error('Save to backend failed:', err);
+      alert('Failed to save to cloud: ' + (err?.message || String(err)));
+      onClose();
+    }
   };
 
   const renderWidgetConfig = () => {
@@ -159,13 +243,13 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, widget, onClose, onUp
             <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
               Table Name
             </label>
-            <input
-              type="text"
-              placeholder="raman_data"
-              defaultValue={(widget.data && widget.data.supabaseTable) || 'raman_data'}
-              onChange={(e) => onUpdate(widget.id, { data: { ...(widget.data || {}), supabaseTable: e.target.value } })}
-              className="w-full px-3 py-2 border rounded"
-            />
+              <input
+                type="text"
+                placeholder="data"
+                defaultValue={(widget.data && widget.data.supabaseTable) || 'data'}
+                onChange={(e) => onUpdate(widget.id, { data: { ...(widget.data || {}), supabaseTable: e.target.value } })}
+                className="w-full px-3 py-2 border rounded"
+              />
             <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
               Supabase Credentials (optional)
             </label>
@@ -214,7 +298,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, widget, onClose, onUp
                       try {
                         // ensure widget has data before running
                         const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
-                        const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.parsedData || widget.data?.tableData || widget.data?.tableDataProcessed || widget.data?.tableDataForecast || []);
+                        const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || widget.data?.tableDataForecast || []);
                         const tableData = Array.isArray(best) ? best : [];
                         if (!tableData || tableData.length === 0) { alert('No input data available for prediction. Connect a data source first.'); return; }
                         setRunning(true);
@@ -313,7 +397,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, widget, onClose, onUp
           <button onClick={() => {
             try {
               const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
-              const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.parsedData || widget.data?.tableData || widget.data?.tableDataProcessed || widget.data?.tableDataForecast || []);
+              const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || widget.data?.tableDataForecast || []);
               const tableData = Array.isArray(best) ? best : [];
               if (!tableData || tableData.length === 0) { alert('No input data available for prediction. Connect a data source first.'); return; }
               setRunning(true);
@@ -325,6 +409,18 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, widget, onClose, onUp
           <button onClick={handleSave} className="px-4 py-2 rounded-lg btn-primary">
             <Save className="inline h-4 w-4 mr-1" />
             Save
+          </button>
+          <button onClick={() => {
+            try {
+              const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
+              const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || widget.data?.tableDataForecast || []);
+              const tableData = Array.isArray(best) ? best : [];
+              if (!tableData || tableData.length === 0) { alert('No input data available to plot. Connect a data source first.'); return; }
+              console.debug('[ConfigModal] dispatching openLineChart for widget', widget.id, 'rows:', tableData.length);
+              try { window.dispatchEvent(new CustomEvent('openLineChart', { detail: { widgetId: widget.id, data: tableData } })); } catch (e) { console.error(e); }
+            } catch (e) { console.error(e); }
+          }} className="px-4 py-2 rounded-lg btn-outline">
+            Plot
           </button>
         </div>
       </div>

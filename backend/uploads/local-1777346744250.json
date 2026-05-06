@@ -1,0 +1,32 @@
+{
+  "filename": "test_upload.csv",
+  "parsedData": [
+    {
+      "﻿shift": "0",
+      "intensity": "10"
+    },
+    {
+      "﻿shift": "1",
+      "intensity": "8"
+    },
+    {
+      "﻿shift": "2",
+      "intensity": "9"
+    },
+    {
+      "﻿shift": "3",
+      "intensity": "7"
+    },
+    {
+      "﻿shift": "4",
+      "intensity": "11\r"
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}

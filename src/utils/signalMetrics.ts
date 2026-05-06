@@ -35,12 +35,12 @@ export function findPeaks(x: number[], y: number[], options?: { minProminence?: 
   if (!x || !y || x.length < 3) return peaks;
 
   const minDistance = options?.minDistance ?? 1;
-  const median = (() => {
-    const copy = [...y].sort((a, b) => a - b);
-    const m = Math.floor(copy.length / 2);
-    return copy.length % 2 === 1 ? copy[m] : (copy[m - 1] + copy[m]) / 2;
-  })();
-  const minProminence = options?.minProminence ?? Math.max(0, median);
+  // Default prominence: use a small fraction of the data range, or a fraction of the stddev
+  const maxVal = Math.max(...y);
+  const minVal = Math.min(...y);
+  const range = Math.max(0, maxVal - minVal);
+  const defaultProminence = range > 0 ? range * 0.05 : calcStd(y) * 0.25;
+  const minProminence = options?.minProminence ?? defaultProminence;
 
   for (let i = 1; i < y.length - 1; i++) {
     if (y[i] > y[i - 1] && y[i] > y[i + 1] && y[i] >= minProminence) {

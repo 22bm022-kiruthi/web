@@ -16,17 +16,115 @@ import LoginPage from './LoginPage';
 const App: React.FC = () => {
   const [loggedIn, setLoggedIn] = useState<boolean>(() => {
     try {
-      // Dev override: append ?showLogin=1 to force showing the login page regardless of localStorage
-      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-      const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
-      if (params && params.get('showLogin') === '1') return false;
-      // support direct link to /login
-      if (pathname === '/login' || pathname.endsWith('/login')) return false;
       return localStorage.getItem('loggedIn') === 'true';
     } catch (err) {
       return false;
     }
   });
+
+  const [showLoginPage, setShowLoginPage] = useState<boolean>(() => {
+    try {
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+      if (params && params.get('showLogin') === '1') return true;
+      // Default: do not show the login overlay automatically at root. The
+      // pre-login landing page will be shown for '/' (see `showLanding`).
+      return false;
+    } catch (err) {
+      return false;
+    }
+  });
+
+  const [showLanding, setShowLanding] = useState<boolean>(() => {
+    try {
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+      if (params && params.get('showLogin') === '1') return false;
+      // If the URL is /login, show the landing (the "page before" login)
+      if (pathname === '/login' || pathname.endsWith('/login')) return true;
+      // If the app is loaded at root, show the pre-login landing when not logged in
+      if (pathname === '/' || pathname === '' || pathname.endsWith('/index.html')) {
+        // Show the pre-login landing when the user opens the site root.
+        return true;
+      }
+      // show landing only when not already logged in for other paths
+      try { return localStorage.getItem('loggedIn') !== 'true'; } catch (e) { return true; }
+    } catch (err) {
+      return true;
+    }
+  });
+
+  // Prevent background scrolling when landing overlay is shown
+  React.useEffect(() => {
+    try {
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = showLanding ? 'hidden' : '';
+        // remove default body margin so overlay truly reaches edges
+        if (showLanding) {
+          (document.body as any).__prevMargin = document.body.style.margin || '';
+          document.body.style.margin = '0';
+        } else {
+          try { document.body.style.margin = (document.body as any).__prevMargin || ''; } catch (e) { document.body.style.margin = ''; }
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+    return () => {
+      try {
+        if (typeof document !== 'undefined') {
+          document.body.style.overflow = '';
+          document.body.style.margin = (document.body as any).__prevMargin || '';
+        }
+      } catch (e) {}
+    };
+  }, [showLanding]);
+
+  // When the login page is shown, ensure any landing page body styles are cleared
+  React.useEffect(() => {
+    try {
+      if (typeof document !== 'undefined') {
+        if (showLoginPage) {
+          try { document.body.style.overflow = ''; } catch (e) {}
+          try { document.body.style.margin = (document.body as any).__prevMargin || ''; } catch (e) {}
+          try { document.body.style.background = ''; } catch (e) {}
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [showLoginPage]);
+
+  // Listen for header/user actions to open the landing (pre-login) page
+  React.useEffect(() => {
+    const handler = () => {
+      try {
+        // Show the landing/intro page and set URL to /login so it can be shared
+        setShowLanding(true);
+        setShowLoginPage(false);
+        try { if (typeof window !== 'undefined') window.history.pushState({}, '', '/login'); } catch (e) {}
+      } catch (e) {
+        // ignore
+      }
+    };
+    window.addEventListener('openLogin', handler as EventListener);
+    return () => window.removeEventListener('openLogin', handler as EventListener);
+  }, []);
+
+  // Listen for header/user actions to open the login overlay directly
+  React.useEffect(() => {
+    const handler = () => {
+      try {
+        setShowLoginPage(true);
+        setShowLanding(false);
+        try { if (typeof window !== 'undefined') window.history.pushState({}, '', '/login?showLogin=1'); } catch (e) {}
+      } catch (e) {
+        // ignore
+      }
+    };
+    window.addEventListener('openLoginOverlay', handler as EventListener);
+    return () => window.removeEventListener('openLoginOverlay', handler as EventListener);
+  }, []);
   
   const handleLogin = () => {
     setLoggedIn(true);
@@ -47,6 +145,15 @@ const App: React.FC = () => {
       } catch (err) {
         // ignore
       }
+    }
+  }, [loggedIn]);
+
+  // Ensure the pre-login landing is hidden whenever a user is logged in
+  React.useEffect(() => {
+    try {
+      if (loggedIn) setShowLanding(false);
+    } catch (e) {
+      // ignore
     }
   }, [loggedIn]);
 
@@ -85,7 +192,7 @@ const App: React.FC = () => {
         setWidgets((prevWidgets: Widget[]) => {
           const fromWidget = prevWidgets.find((w) => fromIds.includes(w.id));
           if (!fromWidget) return prevWidgets;
-          const forwardTable = fromWidget.data?.tableData || fromWidget.data?.parsedData || fromWidget.data?.tableDataProcessed || [];
+          const forwardTable = fromWidget.data?.tableDataProcessed || fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
           if (!forwardTable || forwardTable.length === 0) return prevWidgets;
           return prevWidgets.map((w) => (w.id === targetId ? { ...w, data: { ...(w.data || {}), tableData: forwardTable } } : w));
         });
@@ -108,9 +215,9 @@ const App: React.FC = () => {
             });
             if (forwarded) return;
 
-            // final fallback: call backend proxy to fetch raman_data (if available)
+            // final fallback: call backend proxy to fetch default project table (data)
             console.debug('[App] no upstream widget had data; attempting backend fetch fallback');
-            const resp = await fetch(`/api/supabase/fetch?table=raman_data&limit=200`);
+            const resp = await fetch(`/api/supabase/fetch?table=data&limit=200`);
             if (!resp.ok) { console.warn('[App] backend fetch fallback failed', resp.status); return; }
             const body = await resp.json().catch(() => null);
             const rows = body?.data || body || [];
@@ -214,7 +321,7 @@ const App: React.FC = () => {
 
       for (const src of prevWidgets) {
         // consider processed and parsed data as valid table sources too
-        const srcTable = src.data?.tableData || src.data?.tableDataProcessed || src.data?.parsedData;
+        const srcTable = src.data?.tableDataProcessed || src.data?.tableData || src.data?.parsedData;
         if (!Array.isArray(srcTable) || srcTable.length === 0) continue;
         const targets = connsByFrom[src.id] || [];
         for (const tid of targets) {
@@ -232,11 +339,11 @@ const App: React.FC = () => {
       }
 
       if (changed) {
-        console.log('[App] Auto-forward effect calling setWidgets with', next.length, 'widgets');
+        console.debug('[App] Auto-forward effect calling setWidgets with', next.length, 'widgets');
         setWidgets(next);
         // Data forwarded - Data Tables will only open when user explicitly clicks "Open table" button
       } else {
-        console.log('[App] Auto-forward effect: no changes needed');
+        console.debug('[App] Auto-forward effect: no changes needed');
       }
     } catch (e) {
       console.warn('[App] auto-forward effect failed', e);
@@ -349,7 +456,7 @@ const App: React.FC = () => {
         const sourceWidget = widgets.find(w => w.id === sourceId);
         if (!sourceWidget) return;
         
-        const srcTable = sourceWidget.data?.tableData || sourceWidget.data?.tableDataProcessed || sourceWidget.data?.parsedData;
+        const srcTable = sourceWidget.data?.tableDataProcessed || sourceWidget.data?.tableData || sourceWidget.data?.parsedData;
         if (!Array.isArray(srcTable) || srcTable.length === 0) return;
         
         // Find connected targets
@@ -376,10 +483,29 @@ const App: React.FC = () => {
   }, [widgets, connections]);
 
   const updateWidget = (id: string, changes: Partial<Widget>) => {
+    // Rate-limit/no-op protection: avoid applying identical updates repeatedly
+    try {
+      (updateWidget as any)._last = (updateWidget as any)._last || new Map();
+      const lastMap: Map<string, {hash: string, t: number}> = (updateWidget as any)._last;
+      const now = Date.now();
+      const hash = JSON.stringify(changes || {});
+      const prev = lastMap.get(id);
+      if (prev && prev.hash === hash && (now - prev.t) < 300) {
+        console.debug('[App] updateWidget skipped (debounced identical update) for', id);
+        return;
+      }
+      lastMap.set(id, { hash, t: now });
+    } catch (e) { /* ignore */ }
     const dataProp = (changes as any).data;
     const providedTableData = dataProp && Object.prototype.hasOwnProperty.call(dataProp, 'tableData');
     const tableDataLength = dataProp?.tableData?.length;
     console.log('[App] updateWidget called for', id, 'providedTableData:', !!providedTableData, 'tableData length:', tableDataLength);
+    // Diagnostic: when a caller explicitly provides an empty tableData (length === 0),
+    // log a stack trace to discover the source of the update that cleared data.
+    if (providedTableData && tableDataLength === 0) {
+      console.warn('[App][DIAG] updateWidget: caller provided empty tableData — logging stack to find caller');
+      try { console.warn(new Error().stack); } catch (e) { /* ignore */ }
+    }
     // Only warn if caller explicitly provided a tableData property that is undefined
     if (providedTableData && tableDataLength === undefined) {
       console.warn('[App] updateWidget: caller provided tableData but it is undefined — possible accidental clear. Stack:', new Error().stack);
@@ -404,6 +530,18 @@ const App: React.FC = () => {
         } else {
           merged.position = { x: Math.max(0, x), y: Math.max(0, y) };
         }
+      }
+      try {
+        // If merged.data is deeply equal to previous data and no other change, skip update to avoid loops
+        const prevDataStr = JSON.stringify(w.data || {});
+        const newDataStr = JSON.stringify(merged.data || {});
+        const typeUnchanged = safeType === w.type;
+        const posUnchanged = JSON.stringify(merged.position || {}) === JSON.stringify(w.position || {});
+        if (prevDataStr === newDataStr && typeUnchanged && posUnchanged) {
+          return w; // no-op
+        }
+      } catch (e) {
+        // If stringify fails, fall back to applying merged
       }
       return merged;
     }));
@@ -468,18 +606,49 @@ const App: React.FC = () => {
 
   // Auto-attach: fetch server-side active upload and assign to first file-upload widget
   const autoAttachRef = React.useRef(false);
+
+  // Normalize parsed rows: convert numeric-looking strings to numbers, trim strings, handle booleans
+  const normalizeParsedRows = (rows?: any[]): any[] => {
+    try {
+      if (!Array.isArray(rows)) return [];
+      return rows.map((r: any) => {
+        const out: Record<string, any> = {};
+        Object.keys(r || {}).forEach((k) => {
+          const v = r[k];
+          if (v === null || v === undefined) { out[k] = v; return; }
+          if (typeof v === 'string') {
+            const s = v.trim();
+            if (s !== '' && !Number.isNaN(Number(s))) { out[k] = Number(s); return; }
+            if (s.toLowerCase() === 'true') { out[k] = true; return; }
+            if (s.toLowerCase() === 'false') { out[k] = false; return; }
+            out[k] = s;
+            return;
+          }
+          out[k] = v;
+        });
+        return out;
+      });
+    } catch (e) {
+      try { console.warn('[App] normalizeParsedRows failed', e); } catch (err) {}
+      return rows || [];
+    }
+  };
   React.useEffect(() => {
     if (autoAttachRef.current) return;
     // run once after initial widgets state is available
     autoAttachRef.current = true;
     (async () => {
-      try {
-        const resp = await fetch('/api/upload');
-        if (!resp.ok) return;
-        const list = await resp.json();
-        const active = Array.isArray(list) ? (list.find((u: any) => u.active) || list[0]) : list;
-        if (!active) return;
-        let parsedRows = active.parsedData || active.data?.parsedData;
+        try {
+          const resp = await fetch('/api/upload');
+          if (!resp.ok) return;
+          const json = await resp.json();
+          // Support both shapes: server may return an object `{ files: [...] }`
+          // or an array of files directly. Normalize to `files` array.
+          const files = Array.isArray(json) ? json : (Array.isArray(json.files) ? json.files : []);
+          const active = (Array.isArray(files) && files.length > 0) ? (files.find((u: any) => u.active) || files[0]) : (json.active ? json : null);
+          if (!active) return;
+          let parsedRows = active.parsedData || active.data?.parsedData || active.parsed || active.file?.parsedData;
+        parsedRows = normalizeParsedRows(parsedRows);
         if (!Array.isArray(parsedRows) || parsedRows.length === 0) {
           const id = active._id || active.id || active.fileId || active.file;
           if (id) {
@@ -558,7 +727,7 @@ const App: React.FC = () => {
       return;
     }
     // update the selected widget with the file data
-    onUpdateWidget(selectedWidget.id, { data: { filename: file.filename, fileId: file._id, parsedData: file.parsedData } });
+    onUpdateWidget(selectedWidget.id, { data: { filename: file.filename, fileId: file._id, parsedData: normalizeParsedRows(file.parsedData) } });
     setFilesModalOpen(false);
   };
 
@@ -589,153 +758,172 @@ const App: React.FC = () => {
         (fromWidget.type === 'file-upload' || fromWidget.type === 'supabase' || fromWidget.type === 'blank-remover') &&
         toWidget.type === 'mean-average'
       ) {
-        const tableData = fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
-        setWidgets((prev: Widget[]) =>
-          prev.map((widget: Widget) =>
-            widget.id === toId
-              ? {
-                  ...widget,
-                  data: {
-                    ...widget.data,
-                    tableData,
-                    meanType: 'row', // default selection
-                    meanResult: [],  // will be calculated in the widget
-                  },
-                }
-              : widget
-          )
-        );
+        const tableData = fromWidget.data?.tableDataProcessed || fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
+        if (Array.isArray(tableData) && tableData.length > 0) {
+          setWidgets((prev: Widget[]) =>
+            prev.map((widget: Widget) =>
+              widget.id === toId
+                ? {
+                    ...widget,
+                    data: {
+                      ...widget.data,
+                      tableData,
+                      meanType: 'row', // default selection
+                      meanResult: [],  // will be calculated in the widget
+                    },
+                  }
+                : widget
+            )
+          );
+        }
       }
 
       // Mean Average -> Data Table
       if (fromWidget.type === 'mean-average' && toWidget.type === 'data-table') {
-        setWidgets((prev: Widget[]) =>
-          prev.map((widget: Widget) =>
-            widget.id === toId
-              ? {
-                  ...widget,
-                  data: {
-                    ...widget.data,
-                    tableData: fromWidget.data?.meanResult || [],
-                  },
-                }
-              : widget
-          )
-        );
+        const mres = fromWidget.data?.meanResult || [];
+        if (Array.isArray(mres) && mres.length > 0) {
+          setWidgets((prev: Widget[]) =>
+            prev.map((widget: Widget) =>
+              widget.id === toId
+                ? {
+                    ...widget,
+                    data: {
+                      ...widget.data,
+                      tableData: mres,
+                    },
+                  }
+                : widget
+            )
+          );
+        }
       }
 
       // File Upload/Supabase -> Blank Remover: fill blanks with "NIL"
       if ((fromWidget.type === 'file-upload' || fromWidget.type === 'supabase') && toWidget.type === 'blank-remover') {
-        const tableData = fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
-        // Replace all blank/empty/null/undefined cells with "NIL"
-        const processed = tableData.map((row: Record<string, any>) => {
-          const newRow: Record<string, any> = {};
-          Object.entries(row).forEach(([key, val]) => {
-            newRow[key] =
-              val === null ||
-              val === undefined ||
-              (typeof val === 'string' && val.trim() === '')
-                ? 'NIL'
-                : val;
+        const tableData = fromWidget.data?.tableDataProcessed || fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
+        if (Array.isArray(tableData) && tableData.length > 0) {
+          // Replace all blank/empty/null/undefined cells with "NIL"
+          const processed = tableData.map((row: Record<string, any>) => {
+            const newRow: Record<string, any> = {};
+            Object.entries(row).forEach(([key, val]) => {
+              newRow[key] =
+                val === null ||
+                val === undefined ||
+                (typeof val === 'string' && val.trim() === '')
+                  ? 'NIL'
+                  : val;
+            });
+            return newRow;
           });
-          return newRow;
-        });
-        setWidgets((prev: Widget[]) =>
-          prev.map((widget: Widget) =>
-            widget.id === toId
-              ? {
-                  ...widget,
-                  data: { ...widget.data, tableData: processed },
-                }
-              : widget
-          )
-        );
+          setWidgets((prev: Widget[]) =>
+            prev.map((widget: Widget) =>
+              widget.id === toId
+                ? {
+                    ...widget,
+                    data: { ...widget.data, tableData: processed },
+                  }
+                : widget
+            )
+          );
+        }
       }
 
       // Blank Remover -> Data Table
       if (fromWidget.type === 'blank-remover' && toWidget.type === 'data-table') {
-        setWidgets((prev: Widget[]) =>
-          prev.map((widget: Widget) =>
-            widget.id === toId
-              ? {
-                  ...widget,
-                  data: {
-                    ...widget.data,
-                    tableData: fromWidget.data?.tableData || [],
-                  },
-                }
-              : widget
-          )
-        );
+        const tb = fromWidget.data?.tableData || [];
+        if (Array.isArray(tb) && tb.length > 0) {
+          setWidgets((prev: Widget[]) =>
+            prev.map((widget: Widget) =>
+              widget.id === toId
+                ? {
+                    ...widget,
+                    data: {
+                      ...widget.data,
+                      tableData: tb,
+                    },
+                  }
+                : widget
+            )
+          );
+        }
       }
 
           // File Upload/Supabase -> Data Table (use tableData from source if present)
           if ((fromWidget.type === 'file-upload' || fromWidget.type === 'supabase') && toWidget.type === 'data-table') {
-            const tableData = fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
-            setWidgets((prev: Widget[]) =>
-              prev.map((widget: Widget) =>
-                widget.id === toId
-                  ? {
-                      ...widget,
-                      data: {
-                        ...widget.data,
-                        tableData,
-                      },
-                    }
-                  : widget
-              )
-            );
+            const tableData = fromWidget.data?.tableDataProcessed || fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
+            if (Array.isArray(tableData) && tableData.length > 0) {
+              setWidgets((prev: Widget[]) =>
+                prev.map((widget: Widget) =>
+                  widget.id === toId
+                    ? {
+                        ...widget,
+                        data: {
+                          ...widget.data,
+                          tableData,
+                        },
+                      }
+                    : widget
+                )
+              );
+            }
           }
 
           // File Upload/Supabase -> Line Chart
           if ((fromWidget.type === 'file-upload' || fromWidget.type === 'supabase') && toWidget.type === 'line-chart') {
-            const tableData = fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
-            setWidgets((prev: Widget[]) =>
-              prev.map((widget: Widget) =>
-                widget.id === toId
-                  ? {
-                      ...widget,
-                      data: {
-                        ...widget.data,
-                        tableData,
-                      },
-                    }
-                  : widget
-              )
-            );
+            const tableData = fromWidget.data?.tableDataProcessed || fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
+            if (Array.isArray(tableData) && tableData.length > 0) {
+              setWidgets((prev: Widget[]) =>
+                prev.map((widget: Widget) =>
+                  widget.id === toId
+                    ? {
+                        ...widget,
+                        data: {
+                          ...widget.data,
+                          tableData,
+                        },
+                      }
+                    : widget
+                )
+              );
+            }
           }
 
           // File Upload/Supabase -> Baseline Correction
           if ((fromWidget.type === 'file-upload' || fromWidget.type === 'supabase') && toWidget.type === 'baseline-correction') {
-            const tableData = fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
-            setWidgets((prev: Widget[]) =>
-              prev.map((widget: Widget) =>
-                widget.id === toId
-                  ? {
-                      ...widget,
-                      data: {
-                        ...(widget.data || {}),
-                        tableData,
-                      },
-                    }
-                  : widget
-              )
-            );
+            const tableData = fromWidget.data?.tableDataProcessed || fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
+            if (Array.isArray(tableData) && tableData.length > 0) {
+              setWidgets((prev: Widget[]) =>
+                prev.map((widget: Widget) =>
+                  widget.id === toId
+                    ? {
+                        ...widget,
+                        data: {
+                          ...(widget.data || {}),
+                          tableData,
+                          tableDataProcessed: tableData,
+                        },
+                      }
+                    : widget
+                )
+              );
+            }
           }
 
-      // File Upload / Supabase -> Noise Filter
+      // File Upload/Supabase -> Noise Filter
       if ((fromWidget.type === 'file-upload' || fromWidget.type === 'supabase') && toWidget.type === 'noise-filter') {
-        const tableData = fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
-        setWidgets((prev: Widget[]) =>
-          prev.map((widget: Widget) =>
-            widget.id === toId
-              ? {
-                  ...widget,
-                  data: { ...(widget.data || {}), tableData },
-                }
-              : widget
-          )
-        );
+        const tableData = fromWidget.data?.tableDataProcessed || fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
+        if (Array.isArray(tableData) && tableData.length > 0) {
+          setWidgets((prev: Widget[]) =>
+            prev.map((widget: Widget) =>
+              widget.id === toId
+                ? {
+                    ...widget,
+                    data: { ...(widget.data || {}), tableData, tableDataProcessed: tableData },
+                  }
+                : widget
+            )
+          );
+        }
       }
 
       // Baseline Correction -> Noise Filter (NEW: allows preprocessing chain)
@@ -746,7 +934,7 @@ const App: React.FC = () => {
             widget.id === toId
               ? {
                   ...widget,
-                  data: { ...(widget.data || {}), tableData },
+                  data: { ...(widget.data || {}), tableData, tableDataProcessed: tableData },
                 }
               : widget
           )
@@ -785,7 +973,7 @@ const App: React.FC = () => {
 
           // File Upload/Supabase -> Scatter Plot
           if ((fromWidget.type === 'file-upload' || fromWidget.type === 'supabase') && toWidget.type === 'scatter-plot') {
-            const tableData = fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
+            const tableData = fromWidget.data?.tableDataProcessed || fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
             setWidgets((prev: Widget[]) =>
               prev.map((widget: Widget) =>
                 widget.id === toId
@@ -794,6 +982,7 @@ const App: React.FC = () => {
                       data: {
                         ...widget.data,
                         tableData,
+                        tableDataProcessed: tableData,
                       },
                     }
                   : widget
@@ -803,7 +992,7 @@ const App: React.FC = () => {
 
           // File Upload/Supabase -> Box Plot
           if ((fromWidget.type === 'file-upload' || fromWidget.type === 'supabase') && toWidget.type === 'box-plot') {
-            const tableData = fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
+            const tableData = fromWidget.data?.tableDataProcessed || fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
             setWidgets((prev: Widget[]) =>
               prev.map((widget: Widget) =>
                 widget.id === toId
@@ -812,6 +1001,7 @@ const App: React.FC = () => {
                       data: {
                         ...widget.data,
                         tableData,
+                        tableDataProcessed: tableData,
                       },
                     }
                   : widget
@@ -821,7 +1011,7 @@ const App: React.FC = () => {
 
           // File Upload/Supabase -> Bar Chart
           if ((fromWidget.type === 'file-upload' || fromWidget.type === 'supabase') && toWidget.type === 'bar-chart') {
-            const tableData = fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
+            const tableData = fromWidget.data?.tableDataProcessed || fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
             setWidgets((prev: Widget[]) =>
               prev.map((widget: Widget) =>
                 widget.id === toId
@@ -852,7 +1042,7 @@ const App: React.FC = () => {
             setWidgets((prev: Widget[]) =>
               prev.map((widget: Widget) =>
                 widget.id === toId
-                  ? { ...widget, data: { ...(widget.data || {}), tableData } }
+                  ? { ...widget, data: { ...(widget.data || {}), tableData, tableDataProcessed: tableData } }
                   : widget
               )
             );
@@ -873,7 +1063,7 @@ const App: React.FC = () => {
             setWidgets((prev: Widget[]) =>
               prev.map((widget: Widget) =>
                 widget.id === toId
-                  ? { ...widget, data: { ...(widget.data || {}), tableData } }
+                  ? { ...widget, data: { ...(widget.data || {}), tableData, tableDataProcessed: tableData } }
                   : widget
               )
             );
@@ -882,14 +1072,14 @@ const App: React.FC = () => {
           // Generic fallback: if the source widget has tableData (e.g., Supabase fetch)
           // forward it to the target if the target doesn't already have tableData.
           try {
-            const forwardTable = fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
+            const forwardTable = fromWidget.data?.tableDataProcessed || fromWidget.data?.tableData || fromWidget.data?.parsedData || [];
             if (forwardTable && forwardTable.length > 0) {
               setWidgets((prev: Widget[]) =>
                 prev.map((widget: Widget) =>
                   widget.id === toId
                     ? {
                         ...widget,
-                        data: { ...(widget.data || {}), tableData: forwardTable },
+                        data: { ...(widget.data || {}), tableData: forwardTable, tableDataProcessed: forwardTable },
                       }
                     : widget
                 )
@@ -902,8 +1092,181 @@ const App: React.FC = () => {
     [widgets]
   );
 
-  if (!loggedIn) {
-    return <LoginPage onLogin={handleLogin} />;
+  // If the URL explicitly requests the login page, show it regardless of loggedIn state.
+  if (showLoginPage) {
+    return <LoginPage onLogin={() => { handleLogin(); setShowLoginPage(false); setShowLanding(false); }} />;
+  }
+  const _pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+  const isLoginPath = _pathname === '/login' || _pathname.endsWith('/login');
+
+  if (isLoginPath || showLanding) {
+    return (
+      <div className="min-h-screen bg-gradient-to-r from-slate-900 via-blue-900 to-cyan-900 text-white" style={{ paddingLeft: '1cm', paddingRight: '1cm' }}>
+        <header className="w-full px-0 py-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded overflow-hidden flex items-center justify-center bg-transparent">
+              <img src="/logo_only.png" alt="Company logo" className="w-full h-full object-contain" />
+            </div>
+            <div>
+              <div className="font-semibold text-lg">DeepSpectrum</div>
+              <div className="text-sm text-white/70">Spectral Data Analysis</div>
+            </div>
+          </div>
+          <nav className="flex items-center gap-4">
+            <a className="text-sm text-white/80 hover:text-white">Home</a>
+            <a className="text-sm text-white/80 hover:text-white">About</a>
+            <a className="text-sm text-white/80 hover:text-white">Features</a>
+            <button
+              onClick={() => {
+                // Download App -> enter app
+                setShowLanding(false);
+                setLoggedIn(true);
+                try { localStorage.setItem('loggedIn', 'true'); } catch (e) { /* ignore */ }
+                try { window.history.pushState({}, '', '/'); } catch (e) { /* ignore */ }
+              }}
+              className="ml-4 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 rounded text-sm font-medium"
+            >
+              Download App
+            </button>
+            <a
+              href="/login?showLogin=1"
+              onClick={(e) => {
+                if ((e as any).metaKey || (e as any).ctrlKey || (e as any).shiftKey || (e as any).button === 1) return;
+                e.preventDefault();
+                // Open the login overlay
+                setShowLoginPage(true);
+                try { window.history.pushState({}, '', '/login?showLogin=1'); } catch (e) { }
+              }}
+              className="ml-2 px-3 py-2 border border-white/30 rounded text-sm inline-block text-center"
+            >
+              Login Online
+            </a>
+          </nav>
+        </header>
+
+        <main className="w-full px-0 py-20">
+          <div className="grid grid-cols-12 gap-8 items-center">
+            <div className="col-span-6">
+              <h1 className="text-5xl font-extrabold leading-tight mb-6">Spectral Data Processing & Prediction Tool</h1>
+              <p className="text-lg text-white/80 mb-8">Analyze, visualize, and predict unknown compounds using advanced machine learning algorithms. Fast, accurate, and reliable.</p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => { setShowLanding(false); setLoggedIn(true); try { localStorage.setItem('loggedIn', 'true'); } catch (e) {} }}
+                  className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 rounded-lg font-medium"
+                >
+                  Download App
+                </button>
+                <button
+                  onClick={() => { setShowLoginPage(true); try { window.history.pushState({}, '', '/login?showLogin=1'); } catch (e) {} }}
+                  className="px-6 py-3 border border-white/30 rounded-lg font-medium bg-white/5"
+                >
+                  Login Online
+                </button>
+              </div>
+            </div>
+            <div className="col-span-6">
+              <div className="w-full h-80 rounded-lg shadow-lg overflow-hidden">
+                <img src="/bg13.jpg?v=2" alt="Hero background" className="w-full h-full object-cover" />
+              </div>
+            </div>
+          </div>
+
+          {/* Features band styled like the reference */}
+          <section className="mt-16 bg-gray-50 py-12 rounded-lg" style={{ paddingLeft: '1rem', paddingRight: '1rem' }}>
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-extrabold text-slate-900">Why SpectraSense?</h2>
+                <p className="text-slate-600 mt-2">A complete platform for spectral analysis, machine learning prediction, and result visualization.</p>
+              </div>
+
+              <div className="grid grid-cols-4 gap-6">
+                <div className="bg-white rounded-lg p-6 shadow-md flex gap-4 items-start">
+                  <div className="w-12 h-12 bg-blue-50 rounded flex items-center justify-center">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 17h4l3-7 4 10 3-6h4" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900">Data Visualization</h3>
+                    <p className="text-sm text-slate-600">Visualize spectral data with interactive graphs and peak detection.</p>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-6 shadow-md flex gap-4 items-start">
+                  <div className="w-12 h-12 bg-green-50 rounded flex items-center justify-center">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2v20" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M5 12h14" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900">ML Prediction</h3>
+                    <p className="text-sm text-slate-600">Predict compounds using trained ML models like Random Forest, PCA, and PLS.</p>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-6 shadow-md flex gap-4 items-start">
+                  <div className="w-12 h-12 bg-purple-50 rounded flex items-center justify-center">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 12h18" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 3v18" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900">Cloud Integration</h3>
+                    <p className="text-sm text-slate-600">Securely store and manage your datasets in the cloud for seamless access.</p>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-6 shadow-md flex gap-4 items-start">
+                  <div className="w-12 h-12 bg-yellow-50 rounded flex items-center justify-center">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 7h18" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 7v14" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900">Easy Workflow</h3>
+                    <p className="text-sm text-slate-600">Upload, process, predict, and export results in just a few simple steps.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* How It Works */}
+              <div className="mt-12 bg-white rounded-lg p-8 shadow-sm">
+                <div className="grid grid-cols-12 gap-6 items-center">
+                  <div className="col-span-4">
+                    <h4 className="text-xl font-bold text-slate-900">How It Works</h4>
+                    <p className="text-slate-600 mt-3">Our streamlined workflow makes spectral analysis simple and efficient.</p>
+                    <button className="mt-4 px-4 py-2 border border-emerald-500 text-emerald-600 rounded">Learn More</button>
+                  </div>
+                  <div className="col-span-8 grid grid-cols-4 gap-4">
+                    <div className="bg-gray-50 rounded-lg p-4 text-center">
+                      <div className="w-12 h-12 bg-white rounded-full mx-auto flex items-center justify-center shadow-sm">⬆️</div>
+                      <div className="mt-3 font-semibold">1. Upload Data</div>
+                      <div className="text-sm text-slate-600 mt-2">Upload your spectral data in supported formats.</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 text-center">
+                      <div className="w-12 h-12 bg-white rounded-full mx-auto flex items-center justify-center shadow-sm">⚙️</div>
+                      <div className="mt-3 font-semibold">2. Process Data</div>
+                      <div className="text-sm text-slate-600 mt-2">The system processes and extracts important features.</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 text-center">
+                      <div className="w-12 h-12 bg-white rounded-full mx-auto flex items-center justify-center shadow-sm">📊</div>
+                      <div className="mt-3 font-semibold">3. Predict</div>
+                      <div className="text-sm text-slate-600 mt-2">Our ML models predict the most probable compound.</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 text-center">
+                      <div className="w-12 h-12 bg-white rounded-full mx-auto flex items-center justify-center shadow-sm">✅</div>
+                      <div className="mt-3 font-semibold">4. Get Results</div>
+                      <div className="text-sm text-slate-600 mt-2">View and download the results with detailed insights.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Contact / Location section - appears when user scrolls down */}
+          <section id="contact" className="mt-12 py-12">
+            <div className="max-w-7xl mx-auto bg-white rounded-lg p-8 shadow-md">
+              <h3 className="text-2xl font-semibold text-slate-900 mb-4">Contact Us</h3>
+              <p className="text-sm text-slate-700 mb-2"><strong>Phone:</strong> +91 9876543210</p>
+              <p className="text-sm text-slate-700"><strong>Address:</strong> IITM Parvatk, IIT Madras, Chennai</p>
+            </div>
+          </section>
+        </main>
+      </div>
+    );
   }
   return (
     <ThemeProvider theme={theme} toggleTheme={toggleTheme}>

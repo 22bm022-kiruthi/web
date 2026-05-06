@@ -135,14 +135,43 @@ const DataTableModal: React.FC<DataTableModalProps> = ({ isOpen, data, onClose, 
 
   // Ensure hooks run unconditionally — compute safe data/columns
   const safeData = Array.isArray(data) ? data : [];
+  // If rows include a nested `__raw` object (from flattened processing), merge it
+  // into the top-level row for display so original fields (S.No, Sample name, etc.)
+  // are visible in the table.
+  const displayData = safeData.map((row: any) => {
+    if (row && typeof row === 'object' && row.__raw && typeof row.__raw === 'object' && !Array.isArray(row.__raw)) {
+      // Merge __raw fields first, then override with top-level (shift/intensity) so
+      // scalar values take precedence.
+      const merged = { ...row.__raw, ...row };
+      // Remove nested __raw to avoid double-nesting when stringifying
+      delete merged.__raw;
+      return merged;
+    }
+    return row;
+  });
+
+  // Debug: log a sample row to help diagnose empty-cell rendering
+  if (displayData.length > 0) {
+    try { console.log('[DataTableModal] first row sample (displayData):', displayData[0]); } catch (e) { /* ignore */ }
+  }
+
   const columns: string[] = [];
-  if (safeData.length > 0) {
-    const first = safeData[0];
+  if (displayData.length > 0) {
+    const first = displayData[0];
     if (typeof first === 'object' && !Array.isArray(first)) {
       columns.push(...Object.keys(first));
     } else if (Array.isArray(first)) {
       columns.push(...first.map((_: any, i: number) => `Column ${i + 1}`));
     }
+    try {
+      console.log('[DataTableModal] computed columns:', columns);
+      // log each column's value/type for the first row to help debugging
+      if (typeof displayData[0] === 'object' && !Array.isArray(displayData[0])) {
+        columns.forEach((col) => {
+          try { console.log('[DataTableModal] firstRow col', col, '->', displayData[0][col], typeof displayData[0][col]); } catch (e) { /* ignore */ }
+        });
+      }
+    } catch (e) { /* ignore */ }
   }
 
   // Don't render if modal is not open
@@ -151,15 +180,15 @@ const DataTableModal: React.FC<DataTableModalProps> = ({ isOpen, data, onClose, 
   }
 
   // If no data, normally don't render. In debug mode we still render a placeholder
-  if (safeData.length === 0) {
+  if (displayData.length === 0) {
     console.debug('[DataTableModal] no data available', { isOpen, sourceWidgetId });
     if (!DEBUG_ALWAYS_SHOW) {
-      console.debug('[DataTableModal] not rendering because safeData.length === 0', { isOpen, sourceWidgetId });
+      console.debug('[DataTableModal] not rendering because displayData.length === 0', { isOpen, sourceWidgetId });
       return null;
     }
   }
   const modalContent = (
-    <div 
+    <div
       // When portalled into the canvas the overlay is absolute inside the canvas.
       className="data-table-overlay"
       style={{ position: portalContainerRef.current ? 'absolute' : 'fixed', left: 0, top: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 10001 }}
@@ -201,7 +230,7 @@ const DataTableModal: React.FC<DataTableModalProps> = ({ isOpen, data, onClose, 
           >
             Data Table
           </div>
-          <button 
+          <button
             onClick={(e) => {
               console.log('[DataTableModal] Close button clicked!');
               e.preventDefault();
@@ -211,34 +240,44 @@ const DataTableModal: React.FC<DataTableModalProps> = ({ isOpen, data, onClose, 
             onMouseDown={(e) => {
               e.stopPropagation();
             }}
-            className="text-gray-500 hover:text-red-500 text-2xl font-bold leading-none cursor-pointer bg-transparent border-none"
+            className="px-3 py-1 bg-gray-200 rounded text-sm text-gray-700 hover:bg-gray-300 cursor-pointer"
             aria-label="Close"
             type="button"
             style={{ padding: '0 8px' }}
           >
-            ×
+            Close
           </button>
         </div>
         <div className="overflow-auto max-h-[60vh]">
           <table className="min-w-full border border-gray-300">
-            <thead>
+            <thead className="bg-gray-100 sticky top-0">
               <tr>
-                {columns.map((col: string, idx: number) => (
-                  <th key={idx} className="border px-2 py-1 bg-gray-100">{col}</th>
+                {columns.map((col, idx) => (
+                  <th key={String(col) + String(idx)} className="px-2 py-1 text-left text-sm font-medium text-gray-700 border-b" style={{ color: '#111' }}>
+                    {col}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {safeData.map((row: any, i: number) => (
-                <tr key={i}>
-                  {columns.map((col: string, idx: number) => {
-                    const cellValue = typeof row === 'object' && !Array.isArray(row) ? row[col] : row[idx];
-                    // Convert objects to JSON strings to avoid React rendering errors
-                    const displayValue = typeof cellValue === 'object' && cellValue !== null 
-                      ? JSON.stringify(cellValue) 
-                      : String(cellValue ?? '');
+              {displayData.map((row: any, rIdx: number) => (
+                <tr key={rIdx} className="odd:bg-white even:bg-gray-50">
+                  {columns.map((col, cIdx) => {
+                    const cellValue = typeof row === 'object' && !Array.isArray(row) ? row[col] : (Array.isArray(row) ? row[cIdx] : undefined);
+                    let displayValue = '(empty)';
+                    if (cellValue !== null && cellValue !== undefined && String(cellValue).trim() !== '') {
+                      if (typeof cellValue === 'object') {
+                        try {
+                          displayValue = JSON.stringify(cellValue);
+                        } catch (e) {
+                          displayValue = String(cellValue);
+                        }
+                      } else {
+                        displayValue = String(cellValue);
+                      }
+                    }
                     return (
-                      <td key={idx} className="border px-2 py-1">
+                      <td key={String(col) + String(cIdx)} className="px-2 py-1 text-sm text-gray-900 align-top border-b" style={{ color: '#111', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                         {displayValue}
                       </td>
                     );

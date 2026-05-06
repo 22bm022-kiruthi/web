@@ -1,0 +1,3 @@
+SUPABASE_URL=https://PROJECT_REF.supabase.co
+SUPABASE_SERVICE_KEY=your_service_role_key_here
+SUPABASE_TABLE=raman_data

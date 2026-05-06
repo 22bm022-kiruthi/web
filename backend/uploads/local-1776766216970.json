@@ -1,0 +1,518 @@
+{
+  "filename": "sample_full_spectrum.csv",
+  "parsedData": [
+    {
+      "Raman Shift": "400",
+      "Raman intensity": "1250",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "420",
+      "Raman intensity": "1280",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "440",
+      "Raman intensity": "1310",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "460",
+      "Raman intensity": "1290",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "480",
+      "Raman intensity": "1340",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "500",
+      "Raman intensity": "1380",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "520",
+      "Raman intensity": "1420",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "540",
+      "Raman intensity": "1450",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "560",
+      "Raman intensity": "1520",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "580",
+      "Raman intensity": "1590",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "600",
+      "Raman intensity": "1680",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "620",
+      "Raman intensity": "1750",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "640",
+      "Raman intensity": "1890",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "660",
+      "Raman intensity": "2100",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "680",
+      "Raman intensity": "2380",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "700",
+      "Raman intensity": "2750",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "720",
+      "Raman intensity": "3250",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "740",
+      "Raman intensity": "3850",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "760",
+      "Raman intensity": "4520",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "780",
+      "Raman intensity": "5280",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "800",
+      "Raman intensity": "6150",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "820",
+      "Raman intensity": "7100",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "840",
+      "Raman intensity": "8200",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "860",
+      "Raman intensity": "9350",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "880",
+      "Raman intensity": "10500",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "900",
+      "Raman intensity": "11600",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "920",
+      "Raman intensity": "12500",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "940",
+      "Raman intensity": "13200",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "960",
+      "Raman intensity": "13600",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "980",
+      "Raman intensity": "13750",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1000",
+      "Raman intensity": "13680",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1020",
+      "Raman intensity": "13420",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1040",
+      "Raman intensity": "12980",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1060",
+      "Raman intensity": "12350",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1080",
+      "Raman intensity": "11600",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1100",
+      "Raman intensity": "10850",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1120",
+      "Raman intensity": "10200",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1140",
+      "Raman intensity": "9650",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1160",
+      "Raman intensity": "9200",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1180",
+      "Raman intensity": "8850",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1200",
+      "Raman intensity": "8600",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1220",
+      "Raman intensity": "8450",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1240",
+      "Raman intensity": "8380",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1260",
+      "Raman intensity": "8350",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1280",
+      "Raman intensity": "8380",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1300",
+      "Raman intensity": "8450",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1320",
+      "Raman intensity": "8580",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1340",
+      "Raman intensity": "8750",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1360",
+      "Raman intensity": "8980",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1380",
+      "Raman intensity": "9250",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1400",
+      "Raman intensity": "9580",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1420",
+      "Raman intensity": "9950",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1440",
+      "Raman intensity": "10350",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1460",
+      "Raman intensity": "10780",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1480",
+      "Raman intensity": "11220",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1500",
+      "Raman intensity": "11680",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1520",
+      "Raman intensity": "12150",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1540",
+      "Raman intensity": "12600",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1560",
+      "Raman intensity": "13050",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1580",
+      "Raman intensity": "13450",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1600",
+      "Raman intensity": "13820",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1620",
+      "Raman intensity": "14150",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1640",
+      "Raman intensity": "14420",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1660",
+      "Raman intensity": "14620",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1680",
+      "Raman intensity": "14750",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1700",
+      "Raman intensity": "14800",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1720",
+      "Raman intensity": "14780",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1740",
+      "Raman intensity": "14680",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1760",
+      "Raman intensity": "14520",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1780",
+      "Raman intensity": "14300",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1800",
+      "Raman intensity": "14020",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1820",
+      "Raman intensity": "13680",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1840",
+      "Raman intensity": "13300",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1860",
+      "Raman intensity": "12880",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1880",
+      "Raman intensity": "12420",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1900",
+      "Raman intensity": "11950",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1920",
+      "Raman intensity": "11480",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1940",
+      "Raman intensity": "11020",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1960",
+      "Raman intensity": "10580",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "1980",
+      "Raman intensity": "10180",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2000",
+      "Raman intensity": "9820",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2020",
+      "Raman intensity": "9500",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2040",
+      "Raman intensity": "9220",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2060",
+      "Raman intensity": "8980",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2080",
+      "Raman intensity": "8780",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2100",
+      "Raman intensity": "8620",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2120",
+      "Raman intensity": "8500",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2140",
+      "Raman intensity": "8420",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2160",
+      "Raman intensity": "8380",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2180",
+      "Raman intensity": "8380",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2200",
+      "Raman intensity": "8420",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2220",
+      "Raman intensity": "8500",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2240",
+      "Raman intensity": "8620",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2260",
+      "Raman intensity": "8780",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2280",
+      "Raman intensity": "8980",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2300",
+      "Raman intensity": "9220",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2320",
+      "Raman intensity": "9500",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2340",
+      "Raman intensity": "9820",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2360",
+      "Raman intensity": "10180",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2380",
+      "Raman intensity": "10580",
+      "Sample name": "Test Polystyrene Full"
+    },
+    {
+      "Raman Shift": "2400",
+      "Raman intensity": "11020",
+      "Sample name": "Test Polystyrene Full"
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]",
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}

@@ -250,3 +250,22 @@
   background: #2d2d2d;
   border-color: #616161;
 }
+
+/* Sidebar icon overrides: ensure icons render as white lines inside circle and remove unexpected borders */
+.icon-outer svg {
+  stroke: currentColor !important;
+  fill: none !important;
+  color: inherit !important;
+  display: block;
+}
+.icon-outer svg * {
+  stroke: currentColor !important;
+  fill: none !important;
+}
+.icon-outer img {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  display: block;
+  filter: brightness(0) invert(1) !important;
+}

@@ -37,7 +37,7 @@ function minSubtract(tableData) {
 }
 
 // rolling minimum baseline subtraction: for each point subtract the minimum within a sliding window
-function rollingMinSubtract(tableData, windowSize = 5) {
+function rollingMinSubtract(tableData, windowSize = 21) {
   if (!Array.isArray(tableData) || tableData.length === 0) return tableData || [];
   const n = tableData.length;
   const cols = Object.keys(tableData[0]);
@@ -115,26 +115,23 @@ function polynomialSubtract(tableData, degree = 2) {
   if (yCols.length === 0) return tableData;
 
   // build Vandermonde and solve normal equations per y column
+  // Robustify polynomial baseline fit: fit polynomial to local minima (bin-wise)
   const corrected = tableData.map((r) => ({ ...r }));
 
   // helper: solve linear system A x = b using Gaussian elimination (A is square)
   function solveLinear(A, b) {
     const m = A.length;
-    // build augmented matrix
     const M = new Array(m);
     for (let i = 0; i < m; i++) {
       M[i] = A[i].slice();
       M[i].push(b[i]);
     }
-    // forward elimination
     for (let k = 0; k < m; k++) {
-      // find pivot
       let iMax = k;
       for (let i = k + 1; i < m; i++) if (Math.abs(M[i][k]) > Math.abs(M[iMax][k])) iMax = i;
       const tmp = M[k]; M[k] = M[iMax]; M[iMax] = tmp;
       const pivot = M[k][k];
-      if (Math.abs(pivot) < 1e-12) continue; // singular-ish
-      // normalize row
+      if (Math.abs(pivot) < 1e-12) continue;
       for (let j = k; j <= m; j++) M[k][j] /= pivot;
       for (let i = 0; i < m; i++) {
         if (i === k) continue;
@@ -142,59 +139,87 @@ function polynomialSubtract(tableData, degree = 2) {
         for (let j = k; j <= m; j++) M[i][j] -= factor * M[k][j];
       }
     }
-    const x = new Array(m).fill(0);
-    for (let i = 0; i < m; i++) x[i] = M[i][m];
-    return x;
+    const xsol = new Array(m).fill(0);
+    for (let i = 0; i < m; i++) xsol[i] = M[i][m];
+    return xsol;
   }
 
-  // build matrix V (n x (degree+1))
-  const V = new Array(n);
-  for (let i = 0; i < n; i++) {
-    V[i] = new Array(degree + 1);
-    let xi = Number(x[i]);
-    if (isNaN(xi)) xi = i;
+  // evaluate polynomial with coeffs at xi
+  function evalPoly(coeffs, xi) {
+    let v = 0;
     let pow = 1;
-    for (let d = 0; d <= degree; d++) {
-      V[i][d] = pow;
+    for (let i = 0; i < coeffs.length; i++) {
+      v += coeffs[i] * pow;
       pow *= xi;
     }
+    return v;
   }
 
-  // precompute V^T * V (size (deg+1)x(deg+1))
-  const m = degree + 1;
-  const VtV = new Array(m).fill(0).map(() => new Array(m).fill(0));
-  const VtY = new Array(m).fill(0);
-
   yCols.forEach((col) => {
-    // compute V^T * y
-    for (let i = 0; i < m; i++) VtY[i] = 0;
-    for (let r = 0; r < n; r++) {
-      const yi = Number(tableData[r][col]);
-      if (isNaN(yi)) continue;
-      for (let i = 0; i < m; i++) VtY[i] += V[r][i] * yi;
-    }
-    // compute V^T * V
-    for (let i = 0; i < m; i++) for (let j = 0; j < m; j++) VtV[i][j] = 0;
-    for (let r = 0; r < n; r++) {
-      for (let i = 0; i < m; i++) for (let j = 0; j < m; j++) VtV[i][j] += V[r][i] * V[r][j];
-    }
-
-    // solve (V^T V) c = V^T y
-    let coeffs = [];
-    try {
-      coeffs = solveLinear(VtV.map((row) => row.slice()), VtY.slice());
-    } catch (e) {
-      coeffs = new Array(m).fill(0);
-    }
-
-    // compute baseline and subtract
-    for (let i = 0; i < n; i++) {
-      let baseline = 0;
-      let powx = 1;
-      for (let d = 0; d < m; d++) {
-        baseline += coeffs[d] * powx;
-        powx *= Number(x[i]) || i;
+    const vals = tableData.map((r) => Number(r[col]));
+    // choose bin minima as baseline anchors
+    const bins = Math.min(50, Math.max(8, Math.floor(n / 20)));
+    const anchorsX = [];
+    const anchorsY = [];
+    for (let b = 0; b < bins; b++) {
+      const start = Math.floor((b * n) / bins);
+      const end = Math.min(n - 1, Math.floor(((b + 1) * n) / bins) - 1);
+      let minVal = Infinity;
+      let minIdx = start;
+      for (let i = start; i <= end; i++) {
+        const v = vals[i];
+        if (!isNaN(v) && v < minVal) { minVal = v; minIdx = i; }
       }
+      if (minVal !== Infinity) {
+        anchorsX.push(Number(x[minIdx]) || minIdx);
+        anchorsY.push(minVal);
+      }
+    }
+
+    let coeffs = null;
+    const m = degree + 1;
+    if (anchorsX.length >= m) {
+      // build Vandermonde for anchors
+      const A = new Array(m).fill(0).map(() => new Array(m).fill(0));
+      const B = new Array(m).fill(0);
+      // compute A = VtV and B = VtY over anchor points
+      for (let r = 0; r < anchorsX.length; r++) {
+        let pow = 1;
+        const row = [];
+        for (let d = 0; d < m; d++) { row.push(pow); pow *= anchorsX[r]; }
+        for (let i = 0; i < m; i++) {
+          for (let j = 0; j < m; j++) A[i][j] += row[i] * row[j];
+          B[i] += row[i] * anchorsY[r];
+        }
+      }
+      try {
+        coeffs = solveLinear(A.map((r) => r.slice()), B.slice());
+      } catch (e) {
+        coeffs = null;
+      }
+    }
+
+    // fallback: ordinary fit on full data if anchors insufficient
+    if (!coeffs) {
+      // build V^T V and V^T y on full data
+      const VtV = new Array(m).fill(0).map(() => new Array(m).fill(0));
+      const VtY = new Array(m).fill(0);
+      for (let r = 0; r < n; r++) {
+        const xi = Number(x[r]) || r;
+        let pow = 1;
+        for (let i = 0; i < m; i++) {
+          for (let j = 0; j < m; j++) VtV[i][j] += pow * Math.pow(xi, j);
+          VtY[i] += pow * (Number(tableData[r][col]) || 0);
+          pow *= xi;
+        }
+      }
+      try { coeffs = solveLinear(VtV.map((r) => r.slice()), VtY.slice()); } catch (e) { coeffs = new Array(m).fill(0); }
+    }
+
+    // subtract baseline
+    for (let i = 0; i < n; i++) {
+      const xi = Number(x[i]) || i;
+      const baseline = evalPoly(coeffs, xi);
       const v = Number(tableData[i][col]);
       corrected[i][col] = !isNaN(v) ? Number((v - baseline).toFixed(6)) : tableData[i][col];
     }

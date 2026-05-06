@@ -1,0 +1,60 @@
+{
+  "filename": "unknow spectral1.xlsx",
+  "parsedData": [
+    {
+      "wavelength": 358,
+      "intensity": 0.1
+    },
+    {
+      "wavelength": 360,
+      "intensity": 0.12
+    },
+    {
+      "wavelength": 362,
+      "intensity": 0.15
+    },
+    {
+      "wavelength": 364,
+      "intensity": 0.18
+    },
+    {
+      "wavelength": 366,
+      "intensity": 22
+    },
+    {
+      "wavelength": 368,
+      "intensity": 0.25
+    },
+    {
+      "wavelength": 370,
+      "intensity": 0.28
+    },
+    {
+      "wavelength": 372,
+      "intensity": 0.3
+    },
+    {
+      "wavelength": 374,
+      "intensity": 0.32
+    },
+    {
+      "wavelength": 376,
+      "intensity": 0.3
+    },
+    {
+      "wavelength": 378,
+      "intensity": 0.28
+    },
+    {
+      "wavelength": 380,
+      "intensity": 0.25
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}

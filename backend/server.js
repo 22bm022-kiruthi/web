@@ -3,10 +3,11 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 
-// Set Supabase credentials directly (temporary solution)
-process.env.SUPABASE_URL = 'https://zatafiglyptbujqzsohc.supabase.co';
-process.env.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphdGFmaWdseXB0YnVqcXpzb2hjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTE5MjY2NywiZXhwIjoyMDc2NzY4NjY3fQ.9Fb2TCZ7L0sD3kAUXotQhiLu3zg0lgPGCb5CotbQ9fA';
-process.env.SUPABASE_TABLE = 'raman_data';
+// Supabase credentials must be provided via `backend/.env` or environment variables.
+// Avoid hardcoding secrets (service_role) in source files. Example `.env` entries:
+// SUPABASE_URL=https://<your_project_ref>.supabase.co
+// SUPABASE_SERVICE_KEY=eyJ... (service_role key)
+// SUPABASE_TABLE=raman_data
 
 // Manual .env loading as fallback
 const envPath = path.join(__dirname, '.env');

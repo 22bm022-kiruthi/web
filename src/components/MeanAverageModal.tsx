@@ -112,11 +112,11 @@ const MeanAverageModal: React.FC<MeanAverageModalProps> = ({
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Mean / Average</h2>
           <button
-            className="text-gray-500 hover:text-red-500 text-xl font-bold cursor-pointer"
+            className="px-3 py-1 bg-gray-200 rounded text-sm text-gray-700 hover:bg-gray-300 cursor-pointer"
             onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClose(); }}
             aria-label="Close"
           >
-            ×
+            Close
           </button>
         </div>
 

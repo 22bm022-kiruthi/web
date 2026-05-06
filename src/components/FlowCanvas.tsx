@@ -31,7 +31,7 @@ const FlowCanvas: React.FC = () => {
       addEdge(
         {
           ...params,
-          type: 'smoothstep',
+          type: 'straight',
           animated: true,
           style: { stroke: '#f97316', strokeWidth: 2 },
         },
@@ -79,17 +79,20 @@ const FlowCanvas: React.FC = () => {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
-          connectionLineType={ConnectionLineType.Bezier}
+          connectionLineType={ConnectionLineType.Straight}
           fitView
         />
       </div>
 
       <div className="absolute bottom-4 left-4 z-40">
-        {widgetRegistry.slice(0, 6).map((w) => (
-          <button key={w.id} onClick={() => addNode(w.id)} className="mr-2 p-2 bg-blue-500 text-white rounded">
-            Add {w.name}
-          </button>
-        ))}
+        {widgetRegistry
+          .slice(0, 6)
+          .filter((w) => w.id !== 'file-upload' && w.id !== 'custom-code')
+          .map((w) => (
+            <button key={w.id} onClick={() => addNode(w.id)} className="mr-2 p-2 bg-blue-500 text-white rounded">
+              Add {w.name}
+            </button>
+          ))}
       </div>
     </ReactFlowProvider>
   );

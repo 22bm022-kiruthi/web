@@ -1,0 +1,52 @@
+{
+  "filename": "unknow spectra2.xlsx",
+  "parsedData": [
+    {
+      "wavelength": 358,
+      "intensity": 0.05
+    },
+    {
+      "wavelength": 360,
+      "intensity": 0.08
+    },
+    {
+      "wavelength": 362,
+      "intensity": 0.2
+    },
+    {
+      "wavelength": 364,
+      "intensity": 0.6
+    },
+    {
+      "wavelength": 366,
+      "intensity": 0.95
+    },
+    {
+      "wavelength": 368,
+      "intensity": 0.7
+    },
+    {
+      "wavelength": 370,
+      "intensity": 0.4
+    },
+    {
+      "wavelength": 372,
+      "intensity": 0.2
+    },
+    {
+      "wavelength": 374,
+      "intensity": 0.1
+    },
+    {
+      "wavelength": 376,
+      "intensity": 0.05
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}

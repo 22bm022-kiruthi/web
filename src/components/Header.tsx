@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User, Sun, Moon, Folder, LogOut } from 'lucide-react';
 import { Theme } from '../types';
 
@@ -9,6 +9,13 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onToggleTheme, theme, onOpenFiles }) => {
+  const [showUpload, setShowUpload] = useState(false);
+  const [showCode, setShowCode] = useState(false);
+
+  const closeAll = () => { setShowUpload(false); setShowCode(false); };
+
+  // close widgets when clicking elsewhere: simple handler could be added globally later
+
   return (
     <header className={`h-16 transition-colors duration-300 ${
       theme === 'dark'
@@ -17,9 +24,9 @@ const Header: React.FC<HeaderProps> = ({ onToggleTheme, theme, onOpenFiles }) =>
     }`}>
       <div className="flex items-center justify-between h-full px-6">
         <div className="flex items-center space-x-3">
-          <div className={`p-2 rounded-xl transition-colors duration-300 flex items-center justify-center`} style={{ background: theme === 'dark' ? 'linear-gradient(90deg,#083b8b,#0b6ef6)' : 'linear-gradient(90deg,var(--primary),var(--accent))' }}>
-            {/* Company logo - place logo.jpg/png in public folder */}
-            <img src="/logo.jpg" alt="DeepSpectrum logo" className="h-8 w-8 object-contain" />
+          <div className={`p-2 rounded-xl transition-colors duration-300 flex items-center justify-center bg-transparent`}>
+            {/* Company logo - transparent PNG 'logo_only.png' in public folder */}
+            <img src="/logo_final.png" alt="DeepSpectrum logo" className="h-8 w-8 object-contain" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-[var(--primary)]">DeepSpectrum</h1>
@@ -44,9 +51,28 @@ const Header: React.FC<HeaderProps> = ({ onToggleTheme, theme, onOpenFiles }) =>
               <Folder className="h-5 w-5" />
             </button>
 
-            <button className={`p-2 rounded-lg transition-all duration-300 hover:scale-105 bg-white text-gray-600 border border-gray-100`}>
+            {/* Upload and Custom Code moved to right-side dock */}
+
+            <a
+              href="/login?showLogin=1"
+              onClick={(e) => {
+                // allow modifier clicks (open in new tab)
+                if ((e as any).metaKey || (e as any).ctrlKey || (e as any).shiftKey || (e as any).button === 1) {
+                  return;
+                }
+                e.preventDefault();
+                try {
+                  window.dispatchEvent(new CustomEvent('openLoginOverlay'));
+                  try { window.history.pushState({}, '', '/login?showLogin=1'); } catch (e) {}
+                } catch (err) {
+                  // ignore
+                }
+              }}
+              className={`p-2 rounded-lg transition-all duration-300 hover:scale-105 bg-white text-gray-600 border border-gray-100 inline-flex items-center justify-center`}
+              title="Login"
+            >
               <User className="h-5 w-5" />
-            </button>
+            </a>
 
             <button
               title="Sign out"

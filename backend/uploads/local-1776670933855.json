@@ -1,0 +1,60 @@
+{
+  "filename": "verify_spectrum.xlsx",
+  "parsedData": [
+    {
+      "position": 358,
+      "value": 0.1
+    },
+    {
+      "position": 360,
+      "value": 0.12
+    },
+    {
+      "position": 362,
+      "value": 0.15
+    },
+    {
+      "position": 364,
+      "value": 0.18
+    },
+    {
+      "position": 366,
+      "value": 0.22
+    },
+    {
+      "position": 368,
+      "value": 0.25
+    },
+    {
+      "position": 370,
+      "value": 0.28
+    },
+    {
+      "position": 372,
+      "value": 0.3
+    },
+    {
+      "position": 374,
+      "value": 0.32
+    },
+    {
+      "position": 376,
+      "value": 0.3
+    },
+    {
+      "position": 378,
+      "value": 0.28
+    },
+    {
+      "position": 380,
+      "value": 0.25
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}

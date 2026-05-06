@@ -1,0 +1,4479 @@
+{
+  "filename": "ethanol_1.csv",
+  "parsedData": [
+    {
+      "wavenumber": "358.0",
+      "intensity": "-1.6152859e-06"
+    },
+    {
+      "wavenumber": "360.0",
+      "intensity": "0.00369721046"
+    },
+    {
+      "wavenumber": "362.0",
+      "intensity": "0.0104014343"
+    },
+    {
+      "wavenumber": "364.0",
+      "intensity": "0.0188741907"
+    },
+    {
+      "wavenumber": "366.0",
+      "intensity": "0.0250627808"
+    },
+    {
+      "wavenumber": "368.0",
+      "intensity": "0.0233861767"
+    },
+    {
+      "wavenumber": "370.0",
+      "intensity": "0.0153204203"
+    },
+    {
+      "wavenumber": "372.0",
+      "intensity": "0.00609184476"
+    },
+    {
+      "wavenumber": "374.0",
+      "intensity": "0.00257730484"
+    },
+    {
+      "wavenumber": "376.0",
+      "intensity": "0.00891907234"
+    },
+    {
+      "wavenumber": "378.0",
+      "intensity": "0.0231784098"
+    },
+    {
+      "wavenumber": "380.0",
+      "intensity": "0.0357569121"
+    },
+    {
+      "wavenumber": "382.0",
+      "intensity": "0.0410041213"
+    },
+    {
+      "wavenumber": "384.0",
+      "intensity": "0.0419202819"
+    },
+    {
+      "wavenumber": "386.0",
+      "intensity": "0.0431457087"
+    },
+    {
+      "wavenumber": "388.0",
+      "intensity": "0.0426039137"
+    },
+    {
+      "wavenumber": "390.0",
+      "intensity": "0.0380752683"
+    },
+    {
+      "wavenumber": "392.0",
+      "intensity": "0.0321105868"
+    },
+    {
+      "wavenumber": "394.0",
+      "intensity": "0.0297444519"
+    },
+    {
+      "wavenumber": "396.0",
+      "intensity": "0.033198677"
+    },
+    {
+      "wavenumber": "398.0",
+      "intensity": "0.038896095"
+    },
+    {
+      "wavenumber": "400.0",
+      "intensity": "0.0427352861"
+    },
+    {
+      "wavenumber": "402.0",
+      "intensity": "0.0488662124"
+    },
+    {
+      "wavenumber": "404.0",
+      "intensity": "0.0640880466"
+    },
+    {
+      "wavenumber": "406.0",
+      "intensity": "0.0911168009"
+    },
+    {
+      "wavenumber": "408.0",
+      "intensity": "0.124467343"
+    },
+    {
+      "wavenumber": "410.0",
+      "intensity": "0.158941105"
+    },
+    {
+      "wavenumber": "412.0",
+      "intensity": "0.201894611"
+    },
+    {
+      "wavenumber": "414.0",
+      "intensity": "0.263523608"
+    },
+    {
+      "wavenumber": "416.0",
+      "intensity": "0.346080959"
+    },
+    {
+      "wavenumber": "418.0",
+      "intensity": "0.44401449"
+    },
+    {
+      "wavenumber": "420.0",
+      "intensity": "0.546155572"
+    },
+    {
+      "wavenumber": "422.0",
+      "intensity": "0.65633148"
+    },
+    {
+      "wavenumber": "424.0",
+      "intensity": "0.781562567"
+    },
+    {
+      "wavenumber": "426.0",
+      "intensity": "0.905171096"
+    },
+    {
+      "wavenumber": "428.0",
+      "intensity": "1.00898528"
+    },
+    {
+      "wavenumber": "430.0",
+      "intensity": "1.08359611"
+    },
+    {
+      "wavenumber": "432.0",
+      "intensity": "1.12641048"
+    },
+    {
+      "wavenumber": "434.0",
+      "intensity": "1.14269662"
+    },
+    {
+      "wavenumber": "436.0",
+      "intensity": "1.13634384"
+    },
+    {
+      "wavenumber": "438.0",
+      "intensity": "1.10601521"
+    },
+    {
+      "wavenumber": "440.0",
+      "intensity": "1.05500472"
+    },
+    {
+      "wavenumber": "442.0",
+      "intensity": "0.987015843"
+    },
+    {
+      "wavenumber": "444.0",
+      "intensity": "0.907137096"
+    },
+    {
+      "wavenumber": "446.0",
+      "intensity": "0.826233983"
+    },
+    {
+      "wavenumber": "448.0",
+      "intensity": "0.754734993"
+    },
+    {
+      "wavenumber": "450.0",
+      "intensity": "0.687539458"
+    },
+    {
+      "wavenumber": "452.0",
+      "intensity": "0.618841887"
+    },
+    {
+      "wavenumber": "454.0",
+      "intensity": "0.549440622"
+    },
+    {
+      "wavenumber": "456.0",
+      "intensity": "0.478135526"
+    },
+    {
+      "wavenumber": "458.0",
+      "intensity": "0.404773623"
+    },
+    {
+      "wavenumber": "460.0",
+      "intensity": "0.330656171"
+    },
+    {
+      "wavenumber": "462.0",
+      "intensity": "0.259821504"
+    },
+    {
+      "wavenumber": "464.0",
+      "intensity": "0.201917142"
+    },
+    {
+      "wavenumber": "466.0",
+      "intensity": "0.161012948"
+    },
+    {
+      "wavenumber": "468.0",
+      "intensity": "0.134057462"
+    },
+    {
+      "wavenumber": "470.0",
+      "intensity": "0.114885472"
+    },
+    {
+      "wavenumber": "472.0",
+      "intensity": "0.0960650519"
+    },
+    {
+      "wavenumber": "474.0",
+      "intensity": "0.0784768388"
+    },
+    {
+      "wavenumber": "476.0",
+      "intensity": "0.067527324"
+    },
+    {
+      "wavenumber": "478.0",
+      "intensity": "0.061922431"
+    },
+    {
+      "wavenumber": "480.0",
+      "intensity": "0.0583635494"
+    },
+    {
+      "wavenumber": "482.0",
+      "intensity": "0.0478842184"
+    },
+    {
+      "wavenumber": "484.0",
+      "intensity": "0.0266102254"
+    },
+    {
+      "wavenumber": "486.0",
+      "intensity": "0.00677125482"
+    },
+    {
+      "wavenumber": "488.0",
+      "intensity": "-2.74181332e-07"
+    },
+    {
+      "wavenumber": "490.0",
+      "intensity": "0.00419844408"
+    },
+    {
+      "wavenumber": "492.0",
+      "intensity": "0.0184949823"
+    },
+    {
+      "wavenumber": "494.0",
+      "intensity": "0.0293926485"
+    },
+    {
+      "wavenumber": "496.0",
+      "intensity": "0.0322506912"
+    },
+    {
+      "wavenumber": "498.0",
+      "intensity": "0.0304964948"
+    },
+    {
+      "wavenumber": "500.0",
+      "intensity": "0.0256027579"
+    },
+    {
+      "wavenumber": "502.0",
+      "intensity": "0.0186138079"
+    },
+    {
+      "wavenumber": "504.0",
+      "intensity": "0.0111333188"
+    },
+    {
+      "wavenumber": "506.0",
+      "intensity": "0.00644264836"
+    },
+    {
+      "wavenumber": "508.0",
+      "intensity": "0.00755845942"
+    },
+    {
+      "wavenumber": "510.0",
+      "intensity": "0.00979373418"
+    },
+    {
+      "wavenumber": "512.0",
+      "intensity": "0.00899938308"
+    },
+    {
+      "wavenumber": "514.0",
+      "intensity": "0.00798072852"
+    },
+    {
+      "wavenumber": "516.0",
+      "intensity": "0.0102175167"
+    },
+    {
+      "wavenumber": "518.0",
+      "intensity": "0.0145166395"
+    },
+    {
+      "wavenumber": "520.0",
+      "intensity": "0.0145699866"
+    },
+    {
+      "wavenumber": "522.0",
+      "intensity": "0.00880621932"
+    },
+    {
+      "wavenumber": "524.0",
+      "intensity": "0.00505512953"
+    },
+    {
+      "wavenumber": "526.0",
+      "intensity": "0.00559191406"
+    },
+    {
+      "wavenumber": "528.0",
+      "intensity": "0.0104401885"
+    },
+    {
+      "wavenumber": "530.0",
+      "intensity": "0.0154206445"
+    },
+    {
+      "wavenumber": "532.0",
+      "intensity": "0.0158106405"
+    },
+    {
+      "wavenumber": "534.0",
+      "intensity": "0.0136617869"
+    },
+    {
+      "wavenumber": "536.0",
+      "intensity": "0.0144068757"
+    },
+    {
+      "wavenumber": "538.0",
+      "intensity": "0.0172280893"
+    },
+    {
+      "wavenumber": "540.0",
+      "intensity": "0.0208439361"
+    },
+    {
+      "wavenumber": "542.0",
+      "intensity": "0.0238653012"
+    },
+    {
+      "wavenumber": "544.0",
+      "intensity": "0.0259577613"
+    },
+    {
+      "wavenumber": "546.0",
+      "intensity": "0.0262002312"
+    },
+    {
+      "wavenumber": "548.0",
+      "intensity": "0.0238357522"
+    },
+    {
+      "wavenumber": "550.0",
+      "intensity": "0.0207092725"
+    },
+    {
+      "wavenumber": "552.0",
+      "intensity": "0.0183411278"
+    },
+    {
+      "wavenumber": "554.0",
+      "intensity": "0.015436965"
+    },
+    {
+      "wavenumber": "556.0",
+      "intensity": "0.00926938653"
+    },
+    {
+      "wavenumber": "558.0",
+      "intensity": "0.002669245"
+    },
+    {
+      "wavenumber": "560.0",
+      "intensity": "9.12070318e-05"
+    },
+    {
+      "wavenumber": "562.0",
+      "intensity": "0.00260365009"
+    },
+    {
+      "wavenumber": "564.0",
+      "intensity": "0.0100366557"
+    },
+    {
+      "wavenumber": "566.0",
+      "intensity": "0.0179942716"
+    },
+    {
+      "wavenumber": "568.0",
+      "intensity": "0.02322408"
+    },
+    {
+      "wavenumber": "570.0",
+      "intensity": "0.0246664621"
+    },
+    {
+      "wavenumber": "572.0",
+      "intensity": "0.0218781307"
+    },
+    {
+      "wavenumber": "574.0",
+      "intensity": "0.0168873575"
+    },
+    {
+      "wavenumber": "576.0",
+      "intensity": "0.01007987"
+    },
+    {
+      "wavenumber": "578.0",
+      "intensity": "0.00431729853"
+    },
+    {
+      "wavenumber": "580.0",
+      "intensity": "0.00593087357"
+    },
+    {
+      "wavenumber": "582.0",
+      "intensity": "0.0124888476"
+    },
+    {
+      "wavenumber": "584.0",
+      "intensity": "0.0211305954"
+    },
+    {
+      "wavenumber": "586.0",
+      "intensity": "0.026762642"
+    },
+    {
+      "wavenumber": "588.0",
+      "intensity": "0.0241934154"
+    },
+    {
+      "wavenumber": "590.0",
+      "intensity": "0.0185501967"
+    },
+    {
+      "wavenumber": "592.0",
+      "intensity": "0.0138735268"
+    },
+    {
+      "wavenumber": "594.0",
+      "intensity": "0.0135258669"
+    },
+    {
+      "wavenumber": "596.0",
+      "intensity": "0.0210709423"
+    },
+    {
+      "wavenumber": "598.0",
+      "intensity": "0.0295673478"
+    },
+    {
+      "wavenumber": "600.0",
+      "intensity": "0.0319398791"
+    },
+    {
+      "wavenumber": "602.0",
+      "intensity": "0.0260931309"
+    },
+    {
+      "wavenumber": "604.0",
+      "intensity": "0.0160090122"
+    },
+    {
+      "wavenumber": "606.0",
+      "intensity": "0.0109405695"
+    },
+    {
+      "wavenumber": "608.0",
+      "intensity": "0.0105972709"
+    },
+    {
+      "wavenumber": "610.0",
+      "intensity": "0.0143733472"
+    },
+    {
+      "wavenumber": "612.0",
+      "intensity": "0.0232762285"
+    },
+    {
+      "wavenumber": "614.0",
+      "intensity": "0.0337334722"
+    },
+    {
+      "wavenumber": "616.0",
+      "intensity": "0.0406253859"
+    },
+    {
+      "wavenumber": "618.0",
+      "intensity": "0.03848131"
+    },
+    {
+      "wavenumber": "620.0",
+      "intensity": "0.0270124283"
+    },
+    {
+      "wavenumber": "622.0",
+      "intensity": "0.017869791"
+    },
+    {
+      "wavenumber": "624.0",
+      "intensity": "0.013082182"
+    },
+    {
+      "wavenumber": "626.0",
+      "intensity": "0.0107363611"
+    },
+    {
+      "wavenumber": "628.0",
+      "intensity": "0.00962645467"
+    },
+    {
+      "wavenumber": "630.0",
+      "intensity": "0.00801550131"
+    },
+    {
+      "wavenumber": "632.0",
+      "intensity": "0.00865492504"
+    },
+    {
+      "wavenumber": "634.0",
+      "intensity": "0.0116529763"
+    },
+    {
+      "wavenumber": "636.0",
+      "intensity": "0.0159260519"
+    },
+    {
+      "wavenumber": "638.0",
+      "intensity": "0.023282012"
+    },
+    {
+      "wavenumber": "640.0",
+      "intensity": "0.0305378437"
+    },
+    {
+      "wavenumber": "642.0",
+      "intensity": "0.0355660431"
+    },
+    {
+      "wavenumber": "644.0",
+      "intensity": "0.0385954417"
+    },
+    {
+      "wavenumber": "646.0",
+      "intensity": "0.0361528322"
+    },
+    {
+      "wavenumber": "648.0",
+      "intensity": "0.0278701056"
+    },
+    {
+      "wavenumber": "650.0",
+      "intensity": "0.0162468515"
+    },
+    {
+      "wavenumber": "652.0",
+      "intensity": "0.00801108219"
+    },
+    {
+      "wavenumber": "654.0",
+      "intensity": "0.00931120291"
+    },
+    {
+      "wavenumber": "656.0",
+      "intensity": "0.0151669383"
+    },
+    {
+      "wavenumber": "658.0",
+      "intensity": "0.0206904542"
+    },
+    {
+      "wavenumber": "660.0",
+      "intensity": "0.024023328"
+    },
+    {
+      "wavenumber": "662.0",
+      "intensity": "0.0248799548"
+    },
+    {
+      "wavenumber": "664.0",
+      "intensity": "0.0231403559"
+    },
+    {
+      "wavenumber": "666.0",
+      "intensity": "0.0166949891"
+    },
+    {
+      "wavenumber": "668.0",
+      "intensity": "0.00987756811"
+    },
+    {
+      "wavenumber": "670.0",
+      "intensity": "0.009009487"
+    },
+    {
+      "wavenumber": "672.0",
+      "intensity": "0.00991318002"
+    },
+    {
+      "wavenumber": "674.0",
+      "intensity": "0.00967105944"
+    },
+    {
+      "wavenumber": "676.0",
+      "intensity": "0.00835480727"
+    },
+    {
+      "wavenumber": "678.0",
+      "intensity": "0.00848392863"
+    },
+    {
+      "wavenumber": "680.0",
+      "intensity": "0.011290174"
+    },
+    {
+      "wavenumber": "682.0",
+      "intensity": "0.0145068886"
+    },
+    {
+      "wavenumber": "684.0",
+      "intensity": "0.0132175004"
+    },
+    {
+      "wavenumber": "686.0",
+      "intensity": "0.00893700402"
+    },
+    {
+      "wavenumber": "688.0",
+      "intensity": "0.00745898206"
+    },
+    {
+      "wavenumber": "690.0",
+      "intensity": "0.00870861672"
+    },
+    {
+      "wavenumber": "692.0",
+      "intensity": "0.014743763"
+    },
+    {
+      "wavenumber": "694.0",
+      "intensity": "0.0198766217"
+    },
+    {
+      "wavenumber": "696.0",
+      "intensity": "0.0200233366"
+    },
+    {
+      "wavenumber": "698.0",
+      "intensity": "0.018458318"
+    },
+    {
+      "wavenumber": "700.0",
+      "intensity": "0.0154961888"
+    },
+    {
+      "wavenumber": "702.0",
+      "intensity": "0.0116308127"
+    },
+    {
+      "wavenumber": "704.0",
+      "intensity": "0.00763545651"
+    },
+    {
+      "wavenumber": "706.0",
+      "intensity": "0.00522090495"
+    },
+    {
+      "wavenumber": "708.0",
+      "intensity": "0.0090316413"
+    },
+    {
+      "wavenumber": "710.0",
+      "intensity": "0.0149499979"
+    },
+    {
+      "wavenumber": "712.0",
+      "intensity": "0.0164398439"
+    },
+    {
+      "wavenumber": "714.0",
+      "intensity": "0.0129525904"
+    },
+    {
+      "wavenumber": "716.0",
+      "intensity": "0.00736948848"
+    },
+    {
+      "wavenumber": "718.0",
+      "intensity": "0.00999934319"
+    },
+    {
+      "wavenumber": "720.0",
+      "intensity": "0.0196086913"
+    },
+    {
+      "wavenumber": "722.0",
+      "intensity": "0.0288322475"
+    },
+    {
+      "wavenumber": "724.0",
+      "intensity": "0.0317355804"
+    },
+    {
+      "wavenumber": "726.0",
+      "intensity": "0.024520129"
+    },
+    {
+      "wavenumber": "728.0",
+      "intensity": "0.0140062571"
+    },
+    {
+      "wavenumber": "730.0",
+      "intensity": "0.00603705365"
+    },
+    {
+      "wavenumber": "732.0",
+      "intensity": "0.00147929182"
+    },
+    {
+      "wavenumber": "734.0",
+      "intensity": "0.00162130292"
+    },
+    {
+      "wavenumber": "736.0",
+      "intensity": "0.00406015851"
+    },
+    {
+      "wavenumber": "738.0",
+      "intensity": "0.0087427292"
+    },
+    {
+      "wavenumber": "740.0",
+      "intensity": "0.0157025456"
+    },
+    {
+      "wavenumber": "742.0",
+      "intensity": "0.0193539355"
+    },
+    {
+      "wavenumber": "744.0",
+      "intensity": "0.020347802"
+    },
+    {
+      "wavenumber": "746.0",
+      "intensity": "0.0177637115"
+    },
+    {
+      "wavenumber": "748.0",
+      "intensity": "0.0125264581"
+    },
+    {
+      "wavenumber": "750.0",
+      "intensity": "0.0102111697"
+    },
+    {
+      "wavenumber": "752.0",
+      "intensity": "0.0126534076"
+    },
+    {
+      "wavenumber": "754.0",
+      "intensity": "0.0193037316"
+    },
+    {
+      "wavenumber": "756.0",
+      "intensity": "0.0233998261"
+    },
+    {
+      "wavenumber": "758.0",
+      "intensity": "0.0187861212"
+    },
+    {
+      "wavenumber": "760.0",
+      "intensity": "0.0114969723"
+    },
+    {
+      "wavenumber": "762.0",
+      "intensity": "0.0078421738"
+    },
+    {
+      "wavenumber": "764.0",
+      "intensity": "0.0088541694"
+    },
+    {
+      "wavenumber": "766.0",
+      "intensity": "0.0126555748"
+    },
+    {
+      "wavenumber": "768.0",
+      "intensity": "0.0146683343"
+    },
+    {
+      "wavenumber": "770.0",
+      "intensity": "0.0148647726"
+    },
+    {
+      "wavenumber": "772.0",
+      "intensity": "0.0128563344"
+    },
+    {
+      "wavenumber": "774.0",
+      "intensity": "0.00816676579"
+    },
+    {
+      "wavenumber": "776.0",
+      "intensity": "0.00470829615"
+    },
+    {
+      "wavenumber": "778.0",
+      "intensity": "0.00328044314"
+    },
+    {
+      "wavenumber": "780.0",
+      "intensity": "0.00388467917"
+    },
+    {
+      "wavenumber": "782.0",
+      "intensity": "0.00521405973"
+    },
+    {
+      "wavenumber": "784.0",
+      "intensity": "0.00610523857"
+    },
+    {
+      "wavenumber": "786.0",
+      "intensity": "0.00791066326"
+    },
+    {
+      "wavenumber": "788.0",
+      "intensity": "0.00981073361"
+    },
+    {
+      "wavenumber": "790.0",
+      "intensity": "0.00939289946"
+    },
+    {
+      "wavenumber": "792.0",
+      "intensity": "0.00751369586"
+    },
+    {
+      "wavenumber": "794.0",
+      "intensity": "0.00624014763"
+    },
+    {
+      "wavenumber": "796.0",
+      "intensity": "0.00646271138"
+    },
+    {
+      "wavenumber": "798.0",
+      "intensity": "0.0107734501"
+    },
+    {
+      "wavenumber": "800.0",
+      "intensity": "0.0151483947"
+    },
+    {
+      "wavenumber": "802.0",
+      "intensity": "0.0169292465"
+    },
+    {
+      "wavenumber": "804.0",
+      "intensity": "0.0185166299"
+    },
+    {
+      "wavenumber": "806.0",
+      "intensity": "0.0198188126"
+    },
+    {
+      "wavenumber": "808.0",
+      "intensity": "0.0195170213"
+    },
+    {
+      "wavenumber": "810.0",
+      "intensity": "0.0161781851"
+    },
+    {
+      "wavenumber": "812.0",
+      "intensity": "0.0121449586"
+    },
+    {
+      "wavenumber": "814.0",
+      "intensity": "0.0106901107"
+    },
+    {
+      "wavenumber": "816.0",
+      "intensity": "0.0100556072"
+    },
+    {
+      "wavenumber": "818.0",
+      "intensity": "0.00706871133"
+    },
+    {
+      "wavenumber": "820.0",
+      "intensity": "0.00304443249"
+    },
+    {
+      "wavenumber": "822.0",
+      "intensity": "0.00369963655"
+    },
+    {
+      "wavenumber": "824.0",
+      "intensity": "0.00786452927"
+    },
+    {
+      "wavenumber": "826.0",
+      "intensity": "0.0107874274"
+    },
+    {
+      "wavenumber": "828.0",
+      "intensity": "0.00798028149"
+    },
+    {
+      "wavenumber": "830.0",
+      "intensity": "0.00168565509"
+    },
+    {
+      "wavenumber": "832.0",
+      "intensity": "-1.03712091e-06"
+    },
+    {
+      "wavenumber": "834.0",
+      "intensity": "0.00671461225"
+    },
+    {
+      "wavenumber": "836.0",
+      "intensity": "0.0209140722"
+    },
+    {
+      "wavenumber": "838.0",
+      "intensity": "0.0391963795"
+    },
+    {
+      "wavenumber": "840.0",
+      "intensity": "0.0588981956"
+    },
+    {
+      "wavenumber": "842.0",
+      "intensity": "0.078752026"
+    },
+    {
+      "wavenumber": "844.0",
+      "intensity": "0.0998088643"
+    },
+    {
+      "wavenumber": "846.0",
+      "intensity": "0.122420877"
+    },
+    {
+      "wavenumber": "848.0",
+      "intensity": "0.149814188"
+    },
+    {
+      "wavenumber": "850.0",
+      "intensity": "0.184722245"
+    },
+    {
+      "wavenumber": "852.0",
+      "intensity": "0.232541502"
+    },
+    {
+      "wavenumber": "854.0",
+      "intensity": "0.300748676"
+    },
+    {
+      "wavenumber": "856.0",
+      "intensity": "0.391320944"
+    },
+    {
+      "wavenumber": "858.0",
+      "intensity": "0.500547886"
+    },
+    {
+      "wavenumber": "860.0",
+      "intensity": "0.626395106"
+    },
+    {
+      "wavenumber": "862.0",
+      "intensity": "0.782123148"
+    },
+    {
+      "wavenumber": "864.0",
+      "intensity": "0.98495996"
+    },
+    {
+      "wavenumber": "866.0",
+      "intensity": "1.26813269"
+    },
+    {
+      "wavenumber": "868.0",
+      "intensity": "1.66558123"
+    },
+    {
+      "wavenumber": "870.0",
+      "intensity": "2.19932246"
+    },
+    {
+      "wavenumber": "872.0",
+      "intensity": "2.99388456"
+    },
+    {
+      "wavenumber": "874.0",
+      "intensity": "4.04538631"
+    },
+    {
+      "wavenumber": "876.0",
+      "intensity": "5.40612984"
+    },
+    {
+      "wavenumber": "878.0",
+      "intensity": "7.14356041"
+    },
+    {
+      "wavenumber": "880.0",
+      "intensity": "8.84744263"
+    },
+    {
+      "wavenumber": "882.0",
+      "intensity": "9.92500114"
+    },
+    {
+      "wavenumber": "884.0",
+      "intensity": "10.1334572"
+    },
+    {
+      "wavenumber": "886.0",
+      "intensity": "9.46615505"
+    },
+    {
+      "wavenumber": "888.0",
+      "intensity": "8.2340374"
+    },
+    {
+      "wavenumber": "890.0",
+      "intensity": "6.78709841"
+    },
+    {
+      "wavenumber": "892.0",
+      "intensity": "5.24796391"
+    },
+    {
+      "wavenumber": "894.0",
+      "intensity": "3.88072515"
+    },
+    {
+      "wavenumber": "896.0",
+      "intensity": "2.88199282"
+    },
+    {
+      "wavenumber": "898.0",
+      "intensity": "2.15782285"
+    },
+    {
+      "wavenumber": "900.0",
+      "intensity": "1.61607432"
+    },
+    {
+      "wavenumber": "902.0",
+      "intensity": "1.24870396"
+    },
+    {
+      "wavenumber": "904.0",
+      "intensity": "0.975942016"
+    },
+    {
+      "wavenumber": "906.0",
+      "intensity": "0.772463679"
+    },
+    {
+      "wavenumber": "908.0",
+      "intensity": "0.613868475"
+    },
+    {
+      "wavenumber": "910.0",
+      "intensity": "0.487060159"
+    },
+    {
+      "wavenumber": "912.0",
+      "intensity": "0.39270857"
+    },
+    {
+      "wavenumber": "914.0",
+      "intensity": "0.325219333"
+    },
+    {
+      "wavenumber": "916.0",
+      "intensity": "0.273368955"
+    },
+    {
+      "wavenumber": "918.0",
+      "intensity": "0.225901037"
+    },
+    {
+      "wavenumber": "920.0",
+      "intensity": "0.180148989"
+    },
+    {
+      "wavenumber": "922.0",
+      "intensity": "0.138880193"
+    },
+    {
+      "wavenumber": "924.0",
+      "intensity": "0.105036713"
+    },
+    {
+      "wavenumber": "926.0",
+      "intensity": "0.0765644908"
+    },
+    {
+      "wavenumber": "928.0",
+      "intensity": "0.05385831"
+    },
+    {
+      "wavenumber": "930.0",
+      "intensity": "0.0390965194"
+    },
+    {
+      "wavenumber": "932.0",
+      "intensity": "0.0293445364"
+    },
+    {
+      "wavenumber": "934.0",
+      "intensity": "0.0231023971"
+    },
+    {
+      "wavenumber": "936.0",
+      "intensity": "0.0206165202"
+    },
+    {
+      "wavenumber": "938.0",
+      "intensity": "0.0217153355"
+    },
+    {
+      "wavenumber": "940.0",
+      "intensity": "0.0227256007"
+    },
+    {
+      "wavenumber": "942.0",
+      "intensity": "0.0164116807"
+    },
+    {
+      "wavenumber": "944.0",
+      "intensity": "0.00552089792"
+    },
+    {
+      "wavenumber": "946.0",
+      "intensity": "-1.19209346e-07"
+    },
+    {
+      "wavenumber": "948.0",
+      "intensity": "-8.94069672e-07"
+    },
+    {
+      "wavenumber": "950.0",
+      "intensity": "0.00441625109"
+    },
+    {
+      "wavenumber": "952.0",
+      "intensity": "0.0139872674"
+    },
+    {
+      "wavenumber": "954.0",
+      "intensity": "0.0223209392"
+    },
+    {
+      "wavenumber": "956.0",
+      "intensity": "0.0276810192"
+    },
+    {
+      "wavenumber": "958.0",
+      "intensity": "0.0321845934"
+    },
+    {
+      "wavenumber": "960.0",
+      "intensity": "0.0331600308"
+    },
+    {
+      "wavenumber": "962.0",
+      "intensity": "0.0255457945"
+    },
+    {
+      "wavenumber": "964.0",
+      "intensity": "0.0121272858"
+    },
+    {
+      "wavenumber": "966.0",
+      "intensity": "0.000875675702"
+    },
+    {
+      "wavenumber": "968.0",
+      "intensity": "4.03106205e-05"
+    },
+    {
+      "wavenumber": "970.0",
+      "intensity": "0.00491617899"
+    },
+    {
+      "wavenumber": "972.0",
+      "intensity": "0.00980321132"
+    },
+    {
+      "wavenumber": "974.0",
+      "intensity": "0.0113061965"
+    },
+    {
+      "wavenumber": "976.0",
+      "intensity": "0.0134436544"
+    },
+    {
+      "wavenumber": "978.0",
+      "intensity": "0.0149281742"
+    },
+    {
+      "wavenumber": "980.0",
+      "intensity": "0.015227044"
+    },
+    {
+      "wavenumber": "982.0",
+      "intensity": "0.0152984736"
+    },
+    {
+      "wavenumber": "984.0",
+      "intensity": "0.0139399879"
+    },
+    {
+      "wavenumber": "986.0",
+      "intensity": "0.0101534724"
+    },
+    {
+      "wavenumber": "988.0",
+      "intensity": "0.00316378474"
+    },
+    {
+      "wavenumber": "990.0",
+      "intensity": "0.000201898831"
+    },
+    {
+      "wavenumber": "992.0",
+      "intensity": "0.00232549896"
+    },
+    {
+      "wavenumber": "994.0",
+      "intensity": "0.0133837219"
+    },
+    {
+      "wavenumber": "996.0",
+      "intensity": "0.0249155816"
+    },
+    {
+      "wavenumber": "998.0",
+      "intensity": "0.02754765"
+    },
+    {
+      "wavenumber": "1000.0",
+      "intensity": "0.0207138658"
+    },
+    {
+      "wavenumber": "1002.0",
+      "intensity": "0.0110481614"
+    },
+    {
+      "wavenumber": "1004.0",
+      "intensity": "0.00316282501"
+    },
+    {
+      "wavenumber": "1006.0",
+      "intensity": "0.00416281214"
+    },
+    {
+      "wavenumber": "1008.0",
+      "intensity": "0.0131698968"
+    },
+    {
+      "wavenumber": "1010.0",
+      "intensity": "0.0292929523"
+    },
+    {
+      "wavenumber": "1012.0",
+      "intensity": "0.0493134856"
+    },
+    {
+      "wavenumber": "1014.0",
+      "intensity": "0.0709225237"
+    },
+    {
+      "wavenumber": "1016.0",
+      "intensity": "0.0942212641"
+    },
+    {
+      "wavenumber": "1018.0",
+      "intensity": "0.120938048"
+    },
+    {
+      "wavenumber": "1020.0",
+      "intensity": "0.155619025"
+    },
+    {
+      "wavenumber": "1022.0",
+      "intensity": "0.199028313"
+    },
+    {
+      "wavenumber": "1024.0",
+      "intensity": "0.247002363"
+    },
+    {
+      "wavenumber": "1026.0",
+      "intensity": "0.297130138"
+    },
+    {
+      "wavenumber": "1028.0",
+      "intensity": "0.358263075"
+    },
+    {
+      "wavenumber": "1030.0",
+      "intensity": "0.442945421"
+    },
+    {
+      "wavenumber": "1032.0",
+      "intensity": "0.558615446"
+    },
+    {
+      "wavenumber": "1034.0",
+      "intensity": "0.705123305"
+    },
+    {
+      "wavenumber": "1036.0",
+      "intensity": "0.877928138"
+    },
+    {
+      "wavenumber": "1038.0",
+      "intensity": "1.08526433"
+    },
+    {
+      "wavenumber": "1040.0",
+      "intensity": "1.32613659"
+    },
+    {
+      "wavenumber": "1042.0",
+      "intensity": "1.60647583"
+    },
+    {
+      "wavenumber": "1044.0",
+      "intensity": "1.92371345"
+    },
+    {
+      "wavenumber": "1046.0",
+      "intensity": "2.2361393"
+    },
+    {
+      "wavenumber": "1048.0",
+      "intensity": "2.50722194"
+    },
+    {
+      "wavenumber": "1050.0",
+      "intensity": "2.71632171"
+    },
+    {
+      "wavenumber": "1052.0",
+      "intensity": "2.81128693"
+    },
+    {
+      "wavenumber": "1054.0",
+      "intensity": "2.77363801"
+    },
+    {
+      "wavenumber": "1056.0",
+      "intensity": "2.60542488"
+    },
+    {
+      "wavenumber": "1058.0",
+      "intensity": "2.334548"
+    },
+    {
+      "wavenumber": "1060.0",
+      "intensity": "2.04191232"
+    },
+    {
+      "wavenumber": "1062.0",
+      "intensity": "1.77003288"
+    },
+    {
+      "wavenumber": "1064.0",
+      "intensity": "1.53500628"
+    },
+    {
+      "wavenumber": "1066.0",
+      "intensity": "1.3605547"
+    },
+    {
+      "wavenumber": "1068.0",
+      "intensity": "1.24482501"
+    },
+    {
+      "wavenumber": "1070.0",
+      "intensity": "1.17716372"
+    },
+    {
+      "wavenumber": "1072.0",
+      "intensity": "1.15142667"
+    },
+    {
+      "wavenumber": "1074.0",
+      "intensity": "1.1450702"
+    },
+    {
+      "wavenumber": "1076.0",
+      "intensity": "1.17218542"
+    },
+    {
+      "wavenumber": "1078.0",
+      "intensity": "1.23944724"
+    },
+    {
+      "wavenumber": "1080.0",
+      "intensity": "1.35216618"
+    },
+    {
+      "wavenumber": "1082.0",
+      "intensity": "1.50874639"
+    },
+    {
+      "wavenumber": "1084.0",
+      "intensity": "1.69166052"
+    },
+    {
+      "wavenumber": "1086.0",
+      "intensity": "1.88767982"
+    },
+    {
+      "wavenumber": "1088.0",
+      "intensity": "2.08747363"
+    },
+    {
+      "wavenumber": "1090.0",
+      "intensity": "2.30540633"
+    },
+    {
+      "wavenumber": "1092.0",
+      "intensity": "2.54123878"
+    },
+    {
+      "wavenumber": "1094.0",
+      "intensity": "2.73722005"
+    },
+    {
+      "wavenumber": "1096.0",
+      "intensity": "2.8378787"
+    },
+    {
+      "wavenumber": "1098.0",
+      "intensity": "2.82973576"
+    },
+    {
+      "wavenumber": "1100.0",
+      "intensity": "2.69150162"
+    },
+    {
+      "wavenumber": "1102.0",
+      "intensity": "2.45653701"
+    },
+    {
+      "wavenumber": "1104.0",
+      "intensity": "2.14762449"
+    },
+    {
+      "wavenumber": "1106.0",
+      "intensity": "1.81101656"
+    },
+    {
+      "wavenumber": "1108.0",
+      "intensity": "1.52405214"
+    },
+    {
+      "wavenumber": "1110.0",
+      "intensity": "1.31499064"
+    },
+    {
+      "wavenumber": "1112.0",
+      "intensity": "1.15582013"
+    },
+    {
+      "wavenumber": "1114.0",
+      "intensity": "1.03743267"
+    },
+    {
+      "wavenumber": "1116.0",
+      "intensity": "0.938661933"
+    },
+    {
+      "wavenumber": "1118.0",
+      "intensity": "0.857476115"
+    },
+    {
+      "wavenumber": "1120.0",
+      "intensity": "0.799396038"
+    },
+    {
+      "wavenumber": "1122.0",
+      "intensity": "0.753716767"
+    },
+    {
+      "wavenumber": "1124.0",
+      "intensity": "0.700537801"
+    },
+    {
+      "wavenumber": "1126.0",
+      "intensity": "0.628959477"
+    },
+    {
+      "wavenumber": "1128.0",
+      "intensity": "0.541644037"
+    },
+    {
+      "wavenumber": "1130.0",
+      "intensity": "0.452383578"
+    },
+    {
+      "wavenumber": "1132.0",
+      "intensity": "0.370392501"
+    },
+    {
+      "wavenumber": "1134.0",
+      "intensity": "0.29695031"
+    },
+    {
+      "wavenumber": "1136.0",
+      "intensity": "0.233672649"
+    },
+    {
+      "wavenumber": "1138.0",
+      "intensity": "0.183140188"
+    },
+    {
+      "wavenumber": "1140.0",
+      "intensity": "0.143603474"
+    },
+    {
+      "wavenumber": "1142.0",
+      "intensity": "0.111987226"
+    },
+    {
+      "wavenumber": "1144.0",
+      "intensity": "0.0846687555"
+    },
+    {
+      "wavenumber": "1146.0",
+      "intensity": "0.0623671412"
+    },
+    {
+      "wavenumber": "1148.0",
+      "intensity": "0.0487357974"
+    },
+    {
+      "wavenumber": "1150.0",
+      "intensity": "0.0431177989"
+    },
+    {
+      "wavenumber": "1152.0",
+      "intensity": "0.0387688167"
+    },
+    {
+      "wavenumber": "1154.0",
+      "intensity": "0.0322844759"
+    },
+    {
+      "wavenumber": "1156.0",
+      "intensity": "0.0261449199"
+    },
+    {
+      "wavenumber": "1158.0",
+      "intensity": "0.0234013684"
+    },
+    {
+      "wavenumber": "1160.0",
+      "intensity": "0.0212039594"
+    },
+    {
+      "wavenumber": "1162.0",
+      "intensity": "0.0149936918"
+    },
+    {
+      "wavenumber": "1164.0",
+      "intensity": "0.00635622721"
+    },
+    {
+      "wavenumber": "1166.0",
+      "intensity": "0.00169190171"
+    },
+    {
+      "wavenumber": "1168.0",
+      "intensity": "0.0002964616"
+    },
+    {
+      "wavenumber": "1170.0",
+      "intensity": "0.00150456442"
+    },
+    {
+      "wavenumber": "1172.0",
+      "intensity": "0.00125598896"
+    },
+    {
+      "wavenumber": "1174.0",
+      "intensity": "0.000849604665"
+    },
+    {
+      "wavenumber": "1176.0",
+      "intensity": "0.00462114811"
+    },
+    {
+      "wavenumber": "1178.0",
+      "intensity": "0.0102090714"
+    },
+    {
+      "wavenumber": "1180.0",
+      "intensity": "0.0137169249"
+    },
+    {
+      "wavenumber": "1182.0",
+      "intensity": "0.015419268"
+    },
+    {
+      "wavenumber": "1184.0",
+      "intensity": "0.0168040507"
+    },
+    {
+      "wavenumber": "1186.0",
+      "intensity": "0.0195785277"
+    },
+    {
+      "wavenumber": "1188.0",
+      "intensity": "0.0193995107"
+    },
+    {
+      "wavenumber": "1190.0",
+      "intensity": "0.0126584414"
+    },
+    {
+      "wavenumber": "1192.0",
+      "intensity": "0.00528949499"
+    },
+    {
+      "wavenumber": "1194.0",
+      "intensity": "0.002436304"
+    },
+    {
+      "wavenumber": "1196.0",
+      "intensity": "0.00603680592"
+    },
+    {
+      "wavenumber": "1198.0",
+      "intensity": "0.0105924495"
+    },
+    {
+      "wavenumber": "1200.0",
+      "intensity": "0.0117446305"
+    },
+    {
+      "wavenumber": "1202.0",
+      "intensity": "0.0116484165"
+    },
+    {
+      "wavenumber": "1204.0",
+      "intensity": "0.0118980044"
+    },
+    {
+      "wavenumber": "1206.0",
+      "intensity": "0.0107646948"
+    },
+    {
+      "wavenumber": "1208.0",
+      "intensity": "0.0092943199"
+    },
+    {
+      "wavenumber": "1210.0",
+      "intensity": "0.00768028526"
+    },
+    {
+      "wavenumber": "1212.0",
+      "intensity": "0.00793426018"
+    },
+    {
+      "wavenumber": "1214.0",
+      "intensity": "0.00811821222"
+    },
+    {
+      "wavenumber": "1216.0",
+      "intensity": "0.0075527071"
+    },
+    {
+      "wavenumber": "1218.0",
+      "intensity": "0.00692223292"
+    },
+    {
+      "wavenumber": "1220.0",
+      "intensity": "0.00728678703"
+    },
+    {
+      "wavenumber": "1222.0",
+      "intensity": "0.00700330781"
+    },
+    {
+      "wavenumber": "1224.0",
+      "intensity": "0.0047674533"
+    },
+    {
+      "wavenumber": "1226.0",
+      "intensity": "0.00513336668"
+    },
+    {
+      "wavenumber": "1228.0",
+      "intensity": "0.00763052702"
+    },
+    {
+      "wavenumber": "1230.0",
+      "intensity": "0.00698627252"
+    },
+    {
+      "wavenumber": "1232.0",
+      "intensity": "0.00373150106"
+    },
+    {
+      "wavenumber": "1234.0",
+      "intensity": "0.00219926843"
+    },
+    {
+      "wavenumber": "1236.0",
+      "intensity": "0.00396305323"
+    },
+    {
+      "wavenumber": "1238.0",
+      "intensity": "0.00977683067"
+    },
+    {
+      "wavenumber": "1240.0",
+      "intensity": "0.0184700489"
+    },
+    {
+      "wavenumber": "1242.0",
+      "intensity": "0.0282677189"
+    },
+    {
+      "wavenumber": "1244.0",
+      "intensity": "0.0388177149"
+    },
+    {
+      "wavenumber": "1246.0",
+      "intensity": "0.0509961396"
+    },
+    {
+      "wavenumber": "1248.0",
+      "intensity": "0.0656393543"
+    },
+    {
+      "wavenumber": "1250.0",
+      "intensity": "0.0869320855"
+    },
+    {
+      "wavenumber": "1252.0",
+      "intensity": "0.116717979"
+    },
+    {
+      "wavenumber": "1254.0",
+      "intensity": "0.153559923"
+    },
+    {
+      "wavenumber": "1256.0",
+      "intensity": "0.197274268"
+    },
+    {
+      "wavenumber": "1258.0",
+      "intensity": "0.247350112"
+    },
+    {
+      "wavenumber": "1260.0",
+      "intensity": "0.309313238"
+    },
+    {
+      "wavenumber": "1262.0",
+      "intensity": "0.390544355"
+    },
+    {
+      "wavenumber": "1264.0",
+      "intensity": "0.494107604"
+    },
+    {
+      "wavenumber": "1266.0",
+      "intensity": "0.617912889"
+    },
+    {
+      "wavenumber": "1268.0",
+      "intensity": "0.750812948"
+    },
+    {
+      "wavenumber": "1270.0",
+      "intensity": "0.901802897"
+    },
+    {
+      "wavenumber": "1272.0",
+      "intensity": "1.05477667"
+    },
+    {
+      "wavenumber": "1274.0",
+      "intensity": "1.1661998"
+    },
+    {
+      "wavenumber": "1276.0",
+      "intensity": "1.21495366"
+    },
+    {
+      "wavenumber": "1278.0",
+      "intensity": "1.19830763"
+    },
+    {
+      "wavenumber": "1280.0",
+      "intensity": "1.12568569"
+    },
+    {
+      "wavenumber": "1282.0",
+      "intensity": "1.02450967"
+    },
+    {
+      "wavenumber": "1284.0",
+      "intensity": "0.888908505"
+    },
+    {
+      "wavenumber": "1286.0",
+      "intensity": "0.739135385"
+    },
+    {
+      "wavenumber": "1288.0",
+      "intensity": "0.609976828"
+    },
+    {
+      "wavenumber": "1290.0",
+      "intensity": "0.508974433"
+    },
+    {
+      "wavenumber": "1292.0",
+      "intensity": "0.426710039"
+    },
+    {
+      "wavenumber": "1294.0",
+      "intensity": "0.354627788"
+    },
+    {
+      "wavenumber": "1296.0",
+      "intensity": "0.289791375"
+    },
+    {
+      "wavenumber": "1298.0",
+      "intensity": "0.247473285"
+    },
+    {
+      "wavenumber": "1300.0",
+      "intensity": "0.224892989"
+    },
+    {
+      "wavenumber": "1302.0",
+      "intensity": "0.199415386"
+    },
+    {
+      "wavenumber": "1304.0",
+      "intensity": "0.159603804"
+    },
+    {
+      "wavenumber": "1306.0",
+      "intensity": "0.115439504"
+    },
+    {
+      "wavenumber": "1308.0",
+      "intensity": "0.0834398493"
+    },
+    {
+      "wavenumber": "1310.0",
+      "intensity": "0.0702537298"
+    },
+    {
+      "wavenumber": "1312.0",
+      "intensity": "0.0667403936"
+    },
+    {
+      "wavenumber": "1314.0",
+      "intensity": "0.0653813556"
+    },
+    {
+      "wavenumber": "1316.0",
+      "intensity": "0.0686286911"
+    },
+    {
+      "wavenumber": "1318.0",
+      "intensity": "0.0713056996"
+    },
+    {
+      "wavenumber": "1320.0",
+      "intensity": "0.0671837553"
+    },
+    {
+      "wavenumber": "1322.0",
+      "intensity": "0.0569218621"
+    },
+    {
+      "wavenumber": "1324.0",
+      "intensity": "0.0451085828"
+    },
+    {
+      "wavenumber": "1326.0",
+      "intensity": "0.0368527882"
+    },
+    {
+      "wavenumber": "1328.0",
+      "intensity": "0.0332988724"
+    },
+    {
+      "wavenumber": "1330.0",
+      "intensity": "0.0300028808"
+    },
+    {
+      "wavenumber": "1332.0",
+      "intensity": "0.0266217459"
+    },
+    {
+      "wavenumber": "1334.0",
+      "intensity": "0.0277674906"
+    },
+    {
+      "wavenumber": "1336.0",
+      "intensity": "0.0299747959"
+    },
+    {
+      "wavenumber": "1338.0",
+      "intensity": "0.0266268272"
+    },
+    {
+      "wavenumber": "1340.0",
+      "intensity": "0.0179364923"
+    },
+    {
+      "wavenumber": "1342.0",
+      "intensity": "0.00942752417"
+    },
+    {
+      "wavenumber": "1344.0",
+      "intensity": "0.00288369646"
+    },
+    {
+      "wavenumber": "1346.0",
+      "intensity": "0.00451278687"
+    },
+    {
+      "wavenumber": "1348.0",
+      "intensity": "0.0072704074"
+    },
+    {
+      "wavenumber": "1350.0",
+      "intensity": "0.0143820047"
+    },
+    {
+      "wavenumber": "1352.0",
+      "intensity": "0.0238637701"
+    },
+    {
+      "wavenumber": "1354.0",
+      "intensity": "0.0283441525"
+    },
+    {
+      "wavenumber": "1356.0",
+      "intensity": "0.0234537609"
+    },
+    {
+      "wavenumber": "1358.0",
+      "intensity": "0.0126770018"
+    },
+    {
+      "wavenumber": "1360.0",
+      "intensity": "0.00293271546"
+    },
+    {
+      "wavenumber": "1362.0",
+      "intensity": "0.00121524336"
+    },
+    {
+      "wavenumber": "1364.0",
+      "intensity": "0.00533809653"
+    },
+    {
+      "wavenumber": "1366.0",
+      "intensity": "0.0111819981"
+    },
+    {
+      "wavenumber": "1368.0",
+      "intensity": "0.0169132464"
+    },
+    {
+      "wavenumber": "1370.0",
+      "intensity": "0.0243352652"
+    },
+    {
+      "wavenumber": "1372.0",
+      "intensity": "0.0376623161"
+    },
+    {
+      "wavenumber": "1374.0",
+      "intensity": "0.0558331236"
+    },
+    {
+      "wavenumber": "1376.0",
+      "intensity": "0.0735665113"
+    },
+    {
+      "wavenumber": "1378.0",
+      "intensity": "0.0857656971"
+    },
+    {
+      "wavenumber": "1380.0",
+      "intensity": "0.0967742652"
+    },
+    {
+      "wavenumber": "1382.0",
+      "intensity": "0.110132277"
+    },
+    {
+      "wavenumber": "1384.0",
+      "intensity": "0.124823615"
+    },
+    {
+      "wavenumber": "1386.0",
+      "intensity": "0.133114383"
+    },
+    {
+      "wavenumber": "1388.0",
+      "intensity": "0.13319388"
+    },
+    {
+      "wavenumber": "1390.0",
+      "intensity": "0.127696097"
+    },
+    {
+      "wavenumber": "1392.0",
+      "intensity": "0.124448627"
+    },
+    {
+      "wavenumber": "1394.0",
+      "intensity": "0.12972267"
+    },
+    {
+      "wavenumber": "1396.0",
+      "intensity": "0.14257355"
+    },
+    {
+      "wavenumber": "1398.0",
+      "intensity": "0.160623446"
+    },
+    {
+      "wavenumber": "1400.0",
+      "intensity": "0.177097619"
+    },
+    {
+      "wavenumber": "1402.0",
+      "intensity": "0.194618866"
+    },
+    {
+      "wavenumber": "1404.0",
+      "intensity": "0.219850019"
+    },
+    {
+      "wavenumber": "1406.0",
+      "intensity": "0.256055266"
+    },
+    {
+      "wavenumber": "1408.0",
+      "intensity": "0.297397643"
+    },
+    {
+      "wavenumber": "1410.0",
+      "intensity": "0.339278907"
+    },
+    {
+      "wavenumber": "1412.0",
+      "intensity": "0.379576445"
+    },
+    {
+      "wavenumber": "1414.0",
+      "intensity": "0.422925144"
+    },
+    {
+      "wavenumber": "1416.0",
+      "intensity": "0.468218863"
+    },
+    {
+      "wavenumber": "1418.0",
+      "intensity": "0.514457464"
+    },
+    {
+      "wavenumber": "1420.0",
+      "intensity": "0.566327512"
+    },
+    {
+      "wavenumber": "1422.0",
+      "intensity": "0.626180172"
+    },
+    {
+      "wavenumber": "1424.0",
+      "intensity": "0.694135666"
+    },
+    {
+      "wavenumber": "1426.0",
+      "intensity": "0.764941156"
+    },
+    {
+      "wavenumber": "1428.0",
+      "intensity": "0.836943507"
+    },
+    {
+      "wavenumber": "1430.0",
+      "intensity": "0.915956259"
+    },
+    {
+      "wavenumber": "1432.0",
+      "intensity": "1.01397038"
+    },
+    {
+      "wavenumber": "1434.0",
+      "intensity": "1.13081527"
+    },
+    {
+      "wavenumber": "1436.0",
+      "intensity": "1.27715027"
+    },
+    {
+      "wavenumber": "1438.0",
+      "intensity": "1.46545684"
+    },
+    {
+      "wavenumber": "1440.0",
+      "intensity": "1.70214081"
+    },
+    {
+      "wavenumber": "1442.0",
+      "intensity": "1.97225213"
+    },
+    {
+      "wavenumber": "1444.0",
+      "intensity": "2.26494312"
+    },
+    {
+      "wavenumber": "1446.0",
+      "intensity": "2.57709837"
+    },
+    {
+      "wavenumber": "1448.0",
+      "intensity": "2.89307594"
+    },
+    {
+      "wavenumber": "1450.0",
+      "intensity": "3.19132113"
+    },
+    {
+      "wavenumber": "1452.0",
+      "intensity": "3.42007518"
+    },
+    {
+      "wavenumber": "1454.0",
+      "intensity": "3.53287554"
+    },
+    {
+      "wavenumber": "1456.0",
+      "intensity": "3.54022884"
+    },
+    {
+      "wavenumber": "1458.0",
+      "intensity": "3.41737413"
+    },
+    {
+      "wavenumber": "1460.0",
+      "intensity": "3.16717076"
+    },
+    {
+      "wavenumber": "1462.0",
+      "intensity": "2.82681465"
+    },
+    {
+      "wavenumber": "1464.0",
+      "intensity": "2.44972706"
+    },
+    {
+      "wavenumber": "1466.0",
+      "intensity": "2.10688901"
+    },
+    {
+      "wavenumber": "1468.0",
+      "intensity": "1.8410821"
+    },
+    {
+      "wavenumber": "1470.0",
+      "intensity": "1.6331104"
+    },
+    {
+      "wavenumber": "1472.0",
+      "intensity": "1.48401463"
+    },
+    {
+      "wavenumber": "1474.0",
+      "intensity": "1.37703848"
+    },
+    {
+      "wavenumber": "1476.0",
+      "intensity": "1.30708945"
+    },
+    {
+      "wavenumber": "1478.0",
+      "intensity": "1.26073039"
+    },
+    {
+      "wavenumber": "1480.0",
+      "intensity": "1.23422861"
+    },
+    {
+      "wavenumber": "1482.0",
+      "intensity": "1.21244824"
+    },
+    {
+      "wavenumber": "1484.0",
+      "intensity": "1.16659796"
+    },
+    {
+      "wavenumber": "1486.0",
+      "intensity": "1.08569026"
+    },
+    {
+      "wavenumber": "1488.0",
+      "intensity": "0.980488598"
+    },
+    {
+      "wavenumber": "1490.0",
+      "intensity": "0.870484114"
+    },
+    {
+      "wavenumber": "1492.0",
+      "intensity": "0.761819363"
+    },
+    {
+      "wavenumber": "1494.0",
+      "intensity": "0.651987076"
+    },
+    {
+      "wavenumber": "1496.0",
+      "intensity": "0.543086529"
+    },
+    {
+      "wavenumber": "1498.0",
+      "intensity": "0.450791359"
+    },
+    {
+      "wavenumber": "1500.0",
+      "intensity": "0.379592776"
+    },
+    {
+      "wavenumber": "1502.0",
+      "intensity": "0.321976781"
+    },
+    {
+      "wavenumber": "1504.0",
+      "intensity": "0.269586653"
+    },
+    {
+      "wavenumber": "1506.0",
+      "intensity": "0.227347106"
+    },
+    {
+      "wavenumber": "1508.0",
+      "intensity": "0.190957636"
+    },
+    {
+      "wavenumber": "1510.0",
+      "intensity": "0.157546327"
+    },
+    {
+      "wavenumber": "1512.0",
+      "intensity": "0.126773626"
+    },
+    {
+      "wavenumber": "1514.0",
+      "intensity": "0.0990533158"
+    },
+    {
+      "wavenumber": "1516.0",
+      "intensity": "0.0763444155"
+    },
+    {
+      "wavenumber": "1518.0",
+      "intensity": "0.0607947819"
+    },
+    {
+      "wavenumber": "1520.0",
+      "intensity": "0.0488227606"
+    },
+    {
+      "wavenumber": "1522.0",
+      "intensity": "0.0437723882"
+    },
+    {
+      "wavenumber": "1524.0",
+      "intensity": "0.0431343764"
+    },
+    {
+      "wavenumber": "1526.0",
+      "intensity": "0.0411678106"
+    },
+    {
+      "wavenumber": "1528.0",
+      "intensity": "0.0371397249"
+    },
+    {
+      "wavenumber": "1530.0",
+      "intensity": "0.0276504047"
+    },
+    {
+      "wavenumber": "1532.0",
+      "intensity": "0.0158820152"
+    },
+    {
+      "wavenumber": "1534.0",
+      "intensity": "0.0106954584"
+    },
+    {
+      "wavenumber": "1536.0",
+      "intensity": "0.0145537127"
+    },
+    {
+      "wavenumber": "1538.0",
+      "intensity": "0.020176433"
+    },
+    {
+      "wavenumber": "1540.0",
+      "intensity": "0.0218875408"
+    },
+    {
+      "wavenumber": "1542.0",
+      "intensity": "0.0156211853"
+    },
+    {
+      "wavenumber": "1544.0",
+      "intensity": "0.0120150093"
+    },
+    {
+      "wavenumber": "1546.0",
+      "intensity": "0.0144906407"
+    },
+    {
+      "wavenumber": "1548.0",
+      "intensity": "0.0188714266"
+    },
+    {
+      "wavenumber": "1550.0",
+      "intensity": "0.0165266991"
+    },
+    {
+      "wavenumber": "1552.0",
+      "intensity": "0.00913100224"
+    },
+    {
+      "wavenumber": "1554.0",
+      "intensity": "0.00340557098"
+    },
+    {
+      "wavenumber": "1556.0",
+      "intensity": "0.002329421"
+    },
+    {
+      "wavenumber": "1558.0",
+      "intensity": "0.00644851942"
+    },
+    {
+      "wavenumber": "1560.0",
+      "intensity": "0.0160826575"
+    },
+    {
+      "wavenumber": "1562.0",
+      "intensity": "0.0218587033"
+    },
+    {
+      "wavenumber": "1564.0",
+      "intensity": "0.0217553023"
+    },
+    {
+      "wavenumber": "1566.0",
+      "intensity": "0.0174876209"
+    },
+    {
+      "wavenumber": "1568.0",
+      "intensity": "0.0136995437"
+    },
+    {
+      "wavenumber": "1570.0",
+      "intensity": "0.0133194569"
+    },
+    {
+      "wavenumber": "1572.0",
+      "intensity": "0.0191182252"
+    },
+    {
+      "wavenumber": "1574.0",
+      "intensity": "0.025329886"
+    },
+    {
+      "wavenumber": "1576.0",
+      "intensity": "0.0276112203"
+    },
+    {
+      "wavenumber": "1578.0",
+      "intensity": "0.0240443945"
+    },
+    {
+      "wavenumber": "1580.0",
+      "intensity": "0.0208937414"
+    },
+    {
+      "wavenumber": "1582.0",
+      "intensity": "0.0183560848"
+    },
+    {
+      "wavenumber": "1584.0",
+      "intensity": "0.0145048862"
+    },
+    {
+      "wavenumber": "1586.0",
+      "intensity": "0.00849987287"
+    },
+    {
+      "wavenumber": "1588.0",
+      "intensity": "0.00302377949"
+    },
+    {
+      "wavenumber": "1590.0",
+      "intensity": "0.000958514225"
+    },
+    {
+      "wavenumber": "1592.0",
+      "intensity": "0.00675220462"
+    },
+    {
+      "wavenumber": "1594.0",
+      "intensity": "0.0110258944"
+    },
+    {
+      "wavenumber": "1596.0",
+      "intensity": "0.018237412"
+    },
+    {
+      "wavenumber": "1598.0",
+      "intensity": "0.0251362696"
+    },
+    {
+      "wavenumber": "1600.0",
+      "intensity": "0.0251451246"
+    },
+    {
+      "wavenumber": "1602.0",
+      "intensity": "0.0219227914"
+    },
+    {
+      "wavenumber": "1604.0",
+      "intensity": "0.0191989429"
+    },
+    {
+      "wavenumber": "1606.0",
+      "intensity": "0.0199360251"
+    },
+    {
+      "wavenumber": "1608.0",
+      "intensity": "0.0247866139"
+    },
+    {
+      "wavenumber": "1610.0",
+      "intensity": "0.0286929123"
+    },
+    {
+      "wavenumber": "1612.0",
+      "intensity": "0.0349467397"
+    },
+    {
+      "wavenumber": "1614.0",
+      "intensity": "0.0437602848"
+    },
+    {
+      "wavenumber": "1616.0",
+      "intensity": "0.0472223908"
+    },
+    {
+      "wavenumber": "1618.0",
+      "intensity": "0.0396210775"
+    },
+    {
+      "wavenumber": "1620.0",
+      "intensity": "0.0238481872"
+    },
+    {
+      "wavenumber": "1622.0",
+      "intensity": "0.0104507804"
+    },
+    {
+      "wavenumber": "1624.0",
+      "intensity": "0.00871012267"
+    },
+    {
+      "wavenumber": "1626.0",
+      "intensity": "0.0168395992"
+    },
+    {
+      "wavenumber": "1628.0",
+      "intensity": "0.0262162816"
+    },
+    {
+      "wavenumber": "1630.0",
+      "intensity": "0.0269500855"
+    },
+    {
+      "wavenumber": "1632.0",
+      "intensity": "0.01942675"
+    },
+    {
+      "wavenumber": "1634.0",
+      "intensity": "0.0115647791"
+    },
+    {
+      "wavenumber": "1636.0",
+      "intensity": "0.00798623543"
+    },
+    {
+      "wavenumber": "1638.0",
+      "intensity": "0.0070516346"
+    },
+    {
+      "wavenumber": "1640.0",
+      "intensity": "0.00703518372"
+    },
+    {
+      "wavenumber": "1642.0",
+      "intensity": "0.00841008406"
+    },
+    {
+      "wavenumber": "1644.0",
+      "intensity": "0.0121488813"
+    },
+    {
+      "wavenumber": "1646.0",
+      "intensity": "0.0167498011"
+    },
+    {
+      "wavenumber": "1648.0",
+      "intensity": "0.0162624717"
+    },
+    {
+      "wavenumber": "1650.0",
+      "intensity": "0.0103615168"
+    },
+    {
+      "wavenumber": "1652.0",
+      "intensity": "0.00445556641"
+    },
+    {
+      "wavenumber": "1654.0",
+      "intensity": "0.00247138715"
+    },
+    {
+      "wavenumber": "1656.0",
+      "intensity": "0.00384483347"
+    },
+    {
+      "wavenumber": "1658.0",
+      "intensity": "0.00507982913"
+    },
+    {
+      "wavenumber": "1660.0",
+      "intensity": "0.00629999675"
+    },
+    {
+      "wavenumber": "1662.0",
+      "intensity": "0.00978882331"
+    },
+    {
+      "wavenumber": "1664.0",
+      "intensity": "0.016874684"
+    },
+    {
+      "wavenumber": "1666.0",
+      "intensity": "0.0233333949"
+    },
+    {
+      "wavenumber": "1668.0",
+      "intensity": "0.026525842"
+    },
+    {
+      "wavenumber": "1670.0",
+      "intensity": "0.0262646787"
+    },
+    {
+      "wavenumber": "1672.0",
+      "intensity": "0.0236224905"
+    },
+    {
+      "wavenumber": "1674.0",
+      "intensity": "0.0168848876"
+    },
+    {
+      "wavenumber": "1676.0",
+      "intensity": "0.0069072484"
+    },
+    {
+      "wavenumber": "1678.0",
+      "intensity": "0.000503385032"
+    },
+    {
+      "wavenumber": "1680.0",
+      "intensity": "0.0030308126"
+    },
+    {
+      "wavenumber": "1682.0",
+      "intensity": "0.0101348646"
+    },
+    {
+      "wavenumber": "1684.0",
+      "intensity": "0.0145991556"
+    },
+    {
+      "wavenumber": "1686.0",
+      "intensity": "0.0120087983"
+    },
+    {
+      "wavenumber": "1688.0",
+      "intensity": "0.00891759433"
+    },
+    {
+      "wavenumber": "1690.0",
+      "intensity": "0.0104916804"
+    },
+    {
+      "wavenumber": "1692.0",
+      "intensity": "0.0119092586"
+    },
+    {
+      "wavenumber": "1694.0",
+      "intensity": "0.00926336087"
+    },
+    {
+      "wavenumber": "1696.0",
+      "intensity": "0.00872348528"
+    },
+    {
+      "wavenumber": "1698.0",
+      "intensity": "0.0165725108"
+    },
+    {
+      "wavenumber": "1700.0",
+      "intensity": "0.0284888037"
+    },
+    {
+      "wavenumber": "1702.0",
+      "intensity": "0.0340677612"
+    },
+    {
+      "wavenumber": "1704.0",
+      "intensity": "0.0356025919"
+    },
+    {
+      "wavenumber": "1706.0",
+      "intensity": "0.0341675393"
+    },
+    {
+      "wavenumber": "1708.0",
+      "intensity": "0.0301354639"
+    },
+    {
+      "wavenumber": "1710.0",
+      "intensity": "0.0255224817"
+    },
+    {
+      "wavenumber": "1712.0",
+      "intensity": "0.0205441248"
+    },
+    {
+      "wavenumber": "1714.0",
+      "intensity": "0.0148439463"
+    },
+    {
+      "wavenumber": "1716.0",
+      "intensity": "0.00948911346"
+    },
+    {
+      "wavenumber": "1718.0",
+      "intensity": "0.00782232266"
+    },
+    {
+      "wavenumber": "1720.0",
+      "intensity": "0.0120270671"
+    },
+    {
+      "wavenumber": "1722.0",
+      "intensity": "0.0193997808"
+    },
+    {
+      "wavenumber": "1724.0",
+      "intensity": "0.0214055851"
+    },
+    {
+      "wavenumber": "1726.0",
+      "intensity": "0.015612578"
+    },
+    {
+      "wavenumber": "1728.0",
+      "intensity": "0.00961618405"
+    },
+    {
+      "wavenumber": "1730.0",
+      "intensity": "0.0076970933"
+    },
+    {
+      "wavenumber": "1732.0",
+      "intensity": "0.00854054745"
+    },
+    {
+      "wavenumber": "1734.0",
+      "intensity": "0.0101940641"
+    },
+    {
+      "wavenumber": "1736.0",
+      "intensity": "0.011026334"
+    },
+    {
+      "wavenumber": "1738.0",
+      "intensity": "0.00802648626"
+    },
+    {
+      "wavenumber": "1740.0",
+      "intensity": "0.00383886718"
+    },
+    {
+      "wavenumber": "1742.0",
+      "intensity": "0.0035719038"
+    },
+    {
+      "wavenumber": "1744.0",
+      "intensity": "0.00596942892"
+    },
+    {
+      "wavenumber": "1746.0",
+      "intensity": "0.0105194934"
+    },
+    {
+      "wavenumber": "1748.0",
+      "intensity": "0.0125715844"
+    },
+    {
+      "wavenumber": "1750.0",
+      "intensity": "0.0105073629"
+    },
+    {
+      "wavenumber": "1752.0",
+      "intensity": "0.00905210339"
+    },
+    {
+      "wavenumber": "1754.0",
+      "intensity": "0.00913464371"
+    },
+    {
+      "wavenumber": "1756.0",
+      "intensity": "0.00520066032"
+    },
+    {
+      "wavenumber": "1758.0",
+      "intensity": "0.00185452704"
+    },
+    {
+      "wavenumber": "1760.0",
+      "intensity": "0.00376510015"
+    },
+    {
+      "wavenumber": "1762.0",
+      "intensity": "0.00962215103"
+    },
+    {
+      "wavenumber": "1764.0",
+      "intensity": "0.0131199118"
+    },
+    {
+      "wavenumber": "1766.0",
+      "intensity": "0.0108409943"
+    },
+    {
+      "wavenumber": "1768.0",
+      "intensity": "0.00820777472"
+    },
+    {
+      "wavenumber": "1770.0",
+      "intensity": "0.0108026443"
+    },
+    {
+      "wavenumber": "1772.0",
+      "intensity": "0.0174376648"
+    },
+    {
+      "wavenumber": "1774.0",
+      "intensity": "0.022641236"
+    },
+    {
+      "wavenumber": "1776.0",
+      "intensity": "0.0213627573"
+    },
+    {
+      "wavenumber": "1778.0",
+      "intensity": "0.0156070767"
+    },
+    {
+      "wavenumber": "1780.0",
+      "intensity": "0.0120071536"
+    },
+    {
+      "wavenumber": "1782.0",
+      "intensity": "0.0119289877"
+    },
+    {
+      "wavenumber": "1784.0",
+      "intensity": "0.012465436"
+    },
+    {
+      "wavenumber": "1786.0",
+      "intensity": "0.00987061206"
+    },
+    {
+      "wavenumber": "1788.0",
+      "intensity": "0.00320382114"
+    },
+    {
+      "wavenumber": "1790.0",
+      "intensity": "6.94394112e-06"
+    },
+    {
+      "wavenumber": "1792.0",
+      "intensity": "0.00323660369"
+    },
+    {
+      "wavenumber": "1794.0",
+      "intensity": "0.0115606794"
+    },
+    {
+      "wavenumber": "1796.0",
+      "intensity": "0.0179163087"
+    },
+    {
+      "wavenumber": "1798.0",
+      "intensity": "0.0222411044"
+    },
+    {
+      "wavenumber": "1800.0",
+      "intensity": "0.0258387811"
+    },
+    {
+      "wavenumber": "1802.0",
+      "intensity": "0.0274734683"
+    },
+    {
+      "wavenumber": "1804.0",
+      "intensity": "0.0276213773"
+    },
+    {
+      "wavenumber": "1806.0",
+      "intensity": "0.0228765868"
+    },
+    {
+      "wavenumber": "1808.0",
+      "intensity": "0.0141570214"
+    },
+    {
+      "wavenumber": "1810.0",
+      "intensity": "0.00930879731"
+    },
+    {
+      "wavenumber": "1812.0",
+      "intensity": "0.00813571177"
+    },
+    {
+      "wavenumber": "1814.0",
+      "intensity": "0.0127463639"
+    },
+    {
+      "wavenumber": "1816.0",
+      "intensity": "0.0173856802"
+    },
+    {
+      "wavenumber": "1818.0",
+      "intensity": "0.0143040121"
+    },
+    {
+      "wavenumber": "1820.0",
+      "intensity": "0.0066987332"
+    },
+    {
+      "wavenumber": "1822.0",
+      "intensity": "0.00175036781"
+    },
+    {
+      "wavenumber": "1824.0",
+      "intensity": "0.00336437835"
+    },
+    {
+      "wavenumber": "1826.0",
+      "intensity": "0.00936935563"
+    },
+    {
+      "wavenumber": "1828.0",
+      "intensity": "0.0161275268"
+    },
+    {
+      "wavenumber": "1830.0",
+      "intensity": "0.0215852857"
+    },
+    {
+      "wavenumber": "1832.0",
+      "intensity": "0.0264813062"
+    },
+    {
+      "wavenumber": "1834.0",
+      "intensity": "0.0268039461"
+    },
+    {
+      "wavenumber": "1836.0",
+      "intensity": "0.0180617981"
+    },
+    {
+      "wavenumber": "1838.0",
+      "intensity": "0.00985486433"
+    },
+    {
+      "wavenumber": "1840.0",
+      "intensity": "0.00787272491"
+    },
+    {
+      "wavenumber": "1842.0",
+      "intensity": "0.0129415449"
+    },
+    {
+      "wavenumber": "1844.0",
+      "intensity": "0.0183284581"
+    },
+    {
+      "wavenumber": "1846.0",
+      "intensity": "0.0150631852"
+    },
+    {
+      "wavenumber": "1848.0",
+      "intensity": "0.00876176916"
+    },
+    {
+      "wavenumber": "1850.0",
+      "intensity": "0.0115249865"
+    },
+    {
+      "wavenumber": "1852.0",
+      "intensity": "0.0175489299"
+    },
+    {
+      "wavenumber": "1854.0",
+      "intensity": "0.0239686295"
+    },
+    {
+      "wavenumber": "1856.0",
+      "intensity": "0.0215704795"
+    },
+    {
+      "wavenumber": "1858.0",
+      "intensity": "0.0121589061"
+    },
+    {
+      "wavenumber": "1860.0",
+      "intensity": "0.0120089352"
+    },
+    {
+      "wavenumber": "1862.0",
+      "intensity": "0.0224136114"
+    },
+    {
+      "wavenumber": "1864.0",
+      "intensity": "0.0310940556"
+    },
+    {
+      "wavenumber": "1866.0",
+      "intensity": "0.0315456018"
+    },
+    {
+      "wavenumber": "1868.0",
+      "intensity": "0.0246015079"
+    },
+    {
+      "wavenumber": "1870.0",
+      "intensity": "0.0194359366"
+    },
+    {
+      "wavenumber": "1872.0",
+      "intensity": "0.0240910538"
+    },
+    {
+      "wavenumber": "1874.0",
+      "intensity": "0.030490119"
+    },
+    {
+      "wavenumber": "1876.0",
+      "intensity": "0.0304995142"
+    },
+    {
+      "wavenumber": "1878.0",
+      "intensity": "0.0207745675"
+    },
+    {
+      "wavenumber": "1880.0",
+      "intensity": "0.00771549344"
+    },
+    {
+      "wavenumber": "1882.0",
+      "intensity": "0.00376655464"
+    },
+    {
+      "wavenumber": "1884.0",
+      "intensity": "0.00882267393"
+    },
+    {
+      "wavenumber": "1886.0",
+      "intensity": "0.0136209317"
+    },
+    {
+      "wavenumber": "1888.0",
+      "intensity": "0.0137646087"
+    },
+    {
+      "wavenumber": "1890.0",
+      "intensity": "0.012677866"
+    },
+    {
+      "wavenumber": "1892.0",
+      "intensity": "0.0118542966"
+    },
+    {
+      "wavenumber": "1894.0",
+      "intensity": "0.0137607763"
+    },
+    {
+      "wavenumber": "1896.0",
+      "intensity": "0.0180405732"
+    },
+    {
+      "wavenumber": "1898.0",
+      "intensity": "0.0231744535"
+    },
+    {
+      "wavenumber": "1900.0",
+      "intensity": "0.0272850152"
+    },
+    {
+      "wavenumber": "1902.0",
+      "intensity": "0.0259986334"
+    },
+    {
+      "wavenumber": "1904.0",
+      "intensity": "0.0192315578"
+    },
+    {
+      "wavenumber": "1906.0",
+      "intensity": "0.0126958545"
+    },
+    {
+      "wavenumber": "1908.0",
+      "intensity": "0.00926109031"
+    },
+    {
+      "wavenumber": "1910.0",
+      "intensity": "0.00634450931"
+    },
+    {
+      "wavenumber": "1912.0",
+      "intensity": "0.00527387252"
+    },
+    {
+      "wavenumber": "1914.0",
+      "intensity": "0.00629803538"
+    },
+    {
+      "wavenumber": "1916.0",
+      "intensity": "0.010408449"
+    },
+    {
+      "wavenumber": "1918.0",
+      "intensity": "0.0173554607"
+    },
+    {
+      "wavenumber": "1920.0",
+      "intensity": "0.0212208331"
+    },
+    {
+      "wavenumber": "1922.0",
+      "intensity": "0.0220327042"
+    },
+    {
+      "wavenumber": "1924.0",
+      "intensity": "0.0193040445"
+    },
+    {
+      "wavenumber": "1926.0",
+      "intensity": "0.0135440826"
+    },
+    {
+      "wavenumber": "1928.0",
+      "intensity": "0.0074242414"
+    },
+    {
+      "wavenumber": "1930.0",
+      "intensity": "0.00395804364"
+    },
+    {
+      "wavenumber": "1932.0",
+      "intensity": "0.00523693813"
+    },
+    {
+      "wavenumber": "1934.0",
+      "intensity": "0.0124786794"
+    },
+    {
+      "wavenumber": "1936.0",
+      "intensity": "0.016977584"
+    },
+    {
+      "wavenumber": "1938.0",
+      "intensity": "0.0184267256"
+    },
+    {
+      "wavenumber": "1940.0",
+      "intensity": "0.0161891691"
+    },
+    {
+      "wavenumber": "1942.0",
+      "intensity": "0.0143364668"
+    },
+    {
+      "wavenumber": "1944.0",
+      "intensity": "0.0141223976"
+    },
+    {
+      "wavenumber": "1946.0",
+      "intensity": "0.00672781188"
+    },
+    {
+      "wavenumber": "1948.0",
+      "intensity": "0.00195348565"
+    },
+    {
+      "wavenumber": "1950.0",
+      "intensity": "0.0062189009"
+    },
+    {
+      "wavenumber": "1952.0",
+      "intensity": "0.0148671363"
+    },
+    {
+      "wavenumber": "1954.0",
+      "intensity": "0.0241152868"
+    },
+    {
+      "wavenumber": "1956.0",
+      "intensity": "0.0220878869"
+    },
+    {
+      "wavenumber": "1958.0",
+      "intensity": "0.0118355602"
+    },
+    {
+      "wavenumber": "1960.0",
+      "intensity": "0.012768534"
+    },
+    {
+      "wavenumber": "1962.0",
+      "intensity": "0.0165701285"
+    },
+    {
+      "wavenumber": "1964.0",
+      "intensity": "0.0155944973"
+    },
+    {
+      "wavenumber": "1966.0",
+      "intensity": "0.0132061718"
+    },
+    {
+      "wavenumber": "1968.0",
+      "intensity": "0.00899651926"
+    },
+    {
+      "wavenumber": "1970.0",
+      "intensity": "0.0108890058"
+    },
+    {
+      "wavenumber": "1972.0",
+      "intensity": "0.0175572615"
+    },
+    {
+      "wavenumber": "1974.0",
+      "intensity": "0.0222358555"
+    },
+    {
+      "wavenumber": "1976.0",
+      "intensity": "0.0217682105"
+    },
+    {
+      "wavenumber": "1978.0",
+      "intensity": "0.016131226"
+    },
+    {
+      "wavenumber": "1980.0",
+      "intensity": "0.00710144918"
+    },
+    {
+      "wavenumber": "1982.0",
+      "intensity": "0.000826147152"
+    },
+    {
+      "wavenumber": "1984.0",
+      "intensity": "0.00240988424"
+    },
+    {
+      "wavenumber": "1986.0",
+      "intensity": "0.0125209065"
+    },
+    {
+      "wavenumber": "1988.0",
+      "intensity": "0.0247536786"
+    },
+    {
+      "wavenumber": "1990.0",
+      "intensity": "0.0313025974"
+    },
+    {
+      "wavenumber": "1992.0",
+      "intensity": "0.0275598262"
+    },
+    {
+      "wavenumber": "1994.0",
+      "intensity": "0.0212345906"
+    },
+    {
+      "wavenumber": "1996.0",
+      "intensity": "0.0184544921"
+    },
+    {
+      "wavenumber": "1998.0",
+      "intensity": "0.0170271434"
+    },
+    {
+      "wavenumber": "2000.0",
+      "intensity": "0.0129852593"
+    },
+    {
+      "wavenumber": "2002.0",
+      "intensity": "0.00439139316"
+    },
+    {
+      "wavenumber": "2004.0",
+      "intensity": "0.00105661899"
+    },
+    {
+      "wavenumber": "2006.0",
+      "intensity": "0.00355759123"
+    },
+    {
+      "wavenumber": "2008.0",
+      "intensity": "0.00968576036"
+    },
+    {
+      "wavenumber": "2010.0",
+      "intensity": "0.0166789033"
+    },
+    {
+      "wavenumber": "2012.0",
+      "intensity": "0.0195077825"
+    },
+    {
+      "wavenumber": "2014.0",
+      "intensity": "0.0175762847"
+    },
+    {
+      "wavenumber": "2016.0",
+      "intensity": "0.0150499512"
+    },
+    {
+      "wavenumber": "2018.0",
+      "intensity": "0.014193452"
+    },
+    {
+      "wavenumber": "2020.0",
+      "intensity": "0.0150409341"
+    },
+    {
+      "wavenumber": "2022.0",
+      "intensity": "0.0149287246"
+    },
+    {
+      "wavenumber": "2024.0",
+      "intensity": "0.0111707598"
+    },
+    {
+      "wavenumber": "2026.0",
+      "intensity": "0.00490060169"
+    },
+    {
+      "wavenumber": "2028.0",
+      "intensity": "0.00325294142"
+    },
+    {
+      "wavenumber": "2030.0",
+      "intensity": "0.0102550937"
+    },
+    {
+      "wavenumber": "2032.0",
+      "intensity": "0.0216144137"
+    },
+    {
+      "wavenumber": "2034.0",
+      "intensity": "0.0284906384"
+    },
+    {
+      "wavenumber": "2036.0",
+      "intensity": "0.0268883742"
+    },
+    {
+      "wavenumber": "2038.0",
+      "intensity": "0.0217682086"
+    },
+    {
+      "wavenumber": "2040.0",
+      "intensity": "0.0167188998"
+    },
+    {
+      "wavenumber": "2042.0",
+      "intensity": "0.00989665557"
+    },
+    {
+      "wavenumber": "2044.0",
+      "intensity": "0.0044612498"
+    },
+    {
+      "wavenumber": "2046.0",
+      "intensity": "0.0026755631"
+    },
+    {
+      "wavenumber": "2048.0",
+      "intensity": "0.00696136523"
+    },
+    {
+      "wavenumber": "2050.0",
+      "intensity": "0.0175112318"
+    },
+    {
+      "wavenumber": "2052.0",
+      "intensity": "0.0296924282"
+    },
+    {
+      "wavenumber": "2054.0",
+      "intensity": "0.0343594849"
+    },
+    {
+      "wavenumber": "2056.0",
+      "intensity": "0.028945649"
+    },
+    {
+      "wavenumber": "2058.0",
+      "intensity": "0.0161705967"
+    },
+    {
+      "wavenumber": "2060.0",
+      "intensity": "0.0050605773"
+    },
+    {
+      "wavenumber": "2062.0",
+      "intensity": "0.0027667433"
+    },
+    {
+      "wavenumber": "2064.0",
+      "intensity": "0.0106365429"
+    },
+    {
+      "wavenumber": "2066.0",
+      "intensity": "0.0188538078"
+    },
+    {
+      "wavenumber": "2068.0",
+      "intensity": "0.0242829081"
+    },
+    {
+      "wavenumber": "2070.0",
+      "intensity": "0.021249149"
+    },
+    {
+      "wavenumber": "2072.0",
+      "intensity": "0.0123650944"
+    },
+    {
+      "wavenumber": "2074.0",
+      "intensity": "0.00470462022"
+    },
+    {
+      "wavenumber": "2076.0",
+      "intensity": "0.00517643522"
+    },
+    {
+      "wavenumber": "2078.0",
+      "intensity": "0.0156630725"
+    },
+    {
+      "wavenumber": "2080.0",
+      "intensity": "0.0272277631"
+    },
+    {
+      "wavenumber": "2082.0",
+      "intensity": "0.032869786"
+    },
+    {
+      "wavenumber": "2084.0",
+      "intensity": "0.0356105492"
+    },
+    {
+      "wavenumber": "2086.0",
+      "intensity": "0.0318684392"
+    },
+    {
+      "wavenumber": "2088.0",
+      "intensity": "0.0246517099"
+    },
+    {
+      "wavenumber": "2090.0",
+      "intensity": "0.0178571269"
+    },
+    {
+      "wavenumber": "2092.0",
+      "intensity": "0.00978220534"
+    },
+    {
+      "wavenumber": "2094.0",
+      "intensity": "0.00811374653"
+    },
+    {
+      "wavenumber": "2096.0",
+      "intensity": "0.0111540724"
+    },
+    {
+      "wavenumber": "2098.0",
+      "intensity": "0.0118037136"
+    },
+    {
+      "wavenumber": "2100.0",
+      "intensity": "0.00992209464"
+    },
+    {
+      "wavenumber": "2102.0",
+      "intensity": "0.00608773157"
+    },
+    {
+      "wavenumber": "2104.0",
+      "intensity": "0.00478682108"
+    },
+    {
+      "wavenumber": "2106.0",
+      "intensity": "0.0147237722"
+    },
+    {
+      "wavenumber": "2108.0",
+      "intensity": "0.0260427203"
+    },
+    {
+      "wavenumber": "2110.0",
+      "intensity": "0.0268419981"
+    },
+    {
+      "wavenumber": "2112.0",
+      "intensity": "0.0180791486"
+    },
+    {
+      "wavenumber": "2114.0",
+      "intensity": "0.00599276088"
+    },
+    {
+      "wavenumber": "2116.0",
+      "intensity": "0.00296830852"
+    },
+    {
+      "wavenumber": "2118.0",
+      "intensity": "0.0106695369"
+    },
+    {
+      "wavenumber": "2120.0",
+      "intensity": "0.011832322"
+    },
+    {
+      "wavenumber": "2122.0",
+      "intensity": "0.00545077631"
+    },
+    {
+      "wavenumber": "2124.0",
+      "intensity": "0.00102129276"
+    },
+    {
+      "wavenumber": "2126.0",
+      "intensity": "0.0042046248"
+    },
+    {
+      "wavenumber": "2128.0",
+      "intensity": "0.0185722969"
+    },
+    {
+      "wavenumber": "2130.0",
+      "intensity": "0.0310299471"
+    },
+    {
+      "wavenumber": "2132.0",
+      "intensity": "0.0270661972"
+    },
+    {
+      "wavenumber": "2134.0",
+      "intensity": "0.020148186"
+    },
+    {
+      "wavenumber": "2136.0",
+      "intensity": "0.018152507"
+    },
+    {
+      "wavenumber": "2138.0",
+      "intensity": "0.0113491658"
+    },
+    {
+      "wavenumber": "2140.0",
+      "intensity": "0.00793891586"
+    },
+    {
+      "wavenumber": "2142.0",
+      "intensity": "0.00907164533"
+    },
+    {
+      "wavenumber": "2144.0",
+      "intensity": "0.0130882235"
+    },
+    {
+      "wavenumber": "2146.0",
+      "intensity": "0.0229168404"
+    },
+    {
+      "wavenumber": "2148.0",
+      "intensity": "0.0231331494"
+    },
+    {
+      "wavenumber": "2150.0",
+      "intensity": "0.0162686575"
+    },
+    {
+      "wavenumber": "2152.0",
+      "intensity": "0.013647655"
+    },
+    {
+      "wavenumber": "2154.0",
+      "intensity": "0.00854750257"
+    },
+    {
+      "wavenumber": "2156.0",
+      "intensity": "0.00512764743"
+    },
+    {
+      "wavenumber": "2158.0",
+      "intensity": "0.00838844944"
+    },
+    {
+      "wavenumber": "2160.0",
+      "intensity": "0.0136983506"
+    },
+    {
+      "wavenumber": "2162.0",
+      "intensity": "0.0181527156"
+    },
+    {
+      "wavenumber": "2164.0",
+      "intensity": "0.0187406614"
+    },
+    {
+      "wavenumber": "2166.0",
+      "intensity": "0.0151790855"
+    },
+    {
+      "wavenumber": "2168.0",
+      "intensity": "0.012063086"
+    },
+    {
+      "wavenumber": "2170.0",
+      "intensity": "0.0113816708"
+    },
+    {
+      "wavenumber": "2172.0",
+      "intensity": "0.0110744564"
+    },
+    {
+      "wavenumber": "2174.0",
+      "intensity": "0.0125775468"
+    },
+    {
+      "wavenumber": "2176.0",
+      "intensity": "0.0199834257"
+    },
+    {
+      "wavenumber": "2178.0",
+      "intensity": "0.0243301429"
+    },
+    {
+      "wavenumber": "2180.0",
+      "intensity": "0.0261380635"
+    },
+    {
+      "wavenumber": "2182.0",
+      "intensity": "0.0256502964"
+    },
+    {
+      "wavenumber": "2184.0",
+      "intensity": "0.0156672206"
+    },
+    {
+      "wavenumber": "2186.0",
+      "intensity": "0.00550871389"
+    },
+    {
+      "wavenumber": "2188.0",
+      "intensity": "0.00799231883"
+    },
+    {
+      "wavenumber": "2190.0",
+      "intensity": "0.0137818363"
+    },
+    {
+      "wavenumber": "2192.0",
+      "intensity": "0.0218080524"
+    },
+    {
+      "wavenumber": "2194.0",
+      "intensity": "0.0230817497"
+    },
+    {
+      "wavenumber": "2196.0",
+      "intensity": "0.0148189329"
+    },
+    {
+      "wavenumber": "2198.0",
+      "intensity": "0.0108423382"
+    },
+    {
+      "wavenumber": "2200.0",
+      "intensity": "0.0111604147"
+    },
+    {
+      "wavenumber": "2202.0",
+      "intensity": "0.00829669647"
+    },
+    {
+      "wavenumber": "2204.0",
+      "intensity": "0.00971306488"
+    },
+    {
+      "wavenumber": "2206.0",
+      "intensity": "0.0147993714"
+    },
+    {
+      "wavenumber": "2208.0",
+      "intensity": "0.0157050248"
+    },
+    {
+      "wavenumber": "2210.0",
+      "intensity": "0.0169113353"
+    },
+    {
+      "wavenumber": "2212.0",
+      "intensity": "0.0129424734"
+    },
+    {
+      "wavenumber": "2214.0",
+      "intensity": "0.00723629585"
+    },
+    {
+      "wavenumber": "2216.0",
+      "intensity": "0.00658704201"
+    },
+    {
+      "wavenumber": "2218.0",
+      "intensity": "0.0115973055"
+    },
+    {
+      "wavenumber": "2220.0",
+      "intensity": "0.0165836327"
+    },
+    {
+      "wavenumber": "2222.0",
+      "intensity": "0.0185621381"
+    },
+    {
+      "wavenumber": "2224.0",
+      "intensity": "0.0161712077"
+    },
+    {
+      "wavenumber": "2226.0",
+      "intensity": "0.00966790877"
+    },
+    {
+      "wavenumber": "2228.0",
+      "intensity": "0.0107258223"
+    },
+    {
+      "wavenumber": "2230.0",
+      "intensity": "0.0178580228"
+    },
+    {
+      "wavenumber": "2232.0",
+      "intensity": "0.0203567408"
+    },
+    {
+      "wavenumber": "2234.0",
+      "intensity": "0.0147041082"
+    },
+    {
+      "wavenumber": "2236.0",
+      "intensity": "0.00933472067"
+    },
+    {
+      "wavenumber": "2238.0",
+      "intensity": "0.00367742172"
+    },
+    {
+      "wavenumber": "2240.0",
+      "intensity": "0.00887799542"
+    },
+    {
+      "wavenumber": "2242.0",
+      "intensity": "0.0153207425"
+    },
+    {
+      "wavenumber": "2244.0",
+      "intensity": "0.0222045984"
+    },
+    {
+      "wavenumber": "2246.0",
+      "intensity": "0.0285702832"
+    },
+    {
+      "wavenumber": "2248.0",
+      "intensity": "0.0313013159"
+    },
+    {
+      "wavenumber": "2250.0",
+      "intensity": "0.0243711211"
+    },
+    {
+      "wavenumber": "2252.0",
+      "intensity": "0.017925594"
+    },
+    {
+      "wavenumber": "2254.0",
+      "intensity": "0.00891147554"
+    },
+    {
+      "wavenumber": "2256.0",
+      "intensity": "0.00972543191"
+    },
+    {
+      "wavenumber": "2258.0",
+      "intensity": "0.0180173106"
+    },
+    {
+      "wavenumber": "2260.0",
+      "intensity": "0.0199714564"
+    },
+    {
+      "wavenumber": "2262.0",
+      "intensity": "0.0204330049"
+    },
+    {
+      "wavenumber": "2264.0",
+      "intensity": "0.0163393375"
+    },
+    {
+      "wavenumber": "2266.0",
+      "intensity": "0.0132916942"
+    },
+    {
+      "wavenumber": "2268.0",
+      "intensity": "0.0218516644"
+    },
+    {
+      "wavenumber": "2270.0",
+      "intensity": "0.0272826031"
+    },
+    {
+      "wavenumber": "2272.0",
+      "intensity": "0.0227195881"
+    },
+    {
+      "wavenumber": "2274.0",
+      "intensity": "0.0189690404"
+    },
+    {
+      "wavenumber": "2276.0",
+      "intensity": "0.022226423"
+    },
+    {
+      "wavenumber": "2278.0",
+      "intensity": "0.0259764567"
+    },
+    {
+      "wavenumber": "2280.0",
+      "intensity": "0.0246107783"
+    },
+    {
+      "wavenumber": "2282.0",
+      "intensity": "0.0230424721"
+    },
+    {
+      "wavenumber": "2284.0",
+      "intensity": "0.018070206"
+    },
+    {
+      "wavenumber": "2286.0",
+      "intensity": "0.0155163091"
+    },
+    {
+      "wavenumber": "2288.0",
+      "intensity": "0.0140363891"
+    },
+    {
+      "wavenumber": "2290.0",
+      "intensity": "0.00497533474"
+    },
+    {
+      "wavenumber": "2292.0",
+      "intensity": "0.00761577347"
+    },
+    {
+      "wavenumber": "2294.0",
+      "intensity": "0.0229890216"
+    },
+    {
+      "wavenumber": "2296.0",
+      "intensity": "0.0404833518"
+    },
+    {
+      "wavenumber": "2298.0",
+      "intensity": "0.0588896051"
+    },
+    {
+      "wavenumber": "2300.0",
+      "intensity": "0.0583984591"
+    },
+    {
+      "wavenumber": "2302.0",
+      "intensity": "0.0444943532"
+    },
+    {
+      "wavenumber": "2304.0",
+      "intensity": "0.0292618163"
+    },
+    {
+      "wavenumber": "2306.0",
+      "intensity": "0.011756721"
+    },
+    {
+      "wavenumber": "2308.0",
+      "intensity": "0.00712010404"
+    },
+    {
+      "wavenumber": "2310.0",
+      "intensity": "0.0162717644"
+    },
+    {
+      "wavenumber": "2312.0",
+      "intensity": "0.0326416306"
+    },
+    {
+      "wavenumber": "2314.0",
+      "intensity": "0.0386203639"
+    },
+    {
+      "wavenumber": "2316.0",
+      "intensity": "0.0250244159"
+    },
+    {
+      "wavenumber": "2318.0",
+      "intensity": "0.0056908098"
+    },
+    {
+      "wavenumber": "2320.0",
+      "intensity": "0.00432864903"
+    },
+    {
+      "wavenumber": "2322.0",
+      "intensity": "0.0136969974"
+    },
+    {
+      "wavenumber": "2324.0",
+      "intensity": "0.022940984"
+    },
+    {
+      "wavenumber": "2326.0",
+      "intensity": "0.0248335339"
+    },
+    {
+      "wavenumber": "2328.0",
+      "intensity": "0.017518349"
+    },
+    {
+      "wavenumber": "2330.0",
+      "intensity": "0.00996609218"
+    },
+    {
+      "wavenumber": "2332.0",
+      "intensity": "0.00831530895"
+    },
+    {
+      "wavenumber": "2334.0",
+      "intensity": "0.0146248462"
+    },
+    {
+      "wavenumber": "2336.0",
+      "intensity": "0.022882212"
+    },
+    {
+      "wavenumber": "2338.0",
+      "intensity": "0.0240147337"
+    },
+    {
+      "wavenumber": "2340.0",
+      "intensity": "0.0168156326"
+    },
+    {
+      "wavenumber": "2342.0",
+      "intensity": "0.0237824209"
+    },
+    {
+      "wavenumber": "2344.0",
+      "intensity": "0.0253350865"
+    },
+    {
+      "wavenumber": "2346.0",
+      "intensity": "0.0228943564"
+    },
+    {
+      "wavenumber": "2348.0",
+      "intensity": "0.0209589489"
+    },
+    {
+      "wavenumber": "2350.0",
+      "intensity": "0.0296588466"
+    },
+    {
+      "wavenumber": "2352.0",
+      "intensity": "0.0367347226"
+    },
+    {
+      "wavenumber": "2354.0",
+      "intensity": "0.0373816527"
+    },
+    {
+      "wavenumber": "2356.0",
+      "intensity": "0.0325594246"
+    },
+    {
+      "wavenumber": "2358.0",
+      "intensity": "0.0379090831"
+    },
+    {
+      "wavenumber": "2360.0",
+      "intensity": "0.0347549878"
+    },
+    {
+      "wavenumber": "2362.0",
+      "intensity": "0.016989531"
+    },
+    {
+      "wavenumber": "2364.0",
+      "intensity": "0.00123096863"
+    },
+    {
+      "wavenumber": "2366.0",
+      "intensity": "0.0033172546"
+    },
+    {
+      "wavenumber": "2368.0",
+      "intensity": "0.01650903"
+    },
+    {
+      "wavenumber": "2370.0",
+      "intensity": "0.0234681275"
+    },
+    {
+      "wavenumber": "2372.0",
+      "intensity": "0.0201703981"
+    },
+    {
+      "wavenumber": "2374.0",
+      "intensity": "0.03257256"
+    },
+    {
+      "wavenumber": "2376.0",
+      "intensity": "0.0498431325"
+    },
+    {
+      "wavenumber": "2378.0",
+      "intensity": "0.0554294586"
+    },
+    {
+      "wavenumber": "2380.0",
+      "intensity": "0.0466067493"
+    },
+    {
+      "wavenumber": "2382.0",
+      "intensity": "0.0354741812"
+    },
+    {
+      "wavenumber": "2384.0",
+      "intensity": "0.0236523524"
+    },
+    {
+      "wavenumber": "2386.0",
+      "intensity": "0.0198598243"
+    },
+    {
+      "wavenumber": "2388.0",
+      "intensity": "0.0151253855"
+    },
+    {
+      "wavenumber": "2390.0",
+      "intensity": "0.0121604325"
+    },
+    {
+      "wavenumber": "2392.0",
+      "intensity": "0.00892289169"
+    },
+    {
+      "wavenumber": "2394.0",
+      "intensity": "0.0143011604"
+    },
+    {
+      "wavenumber": "2396.0",
+      "intensity": "0.0276545677"
+    },
+    {
+      "wavenumber": "2398.0",
+      "intensity": "0.0431601182"
+    },
+    {
+      "wavenumber": "2400.0",
+      "intensity": "0.0415925272"
+    },
+    {
+      "wavenumber": "2402.0",
+      "intensity": "0.0254851058"
+    },
+    {
+      "wavenumber": "2404.0",
+      "intensity": "0.00957519095"
+    },
+    {
+      "wavenumber": "2406.0",
+      "intensity": "0.00873412937"
+    },
+    {
+      "wavenumber": "2408.0",
+      "intensity": "0.0101255821"
+    },
+    {
+      "wavenumber": "2410.0",
+      "intensity": "0.0136649273"
+    },
+    {
+      "wavenumber": "2412.0",
+      "intensity": "0.0153008457"
+    },
+    {
+      "wavenumber": "2414.0",
+      "intensity": "0.0152654732"
+    },
+    {
+      "wavenumber": "2416.0",
+      "intensity": "0.00858593173"
+    },
+    {
+      "wavenumber": "2418.0",
+      "intensity": "0.0110187214"
+    },
+    {
+      "wavenumber": "2420.0",
+      "intensity": "0.0239992067"
+    },
+    {
+      "wavenumber": "2422.0",
+      "intensity": "0.0410057008"
+    },
+    {
+      "wavenumber": "2424.0",
+      "intensity": "0.0421054885"
+    },
+    {
+      "wavenumber": "2426.0",
+      "intensity": "0.0305178147"
+    },
+    {
+      "wavenumber": "2428.0",
+      "intensity": "0.0156610943"
+    },
+    {
+      "wavenumber": "2430.0",
+      "intensity": "0.00941013824"
+    },
+    {
+      "wavenumber": "2432.0",
+      "intensity": "0.0126901502"
+    },
+    {
+      "wavenumber": "2434.0",
+      "intensity": "0.020429654"
+    },
+    {
+      "wavenumber": "2436.0",
+      "intensity": "0.0271035135"
+    },
+    {
+      "wavenumber": "2438.0",
+      "intensity": "0.0353038684"
+    },
+    {
+      "wavenumber": "2440.0",
+      "intensity": "0.0308099631"
+    },
+    {
+      "wavenumber": "2442.0",
+      "intensity": "0.0223189816"
+    },
+    {
+      "wavenumber": "2444.0",
+      "intensity": "0.0158484038"
+    },
+    {
+      "wavenumber": "2446.0",
+      "intensity": "0.0118561536"
+    },
+    {
+      "wavenumber": "2448.0",
+      "intensity": "0.02315134"
+    },
+    {
+      "wavenumber": "2450.0",
+      "intensity": "0.0433998927"
+    },
+    {
+      "wavenumber": "2452.0",
+      "intensity": "0.0551458895"
+    },
+    {
+      "wavenumber": "2454.0",
+      "intensity": "0.0554363206"
+    },
+    {
+      "wavenumber": "2456.0",
+      "intensity": "0.0419800878"
+    },
+    {
+      "wavenumber": "2458.0",
+      "intensity": "0.0311893728"
+    },
+    {
+      "wavenumber": "2460.0",
+      "intensity": "0.0192132816"
+    },
+    {
+      "wavenumber": "2462.0",
+      "intensity": "0.0160142593"
+    },
+    {
+      "wavenumber": "2464.0",
+      "intensity": "0.0202252008"
+    },
+    {
+      "wavenumber": "2466.0",
+      "intensity": "0.0311068408"
+    },
+    {
+      "wavenumber": "2468.0",
+      "intensity": "0.0389390886"
+    },
+    {
+      "wavenumber": "2470.0",
+      "intensity": "0.0217418652"
+    },
+    {
+      "wavenumber": "2472.0",
+      "intensity": "0.0127968993"
+    },
+    {
+      "wavenumber": "2474.0",
+      "intensity": "0.0216336641"
+    },
+    {
+      "wavenumber": "2476.0",
+      "intensity": "0.0297787711"
+    },
+    {
+      "wavenumber": "2478.0",
+      "intensity": "0.0289337747"
+    },
+    {
+      "wavenumber": "2480.0",
+      "intensity": "0.0186948851"
+    },
+    {
+      "wavenumber": "2482.0",
+      "intensity": "0.0120464573"
+    },
+    {
+      "wavenumber": "2484.0",
+      "intensity": "0.0355464555"
+    },
+    {
+      "wavenumber": "2486.0",
+      "intensity": "0.0593893528"
+    },
+    {
+      "wavenumber": "2488.0",
+      "intensity": "0.0570411459"
+    },
+    {
+      "wavenumber": "2490.0",
+      "intensity": "0.0416610353"
+    },
+    {
+      "wavenumber": "2492.0",
+      "intensity": "0.0320644155"
+    },
+    {
+      "wavenumber": "2494.0",
+      "intensity": "0.0227103233"
+    },
+    {
+      "wavenumber": "2496.0",
+      "intensity": "0.0281081758"
+    },
+    {
+      "wavenumber": "2498.0",
+      "intensity": "0.0293582641"
+    },
+    {
+      "wavenumber": "2500.0",
+      "intensity": "0.01843426"
+    },
+    {
+      "wavenumber": "2502.0",
+      "intensity": "0.0278662406"
+    },
+    {
+      "wavenumber": "2504.0",
+      "intensity": "0.03191223"
+    },
+    {
+      "wavenumber": "2506.0",
+      "intensity": "0.0299773943"
+    },
+    {
+      "wavenumber": "2508.0",
+      "intensity": "0.0281154439"
+    },
+    {
+      "wavenumber": "2510.0",
+      "intensity": "0.023093868"
+    },
+    {
+      "wavenumber": "2512.0",
+      "intensity": "0.0221082903"
+    },
+    {
+      "wavenumber": "2514.0",
+      "intensity": "0.0288720801"
+    },
+    {
+      "wavenumber": "2516.0",
+      "intensity": "0.0220911466"
+    },
+    {
+      "wavenumber": "2518.0",
+      "intensity": "0.0240607709"
+    },
+    {
+      "wavenumber": "2520.0",
+      "intensity": "0.0266457982"
+    },
+    {
+      "wavenumber": "2522.0",
+      "intensity": "0.0510042422"
+    },
+    {
+      "wavenumber": "2524.0",
+      "intensity": "0.0521098897"
+    },
+    {
+      "wavenumber": "2526.0",
+      "intensity": "0.0368017778"
+    },
+    {
+      "wavenumber": "2528.0",
+      "intensity": "0.0237763543"
+    },
+    {
+      "wavenumber": "2530.0",
+      "intensity": "0.0250468086"
+    },
+    {
+      "wavenumber": "2532.0",
+      "intensity": "0.0333062783"
+    },
+    {
+      "wavenumber": "2534.0",
+      "intensity": "0.0485509261"
+    },
+    {
+      "wavenumber": "2536.0",
+      "intensity": "0.0526822507"
+    },
+    {
+      "wavenumber": "2538.0",
+      "intensity": "0.0588281639"
+    },
+    {
+      "wavenumber": "2540.0",
+      "intensity": "0.0759599432"
+    },
+    {
+      "wavenumber": "2542.0",
+      "intensity": "0.0852671191"
+    },
+    {
+      "wavenumber": "2544.0",
+      "intensity": "0.0760947168"
+    },
+    {
+      "wavenumber": "2546.0",
+      "intensity": "0.0684398785"
+    },
+    {
+      "wavenumber": "2548.0",
+      "intensity": "0.0753504336"
+    },
+    {
+      "wavenumber": "2550.0",
+      "intensity": "0.0811922699"
+    },
+    {
+      "wavenumber": "2552.0",
+      "intensity": "0.0978819579"
+    },
+    {
+      "wavenumber": "2554.0",
+      "intensity": "0.072019577"
+    },
+    {
+      "wavenumber": "2556.0",
+      "intensity": "0.036365889"
+    },
+    {
+      "wavenumber": "2558.0",
+      "intensity": "0.0562331453"
+    },
+    {
+      "wavenumber": "2560.0",
+      "intensity": "0.0873776227"
+    },
+    {
+      "wavenumber": "2562.0",
+      "intensity": "0.100123644"
+    },
+    {
+      "wavenumber": "2564.0",
+      "intensity": "0.0780997127"
+    },
+    {
+      "wavenumber": "2566.0",
+      "intensity": "0.0399294496"
+    },
+    {
+      "wavenumber": "2568.0",
+      "intensity": "0.0373671241"
+    },
+    {
+      "wavenumber": "2570.0",
+      "intensity": "0.0713500828"
+    },
+    {
+      "wavenumber": "2572.0",
+      "intensity": "0.116860077"
+    },
+    {
+      "wavenumber": "2574.0",
+      "intensity": "0.162167549"
+    },
+    {
+      "wavenumber": "2576.0",
+      "intensity": "0.145531759"
+    },
+    {
+      "wavenumber": "2578.0",
+      "intensity": "0.0735044926"
+    },
+    {
+      "wavenumber": "2580.0",
+      "intensity": "0.0320794955"
+    },
+    {
+      "wavenumber": "2582.0",
+      "intensity": "0.0365032516"
+    },
+    {
+      "wavenumber": "2584.0",
+      "intensity": "-9.51439119e-07"
+    }
+  ],
+  "supabase": {
+    "inserted": 0,
+    "errors": [
+      "[object Object]",
+      "[object Object]",
+      "[object Object]",
+      "[object Object]",
+      "[object Object]",
+      "[object Object]",
+      "[object Object]",
+      "[object Object]",
+      "[object Object]",
+      "[object Object]",
+      "[object Object]",
+      "[object Object]"
+    ]
+  },
+  "storage": null
+}

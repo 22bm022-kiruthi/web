@@ -1,0 +1,8 @@
+DeviceSN	10039
+LaserWavelength_nm	785
+Exposure_ms	1000
+GainMultiplier	1
+LaserCurrent_mA	250
+LaserPower_mW	90.7130737
+RepetitionCount	5
+Tags	

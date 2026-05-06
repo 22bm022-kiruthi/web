@@ -5,15 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "fix-logo": "node scripts/remove-logo-bg.cjs",
+    "extract-logo": "node scripts/extract-logo.cjs",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "busboy": "^1.6.0",
+    "jimp": "^1.6.1",
     "lucide-react": "^0.344.0",
     "mongodb": "^6.19.0",
     "papaparse": "^5.5.3",
-    "busboy": "^1.6.0",
     "postgres": "^3.4.7",
     "react": "^18.3.1",
     "react-dnd": "^16.0.1",

@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       host: true, // Allow access from network
-      port: 5173,
+      port: 5177,
       strictPort: false,
       proxy: {
         // Use explicit IPv4 loopback address to avoid Windows localhost/IPv6 proxy edge-cases

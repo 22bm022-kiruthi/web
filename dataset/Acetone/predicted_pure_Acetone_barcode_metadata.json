@@ -1,0 +1,40 @@
+{
+  "barcode_source": "predicted_pure_Acetone",
+  "timestamp": "1_2.tsv",
+  "n_peaks": 8,
+  "peaks": [
+    390,
+    490,
+    528,
+    786,
+    1066,
+    1220,
+    1430,
+    1710
+  ],
+  "widths": [
+    27.61495553298753,
+    14.52225985556376,
+    23.318302811153075,
+    19.2295041297466,
+    19.68597676225454,
+    19.37664058154428,
+    38.591885849110895,
+    21.38746806353197
+  ],
+  "image_meta": {
+    "wn_min": 400,
+    "wn_max": 1750.0,
+    "quiet_zone_data": 145.2225985556376,
+    "dpi": 300,
+    "pixel_per_unit": 0.1377196125046448,
+    "image_width_pixels": 1600,
+    "image_height_pixels": 450,
+    "x_dim": 14.52225985556376,
+    "min_gap_data_unit": 0.7261129927781881,
+    "n_bars": 8,
+    "saved": true,
+    "path": "C:\\Users\\Muthu Manoj L\\Documents\\DeepSpectrum\\IIT-PRG\\Data\\Solvents amber vials\\Acetone\\predicted_pure_Acetone_barcode.png"
+  },
+  "description": "Barcode generated from single spectrum"
+}

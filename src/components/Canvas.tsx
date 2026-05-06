@@ -4,6 +4,7 @@ import CanvasWidget from './CanvasWidget';
 import ConnectionLine from './ConnectionLine';
 import { Widget, Connection } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
+import RightDock from './RightDock';
 
 interface CanvasProps {
   widgets: Widget[];
@@ -27,8 +28,12 @@ const Canvas: React.FC<CanvasProps> = ({
   onRemoveConnections,
 }) => {
   const canvasRef = useRef<HTMLDivElement | null>(null);
-  // Inner radius (in pixels) used for connection anchors / hit-testing. Use a smaller value to attach to the inner layer.
-  const INNER_RADIUS = 30;
+  // Widget icon measurements (keep in sync with OrangeStyleWidget)
+  const ICON_HALF = 35; // OrangeStyleWidget uses 70x70 icon -> half is 35
+  // Distance from icon center to visual port center (approx). Matches port styles (left:14/right:14 with 8px dot -> ~17px offset)
+  const PORT_X_OFFSET = 17;
+  // Inner radius (in pixels) used for connection anchors / hit-testing. Use a value that reaches the inner circle.
+  const INNER_RADIUS = 32;
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
   const [connectingFromPort, setConnectingFromPort] = useState<'top' | 'left' | 'right' | 'bottom' | null>(null);
   const [connectionPreview, setConnectionPreview] = useState<{
@@ -67,8 +72,8 @@ const Canvas: React.FC<CanvasProps> = ({
       }
       const canvasRect = canvasRef.current.getBoundingClientRect();
       const position = {
-        x: clientOffset.x - canvasRect.left - 40,
-        y: clientOffset.y - canvasRect.top - 40,
+        x: clientOffset.x - canvasRect.left - ICON_HALF,
+        y: clientOffset.y - canvasRect.top - ICON_HALF,
       };
 
       console.log('[Canvas] Drop: calculated position:', position, 'canvasRect:', canvasRect);
@@ -130,7 +135,7 @@ const Canvas: React.FC<CanvasProps> = ({
       // place new node to the right-bottom of source, with a small offset
       const newPos = {
         x: Math.min(source.position.x + 140, Math.max(20, canvasRect.width - 80)),
-        y: Math.min(source.position.y + 40, Math.max(20, canvasRect.height - 80)),
+        y: Math.min(source.position.y + ICON_HALF, Math.max(20, canvasRect.height - 80)),
       };
       // Tell parent (App) to add widget -- Canvas doesn't own widgets state; we'll call onAddWidget which expects a type and position
       onAddWidget(widgetTypeId, newPos);
@@ -160,8 +165,8 @@ const Canvas: React.FC<CanvasProps> = ({
         const rect = canvasRef.current.getBoundingClientRect();
         const fromWidget = widgets.find((w) => w.id === connectingFrom);
           if (fromWidget) {
-          const baseX = fromWidget.position.x + 40;
-          const baseY = fromWidget.position.y + 40;
+          const baseX = fromWidget.position.x + ICON_HALF;
+          const baseY = fromWidget.position.y + ICON_HALF;
           let from = { x: baseX, y: baseY };
           if (connectingFromPort === 'right') from = { x: baseX + INNER_RADIUS, y: baseY };
           if (connectingFromPort === 'left') from = { x: baseX - INNER_RADIUS, y: baseY };
@@ -204,8 +209,8 @@ const Canvas: React.FC<CanvasProps> = ({
             // Immediately set a connection preview so the preview originates at the dot
             setConnectionPreview({ from: anchor, to: anchor });
           } else if (w) {
-            const cx = w.position.x + 40;
-            const cy = w.position.y + 40;
+            const cx = w.position.x + ICON_HALF;
+            const cy = w.position.y + ICON_HALF;
             // compute angle from center to client point
             const angle = Math.atan2(portOrPoint.clientY - (rect.top + cy), portOrPoint.clientX - (rect.left + cx));
             // perimeter radius (use inner radius to attach connections to inner layer)
@@ -227,8 +232,8 @@ const Canvas: React.FC<CanvasProps> = ({
         if (!canvasRef.current) return;
         const rect = canvasRef.current.getBoundingClientRect();
         const srcWidget = widgets.find((w) => w.id === widgetId);
-        const baseX = srcWidget && srcWidget.position ? srcWidget.position.x + 40 : 0;
-        const baseY = srcWidget && srcWidget.position ? srcWidget.position.y + 40 : 0;
+          const baseX = srcWidget && srcWidget.position ? srcWidget.position.x + ICON_HALF : 0;
+        const baseY = srcWidget && srcWidget.position ? srcWidget.position.y + ICON_HALF : 0;
         let from = { x: baseX, y: baseY };
         if (anchor) {
           from = { x: anchor.x, y: anchor.y };
@@ -257,8 +262,8 @@ const Canvas: React.FC<CanvasProps> = ({
           let best: { id: string; score: number } | null = null;
           for (const w of widgets) {
             if (w.id === widgetId) continue;
-            const cx = w.position.x + 40;
-            const cy = w.position.y + 40;
+            const cx = w.position.x + ICON_HALF;
+            const cy = w.position.y + ICON_HALF;
             const dx = px - cx;
             const dy = py - cy;
             const dist = Math.sqrt(dx * dx + dy * dy);
@@ -339,8 +344,8 @@ const Canvas: React.FC<CanvasProps> = ({
           const computePort = (w: typeof fromWidget, sidePreference: 'left' | 'right' | 'auto' = 'auto') => {
             // Prefer using a measured icon center if available (stored in widget.data.iconCenter as viewport coords)
             const canvasRect = canvasRef.current ? canvasRef.current.getBoundingClientRect() : { left: 0, top: 0 } as DOMRect;
-            let centerX = w.position.x + 40;
-            let centerY = w.position.y + 40;
+            let centerX = w.position.x + ICON_HALF;
+            let centerY = w.position.y + ICON_HALF;
             try {
               const ic = (w.data && (w.data as any).iconCenter) || null;
               if (ic && typeof ic.left === 'number' && typeof ic.top === 'number') {
@@ -351,9 +356,9 @@ const Canvas: React.FC<CanvasProps> = ({
             } catch (err) {
               // fallback to position-based center
             }
-            const leftDotX = centerX - 21;
-            const rightDotX = centerX + 21;
-            const isInput = ['supabase', 'data-table', 'file-upload'].includes(w.type);
+            const leftDotX = centerX - PORT_X_OFFSET;
+            const rightDotX = centerX + PORT_X_OFFSET;
+            const isInput = ['supabase', 'data-table', 'file-upload', 'mean-average', 'pca-analysis', 'line-chart', 'scatter-plot', 'box-plot', 'bar-chart', 'hierarchical-clustering'].includes(w.type);
             if (!isInput) return { x: centerX, y: centerY };
             if (sidePreference === 'left') return { x: leftDotX, y: centerY };
             if (sidePreference === 'right') return { x: rightDotX, y: centerY };
@@ -363,8 +368,8 @@ const Canvas: React.FC<CanvasProps> = ({
 
           // Decide which ports to use based on relative positions so lines connect visually between dots
           const dx = toWidget.position.x - fromWidget.position.x;
-          let fromPoint = { x: fromWidget.position.x + 40, y: fromWidget.position.y + 40 };
-          let toPoint = { x: toWidget.position.x + 40, y: toWidget.position.y + 40 };
+          let fromPoint = { x: fromWidget.position.x + ICON_HALF, y: fromWidget.position.y + ICON_HALF };
+          let toPoint = { x: toWidget.position.x + ICON_HALF, y: toWidget.position.y + ICON_HALF };
           if (dx > 0) {
             // from is left of to -> use right port on from and left port on to
             fromPoint = computePort(fromWidget, 'right');
@@ -375,8 +380,8 @@ const Canvas: React.FC<CanvasProps> = ({
             toPoint = computePort(toWidget, 'right');
           } else {
             // vertically aligned or same x: use centers
-            fromPoint = { x: fromWidget.position.x + 40, y: fromWidget.position.y + 40 };
-            toPoint = { x: toWidget.position.x + 40, y: toWidget.position.y + 40 };
+            fromPoint = { x: fromWidget.position.x + ICON_HALF, y: fromWidget.position.y + ICON_HALF };
+            toPoint = { x: toWidget.position.x + ICON_HALF, y: toWidget.position.y + ICON_HALF };
           }
 
           return (
@@ -405,14 +410,17 @@ const Canvas: React.FC<CanvasProps> = ({
         )}
       </svg>
 
+      {/* Right-side dock: persistent boxes for upload and custom code */}
+      <RightDock />
+
       {/* Widgets */}
       {widgets.map((widget) => {
         // compute a quick distance-based highlight for preview end snapping
         let isHighlighted = false;
         let highlightAngle: number | null = null;
         if (!externalDrag && connectionPreview) {
-          const dx = connectionPreview.to.x - (widget.position.x + 40);
-          const dy = connectionPreview.to.y - (widget.position.y + 40);
+          const dx = connectionPreview.to.x - (widget.position.x + ICON_HALF);
+            const dy = connectionPreview.to.y - (widget.position.y + ICON_HALF);
           const dist = Math.sqrt(dx * dx + dy * dy);
           isHighlighted = dist < 84; // within 84px show highlight
           if (isHighlighted) {
@@ -455,7 +463,7 @@ const Canvas: React.FC<CanvasProps> = ({
                 onClick={() => {
                   if (!canvasRef.current) return;
                   const rect = canvasRef.current.getBoundingClientRect();
-                  const position = { x: rect.width / 2 - 40, y: rect.height / 2 - 40 };
+                  const position = { x: rect.width / 2 - ICON_HALF, y: rect.height / 2 - ICON_HALF };
                   onAddWidget('supabase', position);
                 }}
                 className={`px-3 py-1 rounded-full ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-blue-100 text-blue-800'}`}
@@ -468,7 +476,7 @@ const Canvas: React.FC<CanvasProps> = ({
                 onClick={() => {
                   if (!canvasRef.current) return;
                   const rect = canvasRef.current.getBoundingClientRect();
-                  const position = { x: rect.width / 2 - 40, y: rect.height / 2 - 40 };
+                  const position = { x: rect.width / 2 - ICON_HALF, y: rect.height / 2 - ICON_HALF };
                   onAddWidget('blank-remover', position);
                 }}
                 className={`px-3 py-1 rounded-full ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-blue-100 text-blue-800'}`}
@@ -481,7 +489,7 @@ const Canvas: React.FC<CanvasProps> = ({
                 onClick={() => {
                   if (!canvasRef.current) return;
                   const rect = canvasRef.current.getBoundingClientRect();
-                  const position = { x: rect.width / 2 - 40, y: rect.height / 2 - 40 };
+                  const position = { x: rect.width / 2 - ICON_HALF, y: rect.height / 2 - ICON_HALF };
                   onAddWidget('line-chart', position);
                 }}
                 className={`px-3 py-1 rounded-full ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-blue-100 text-blue-800'}`}
@@ -494,7 +502,7 @@ const Canvas: React.FC<CanvasProps> = ({
                 onClick={() => {
                   if (!canvasRef.current) return;
                   const rect = canvasRef.current.getBoundingClientRect();
-                  const position = { x: rect.width / 2 - 40, y: rect.height / 2 + 60 };
+                  const position = { x: rect.width / 2 - ICON_HALF, y: rect.height / 2 + 60 };
                   onAddWidget('kmeans-analysis', position);
                 }}
                 className={`px-3 py-1 rounded-full ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-blue-100 text-blue-800'}`}

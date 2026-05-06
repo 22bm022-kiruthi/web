@@ -40,10 +40,10 @@ const BoxPlotModal: React.FC<BoxPlotModalProps> = ({
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Box Plot Stats</h2>
           <button
-            className="text-gray-500 hover:text-red-500 text-xl font-bold"
-            onClick={onClose}
+            className="px-3 py-1 bg-gray-200 rounded text-sm text-gray-700 hover:bg-gray-300"
+            onClick={(e) => { e.stopPropagation(); onClose(); }}
           >
-            ×
+            Close
           </button>
         </div>
         <div style={{ width: '100%', height: 400, overflow: 'auto' }}>

@@ -8,7 +8,24 @@ data = json.loads(sys.stdin.read())
 
 signal = np.array(data["signal"])
 
-peaks, _ = find_peaks(signal)
+# Optional parameters
+prominence = data.get('prominence', None)
+distance = data.get('distance', None)
+
+# Build kwargs for scipy.find_peaks
+kwargs = {}
+if prominence is not None:
+    try:
+        kwargs['prominence'] = float(prominence)
+    except:
+        pass
+if distance is not None:
+    try:
+        kwargs['distance'] = int(distance)
+    except:
+        pass
+
+peaks, _ = find_peaks(signal, **kwargs)
 num_peaks = len(peaks)
 
 max_val = np.max(signal)

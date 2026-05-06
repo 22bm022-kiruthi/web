@@ -8,7 +8,8 @@
     "dev": "node server.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.76.1",
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.105.1",
     "axios": "^1.13.1",
     "cors": "^2.8.5",
     "csv-parse": "^5.5.0",

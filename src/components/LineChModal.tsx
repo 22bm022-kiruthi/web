@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
@@ -14,22 +15,54 @@ const COLORS = [
   '#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088FE', '#00C49F', '#FFBB28', '#FF8042'
 ];
 
+import { useEffect } from 'react';
+
 const LineChartModal: React.FC<LineChartModalProps> = ({
   isOpen,
   onClose,
   data,
   columns,
 }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const keyHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', keyHandler);
+    return () => window.removeEventListener('keydown', keyHandler);
+  }, [isOpen, onClose]);
   if (!isOpen) return null;
   if (!data || data.length === 0 || columns.length < 1) return <div>No data</div>;
 
+  // Coerce numeric-looking strings into numbers so recharts receives numeric values
+  const processedData = React.useMemo(() => {
+    if (!data || !data.length) return [] as Record<string, any>[];
+    return data.map((row) => {
+      const out: Record<string, any> = {};
+      Object.keys(row).forEach((k) => {
+        const v = row[k];
+        if (typeof v === 'string') {
+          const t = v.trim();
+          if (t !== '' && !Number.isNaN(Number(t))) {
+            out[k] = Number(t);
+            return;
+          }
+        }
+        out[k] = v;
+      });
+      return out;
+    });
+  }, [data]);
+
+  const procColumns = processedData && processedData.length > 0 ? Object.keys(processedData[0]) : columns;
+
   console.log('[LineChart] ========== MODAL OPENED ==========');
-  console.log('[LineChart] Available columns:', columns);
-  console.log('[LineChart] Data sample:', data[0]);
+  console.log('[LineChart] Available columns:', procColumns);
+  console.log('[LineChart] Data sample:', processedData[0]);
 
   // Prefer an explicit "x"-like column if present
   // For Raman spectroscopy, prioritize shift/wavenumber columns
-  const lowerCols = columns.map((c) => (c || '').toLowerCase());
+  const lowerCols = procColumns.map((c) => (c || '').toLowerCase());
   let xKey: string | null = null;
   
   // First priority: Raman-specific x-axis columns
@@ -39,7 +72,7 @@ const LineChartModal: React.FC<LineChartModalProps> = ({
     // More robust matching: remove all non-alphanumeric characters for comparison
     const cleanName = name.replace(/[^a-z0-9]/g, '');
     console.log(`[LineChart]   Trying "${name}" (clean: "${cleanName}")...`);
-    const matchCol = columns.find(c => {
+    const matchCol = procColumns.find(c => {
       const cleanCol = c.toLowerCase().replace(/[^a-z0-9]/g, '');
       const matches = cleanCol.includes(cleanName) || cleanName.includes(cleanCol);
       if (matches) console.log(`[LineChart]     ✅ MATCHED: "${c}" (clean: "${cleanCol}")`);
@@ -58,7 +91,7 @@ const LineChartModal: React.FC<LineChartModalProps> = ({
     for (const name of preferNames) {
       const i = lowerCols.indexOf(name);
       if (i >= 0) {
-        xKey = columns[i];
+        xKey = procColumns[i];
         console.log(`[LineChart] X-axis auto-selected: "${xKey}" (generic match)`);
         break;
       }
@@ -68,8 +101,8 @@ const LineChartModal: React.FC<LineChartModalProps> = ({
   // If no explicit x-like column, pick the first NUMERIC column as x
   // Avoid text columns like "Sample name"
   if (!xKey) {
-    const firstRow = data[0] || {};
-    for (const col of columns) {
+    const firstRow = processedData[0] || {};
+    for (const col of procColumns) {
       const v = firstRow[col];
       // Skip if undefined, null, or non-numeric (like "Sample name")
       if (v === undefined || v === null || isNaN(Number(v))) continue;
@@ -85,7 +118,7 @@ const LineChartModal: React.FC<LineChartModalProps> = ({
   }
 
   // Choose a single Y column to plot (prefer Raman intensity names first, then common intensity names)
-  const lowerColsMap = columns.reduce<Record<string, string>>((acc, c) => { acc[c.toLowerCase()] = c; return acc; }, {} as Record<string, string>);
+  const lowerColsMap = procColumns.reduce<Record<string, string>>((acc, c) => { acc[c.toLowerCase()] = c; return acc; }, {} as Record<string, string>);
   
   // First priority: Raman-specific intensity columns
   const ramanYNames = ['raman intensity', 'intensity y axis', 'raman_intensity', 'intensity_y_axis', 'intensity'];
@@ -93,7 +126,7 @@ const LineChartModal: React.FC<LineChartModalProps> = ({
   for (const name of ramanYNames) {
     // More robust matching: remove all non-alphanumeric characters for comparison
     const cleanName = name.replace(/[^a-z0-9]/g, '');
-    const matchCol = columns.find(c => {
+    const matchCol = procColumns.find(c => {
       const cleanCol = c.toLowerCase().replace(/[^a-z0-9]/g, '');
       return cleanCol.includes(cleanName) || cleanName.includes(cleanCol);
     });
@@ -114,7 +147,7 @@ const LineChartModal: React.FC<LineChartModalProps> = ({
     }
     if (!yKey) {
       // try substring match
-      for (const col of columns) {
+      for (const col of procColumns) {
         const lc = col.toLowerCase();
         if (preferYNames.some((p) => lc.includes(p))) { yKey = col; break; }
       }
@@ -122,15 +155,15 @@ const LineChartModal: React.FC<LineChartModalProps> = ({
   }
   if (!yKey) {
     // fallback: pick first numeric column (excluding xKey)
-    for (const col of columns) {
+    for (const col of procColumns) {
       if (col === xKey) continue;
-      const v = data[0][col];
+      const v = processedData[0][col];
       if (v !== undefined && v !== null && !isNaN(Number(v))) { yKey = col; break; }
     }
   }
   // final fallback: use the first non-x column
   if (!yKey) {
-    const others = columns.filter((c) => c !== xKey);
+    const others = procColumns.filter((c) => c !== xKey);
     yKey = others.length ? others[0] : null;
   }
   const yKeys = yKey ? [yKey] : [];
@@ -138,38 +171,48 @@ const LineChartModal: React.FC<LineChartModalProps> = ({
   // allow the user to override which columns are used for X and Y in the modal
   const [selectedX, setSelectedX] = useState<string>(xKey as string);
   const [selectedY, setSelectedY] = useState<string | null>(yKey);
+  // debug UI removed per user request
 
   // recompute chartData when selection changes
   const chartData = useMemo(() => {
     const sx = selectedX || '___index___';
     const sy = selectedY || (yKeys.length ? yKeys[0] : null);
-    const rows = data.map((row: Record<string, any>, idx: number) => {
-      const xVal = sx === '___index___' ? idx : (row[sx] !== undefined ? row[sx] : idx);
-      const out: Record<string, any> = { [sx]: xVal };
+    const rows = processedData.map((row: Record<string, any>, idx: number) => {
+      const rawX = sx === '___index___' ? idx : (row[sx] !== undefined ? row[sx] : idx);
+      const rawY = sy ? row[sy] : undefined;
+      const parsedX = (rawX === null || rawX === undefined) ? rawX : (typeof rawX === 'number' ? rawX : (String(rawX).trim() === '' ? rawX : Number(rawX)));
+      const parsedY = (rawY === null || rawY === undefined) ? rawY : (typeof rawY === 'number' ? rawY : (String(rawY).trim() === '' ? rawY : Number(rawY)));
+      const out: Record<string, any> = { [sx]: Number.isFinite(parsedX) ? parsedX : rawX };
       if (sy) {
-        const raw = row[sy];
-        const num = Number(raw);
-        out[sy] = Number.isFinite(num) ? num : (raw === null || raw === undefined ? null : raw);
+        out[sy] = Number.isFinite(parsedY) ? parsedY : (rawY === null || rawY === undefined ? null : rawY);
       }
       return out;
     });
     const isXNumeric = rows.length > 0 && typeof rows[0][sx] === 'number';
     if (isXNumeric) rows.sort((a, b) => (a[sx] as number) - (b[sx] as number));
+    // Debug sample to help diagnose empty chart issues
+    try { console.debug('[LineChart] chartData sample:', rows.slice(0,3)); } catch (e) { /* ignore */ }
     return rows;
-  }, [data, selectedX, selectedY]);
+  }, [processedData, selectedX, selectedY]);
 
   // (chartData is computed via useMemo above)
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white rounded-lg shadow-lg p-6 min-w-[600px] max-w-[90vw]">
+  // Render modal into document.body to isolate it from parent click handlers
+  if (typeof document === 'undefined') return null;
+
+  const modal = (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40" style={{ zIndex: 2147483647, pointerEvents: 'auto' }} onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-lg p-6 min-w-[600px] max-w-[90vw]" style={{ zIndex: 2147483648 }} onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Line Chart</h2>
           <button
-            className="text-gray-500 hover:text-red-500 text-xl font-bold"
-            onClick={onClose}
+            type="button"
+            className="px-3 py-1 bg-gray-200 rounded text-sm text-gray-700 hover:bg-gray-300"
+            onMouseDown={(e) => { e.stopPropagation(); }}
+            onClick={(e) => { e.stopPropagation(); console.log('[LineChart] Close button clicked - calling onClose'); onClose(); }}
+            aria-label="Close chart"
           >
-            ×
+            Close
           </button>
         </div>
         <div className="mb-3 flex items-center gap-4">
@@ -211,14 +254,19 @@ const LineChartModal: React.FC<LineChartModalProps> = ({
                   stroke={COLORS[0]}
                   strokeWidth={2}
                   dot={false}
+                  isAnimationActive={false}
+                  connectNulls={true}
                 />
               )}
             </LineChart>
           </ResponsiveContainer>
         </div>
+        {/* Debug UI removed */}
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 };
 
 export default LineChartModal;

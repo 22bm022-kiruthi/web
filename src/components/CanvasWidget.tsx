@@ -32,7 +32,18 @@ import { useTheme } from '../contexts/ThemeContext';
 import OrangeStyleWidget from './OrangeStyleWidget';
 import { getWidgetColors, getWidgetLabel, getWidgetCategory } from '../config/orangeColors';
 import ParametersModal from './ParametersModal';
-import { computeSignalMetrics } from '../utils/signalMetrics';
+import { computeSignalMetrics, calcStd } from '../utils/signalMetrics';
+
+// Choose the most likely intensity column from parsed table columns.
+const normalizeIntensityKey = (cols: string[], firstRow: any) => {
+  const intensityPattern = /raman.*intens|intens.*raman|intensity|^value$|^y$/i;
+  const positionPattern = /pos|shift|position|x|wavenumber|raman shift/i;
+  let key = cols.find(c => intensityPattern.test(c));
+  if (key) return key;
+  key = cols.find(c => !positionPattern.test(c) && !isNaN(Number(firstRow?.[c])));
+  if (key) return key;
+  return cols.find(c => !isNaN(Number(firstRow?.[c]))) || null;
+};
 
 const iconMap: Record<string, React.ComponentType<any>> = {
   'file-upload': Upload,
@@ -113,6 +124,44 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
     }
   }, [showTableModal, widget.id, widget.type]);
 
+  // Listen for hierarchical widget persistence events to handle them asynchronously
+  useEffect(() => {
+    const handler = (ev: any) => {
+      try {
+        const wid = ev?.detail?.widgetId;
+        const payload = ev?.detail?.payload;
+        if (!wid || !payload) return;
+        if (String(wid) === String(widget.id)) {
+          console.debug('[CanvasWidget] hier-persist event received for', widget.id, 'dispatching async onUpdateWidget');
+          setTimeout(() => {
+            try { onUpdateWidget && onUpdateWidget(payload); console.debug('[CanvasWidget] hier-persist applied for', widget.id); } catch (e) { console.error('[CanvasWidget] hier-persist apply failed', e); }
+          }, 40);
+        }
+      } catch (err) { console.error('[CanvasWidget] hier-persist handler error', err); }
+    };
+    window.addEventListener('hier-persist', handler as EventListener);
+    return () => window.removeEventListener('hier-persist', handler as EventListener);
+  }, [widget.id, onUpdateWidget]);
+
+  // Listen for widgets dispatching an openWidgetParameters event (used by some widgets
+  // to request the parent open the parameters modal). This allows widget-local buttons
+  // to open the parent modal without direct prop drilling.
+  useEffect(() => {
+    const paramsHandler = (ev: any) => {
+      try {
+        const d = ev?.detail || {};
+        const id = d?.widgetId;
+        if (!d || String(id) !== String(widget.id)) return;
+        console.log('[CanvasWidget] openWidgetParameters event received for', widget.id, 'detailId:', id);
+        setShowParameters(true);
+      } catch (err) {
+        console.debug('[CanvasWidget] openWidgetParameters handler error', err);
+      }
+    };
+    window.addEventListener('openWidgetParameters', paramsHandler as EventListener);
+    return () => window.removeEventListener('openWidgetParameters', paramsHandler as EventListener);
+  }, [widget.id]);
+
   // NOTE: automatic open events are ignored for data-table widgets; users must click "Open" to view
   const [showTableInline, setShowTableInline] = useState<boolean>(false);
   const [nComponents, setNComponents] = useState<number>(widget.data?.pcaParams?.nComponents || 2);
@@ -151,6 +200,23 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
         }, 1000);
       }, 0);
     } catch (e) { /* swallow */ }
+  };
+
+  // Guarded opener for Line Chart modal to avoid immediate reopen from parent click handlers
+  const openLineChartSafely = (source?: string) => {
+    try {
+      if (justClosedRef.current) {
+        console.warn('[LineChart] open suppressed due to recent close. source:', source);
+        return;
+      }
+    } catch (e) { /* ignore */ }
+    console.warn('[LineChart] open requested from', source);
+    // Actually open the modal (avoid re-entrancy)
+    try {
+      setShowLineChartModal(true);
+    } catch (e) {
+      console.error('[LineChart] failed to open modal', e);
+    }
   };
 
   const guardedCloseTableModal = (opts?: { setJustClosed?: boolean }) => {
@@ -318,6 +384,22 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           const r = el.getBoundingClientRect();
           const ic = { left: Math.round(r.left + r.width / 2), top: Math.round(r.top + r.height / 2) };
           setIconCenter(ic);
+          // Persist measured icon center to widget data so the Canvas can compute
+          // exact connection port coordinates. Only update when location changed
+          // noticeably to avoid frequent state churn in parent.
+          try {
+            if (onUpdateWidget && ic) {
+              const prev = widget.data && (widget.data as any).iconCenter;
+              const changed = !prev || Math.abs(prev.left - ic.left) > 2 || Math.abs(prev.top - ic.top) > 2;
+              if (changed) {
+                // Merge into widget.data without overwriting other keys
+                onUpdateWidget({ data: { ...(widget.data || {}), iconCenter: ic } });
+              }
+            }
+          } catch (e) {
+            // swallow to avoid breaking layout if parent update fails
+            console.debug('[CanvasWidget] failed to persist iconCenter', e);
+          }
           // NOTE: do not persist iconCenter back into widget.data on every measurement —
           // writing it causes frequent widget state updates and can create a re-render loop
           // due to small DOM measurement fluctuations. Keep iconCenter as local state only.
@@ -358,7 +440,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       try {
         const id = ev?.detail?.widgetId;
         console.debug('[CanvasWidget] paramsHandler received event for', id, 'this widget:', widget.id);
-        if (id && id === widget.id) {
+        if (id && String(id) === String(widget.id)) {
           console.debug('[CanvasWidget] paramsHandler opening parameters for', widget.id);
           setShowParameters(true);
         }
@@ -407,7 +489,9 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       const base = envApi.replace(/\/$/, '');
       candidates.push(`${base}${path}`);
     }
-    candidates.push(path, `http://127.0.0.1:5003${path}`, `http://localhost:5003${path}`);
+    // Prefer direct local backend endpoints first to avoid proxy timing issues
+    candidates.push(`http://127.0.0.1:5003${path}`, `http://localhost:5003${path}`, path);
+    console.debug('[CanvasWidget] fetchToBackend candidate order:', candidates);
     let lastError: any = null;
     for (const url of candidates) {
       // use AbortController to avoid long hanging fetches
@@ -581,31 +665,28 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
     }
   }, [widget.data?.noiseParams]);
 
-  const data: Record<string, any>[] = widget.data?.tableData || [];
+  const data: Record<string, any>[] = widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || [];
   const columns: string[] = data.length > 0 ? Object.keys(data[0]) : [];
 
   // Auto-predict: when a Predict widget receives new data, compute basic features and call backend
   useEffect(() => {
     // Only run for Predict widgets and when there's data
     if (widget.type !== 'predict') return;
-    const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
-    const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.parsedData || widget.data?.tableData || widget.data?.tableDataProcessed || widget.data?.tableDataForecast || []);
+    const sources = [widget.data?.tableDataProcessed, widget.data?.tableData, widget.data?.parsedData, widget.data?.tableDataForecast];
+    const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || widget.data?.tableDataForecast || []);
     const tableData = Array.isArray(best) ? best : [];
     if (!tableData || tableData.length === 0) return;
 
     // choose intensity column
     const cols = Object.keys(tableData[0] || {});
-    let intensityKey = cols.find(c => /raman.*intens|intens.*raman|intensity/i.test(c)) || cols.find(c => !isNaN(Number(tableData[0][c])));
+    let intensityKey = normalizeIntensityKey(cols, tableData[0]);
     if (!intensityKey) return;
     const vals = tableData.map(r => Number(r[intensityKey])).filter(v => !isNaN(v));
     if (vals.length === 0) return;
     const mx = Math.max(...vals);
     const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-    // simple peaks count
-    let peaks = 0;
-    for (let i = 1; i < vals.length - 1; i++) if (vals[i] > vals[i - 1] && vals[i] > vals[i + 1]) peaks++;
-
-    const payload = { peaks, max: mx, avg };
+    // send the full signal to backend so the Python spectral model can predict compound names
+    const payload = { signal: vals, max: mx, avg };
     (async () => {
       try {
         const resp = await fetchToBackend('/api/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -647,10 +728,11 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
   const isSupabase = widget.type === 'supabase';
 
   // Supabase widget state for manual fetch
-  const [sbTableName, setSbTableName] = useState<string>(widget.data?.supabaseTable || 'raman_data');
+  const [sbTableName, setSbTableName] = useState<string>(widget.data?.supabaseTable || 'data');
   const [sbSampleFilter, setSbSampleFilter] = useState<string>(widget.data?.sampleFilter || '');
   const [sbFetching, setSbFetching] = useState(false);
   const [sbHasData, setSbHasData] = useState<boolean>(!!(widget.data?.tableData && widget.data.tableData.length > 0));
+  const [sbAllowedTables, setSbAllowedTables] = useState<string[] | null>(null);
 
   // Manual fetch function for Supabase widget (uses server-side credentials from backend/.env)
   const fetchSupabaseData = async () => {
@@ -705,21 +787,76 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       const xCandidates = ['shift','x','wavenumber','wavenumber_cm','raman_shift'];
       const yCandidates = ['intensity','y','counts','value'];
       const pickCol = (cands: string[]) => {
+        // Prefer substring matches (handles columns like "Shift x axis" or "Intensity y axis")
+        for (const c of cands) {
+          const lc = c.toLowerCase();
+          const idx = lower.findIndex((k) => k.includes(lc));
+          if (idx >= 0) return keys[idx];
+        }
+        // Fallback to exact matches
         for (const c of cands) {
           const idx = lower.indexOf(c.toLowerCase());
           if (idx >= 0) return keys[idx];
         }
+        // Fallback: pick first numeric column if available
+        const numIdx = keys.findIndex((k) => !isNaN(Number(sample[k])));
+        if (numIdx >= 0) return keys[numIdx];
         return keys[0] || null;
       };
       const xCol = pickCol(xCandidates);
       const yCol = pickCol(yCandidates) || (keys[1] || keys[0]);
       
-      const mapped = rows.map((r: Record<string, any>) => {
-        const x = xCol ? Number(r[xCol]) : null;
-        const y = yCol ? Number(r[yCol]) : null;
-        return { shift: Number.isFinite(x) ? x : null, intensity: Number.isFinite(y) ? y : null, __raw: r };
-      }).filter((d: any) => d.shift !== null && d.intensity !== null);
-      
+      // Detect if selected columns contain array/series data (stringified arrays or actual arrays)
+      const looksLikeArray = (v: any) => {
+        if (Array.isArray(v)) return true;
+        if (typeof v === 'string') {
+          const t = v.trim();
+          return (t.startsWith('[') && t.endsWith(']')) || t.includes(',');
+        }
+        return false;
+      };
+
+      let mapped: any[] = [];
+      const firstRow = rows && rows.length ? rows[0] : null;
+      const firstX = firstRow ? firstRow[xCol as string] : null;
+      const firstY = firstRow ? firstRow[yCol as string] : null;
+
+      if (looksLikeArray(firstX) || looksLikeArray(firstY)) {
+        // Parse the first row's arrays and flatten into point rows for plotting
+        const parseArr = (val: any) => {
+          if (Array.isArray(val)) return val;
+          if (typeof val === 'string') {
+            try { return JSON.parse(val); } catch (e) {
+              // fallback: split on commas
+              return val.replace(/^[\[\]]+/g, '').replace(/[\[\]]+$/g, '').split(',').map(s => s.trim());
+            }
+          }
+          return null;
+        };
+        const px = parseArr(firstX) || [];
+        const py = parseArr(firstY) || [];
+        const n = Math.max(px.length, py.length);
+        // Preserve metadata from the original row (e.g. S.No, Sample name, etc.)
+        const meta: Record<string, any> = { ...(firstRow || {}) };
+        // Remove the original series fields to avoid duplication (they'll be replaced by scalar shift/intensity)
+        if (xCol) delete meta[xCol as string];
+        if (yCol) delete meta[yCol as string];
+        for (let i = 0; i < n; i++) {
+          const xv = px[i] !== undefined ? px[i] : (i < px.length ? px[i] : null);
+          const yv = py[i] !== undefined ? py[i] : (i < py.length ? py[i] : null);
+          const sx = xv === null || xv === undefined ? null : Number(xv);
+          const sy = yv === null || yv === undefined ? null : Number(yv);
+          if (Number.isFinite(sx) && Number.isFinite(sy)) mapped.push({ ...meta, shift: sx, intensity: sy, __raw: firstRow });
+        }
+        console.debug('[Supabase] Parsed array-series from first row into', mapped.length, 'points');
+      } else {
+        mapped = rows.map((r: Record<string, any>) => {
+          const x = xCol ? Number(r[xCol]) : null;
+          const y = yCol ? Number(r[yCol]) : null;
+          return { ...(r || {}), shift: Number.isFinite(x) ? x : null, intensity: Number.isFinite(y) ? y : null, __raw: r };
+        }).filter((d: any) => d.shift !== null && d.intensity !== null);
+      }
+
       console.log('🔵 [FETCH] Calling onUpdateWidget to store', rows.length, 'rows in widget.data.tableData');
       onUpdateWidget?.({ data: { ...(widget.data || {}), tableData: rows, tableDataProcessed: mapped, fetchStatus: 'success', supabaseTable: sbTableName } });
       console.log('🔵 [FETCH] onUpdateWidget called, setting sbHasData to true');
@@ -742,6 +879,30 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       setSbFetching(false);
     }
   };
+
+  // Load allowed tables from backend for dropdown (if available)
+  useEffect(() => {
+    if (!isSupabase) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetchToBackend('/api/supabase/allowed');
+        if (!res || !res.ok) return;
+        const body = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (body && body.allowAll) {
+          // allow all -> provide free-text input
+          setSbAllowedTables(null);
+        } else if (body && Array.isArray(body.tables)) {
+          setSbAllowedTables(body.tables);
+          if ((!sbTableName || sbTableName === '') && body.tables.length) setSbTableName(body.tables[0]);
+        }
+      } catch (e) {
+        // ignore failures silently
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isSupabase]);
 
   // Listen for programmatic fetch requests (e.g. when a connection is created)
   useEffect(() => {
@@ -781,14 +942,14 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
 
         // compute same payload as auto-predict
         const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
-        const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.parsedData || widget.data?.tableData || widget.data?.tableDataProcessed || widget.data?.tableDataForecast || []);
+        const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || widget.data?.tableDataForecast || []);
         const tableData = Array.isArray(best) ? best : [];
         if (!tableData || tableData.length === 0) {
           console.warn('[predictNow] no data available for prediction for widget', widget.id);
           return;
         }
         const cols = Object.keys(tableData[0] || {});
-        let intensityKey = cols.find(c => /raman.*intens|intens.*raman|intensity/i.test(c)) || cols.find(c => !isNaN(Number(tableData[0][c])));
+        let intensityKey = normalizeIntensityKey(cols, tableData[0]);
         if (!intensityKey) {
           console.warn('[predictNow] no intensity column found for widget', widget.id);
           return;
@@ -797,41 +958,41 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
         if (vals.length === 0) return;
         const mx = Math.max(...vals);
         const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-        let peaks = 0;
-        for (let i = 1; i < vals.length - 1; i++) if (vals[i] > vals[i - 1] && vals[i] > vals[i + 1]) peaks++;
 
-        const payload = { peaks, max: mx, avg };
-        // Compute a local label using widget predictionMeta so UI gets immediate feedback
+        // include the full signal so the backend spectral classifier can return compound names
+        const payload = { signal: vals, max: mx, avg };
+        // Show a temporary indicator while awaiting the server prediction
         try {
-          const pm = widget.data?.predictionMeta || {};
-          const ruleLocal = pm.rule || 'max_threshold';
-          const maxThresholdLocal = typeof pm.maxThreshold === 'number' ? pm.maxThreshold : 5000;
-          const minPeaksLocal = typeof pm.minPeaks === 'number' ? pm.minPeaks : 1;
-          let localLabel = 'Normal';
-          if (ruleLocal === 'max_threshold') {
-            if (mx > maxThresholdLocal) localLabel = 'Abnormal';
-          } else {
-            if (peaks >= minPeaksLocal) localLabel = 'Abnormal';
-          }
-          try { if (onUpdateWidget) onUpdateWidget({ data: { ...(widget.data || {}), prediction: localLabel, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload } } }); } catch (e) { /* ignore */ }
-          try { window.dispatchEvent(new CustomEvent('predictDone', { detail: { widgetId: widget.id, prediction: localLabel, payload, source: 'local' } })); } catch (e) { /* ignore */ }
-        } catch (e) { /* ignore local label */ }
+          const temp = 'Predicting…';
+          try { if (onUpdateWidget) onUpdateWidget({ data: { ...(widget.data || {}), prediction: temp, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload } } }); } catch (e) { /* ignore */ }
+          try { window.dispatchEvent(new CustomEvent('predictDone', { detail: { widgetId: widget.id, prediction: temp, payload, source: 'local' } })); } catch (e) { /* ignore */ }
+        } catch (e) { /* ignore */ }
 
         (async () => {
           try {
             const resp = await fetchToBackend('/api/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
             if (!resp.ok) {
               console.warn('[predictNow] backend error', resp.status);
+              // clear temporary predicting state
+              try { if (onUpdateWidget) onUpdateWidget({ data: { ...(widget.data || {}), prediction: null, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload, lastErrorStatus: resp.status } } }); } catch (e) { /* ignore */ }
+              try { window.dispatchEvent(new CustomEvent('predictDone', { detail: { widgetId: widget.id, prediction: null, error: true, status: resp.status, payload, source: 'server' } })); } catch (e) { /* ignore */ }
               return;
             }
             const body = await resp.json().catch(() => null);
+            console.debug('[predictNow] backend body:', body);
             const pred = body?.prediction || body?.result || null;
-            if (pred && onUpdateWidget) {
+            // ensure we update the widget with the backend's `prediction` key
+            if (pred !== null && onUpdateWidget) {
               onUpdateWidget({ data: { ...(widget.data || {}), prediction: pred, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload, lastResponse: body } } });
+            } else {
+              // no prediction returned — clear temporary indicator
+              try { if (onUpdateWidget) onUpdateWidget({ data: { ...(widget.data || {}), prediction: null, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload, lastResponse: body } } }); } catch (e) { /* ignore */ }
             }
             try { window.dispatchEvent(new CustomEvent('predictDone', { detail: { widgetId: widget.id, prediction: pred, raw: body, payload, source: 'server' } })); } catch (e) { /* ignore */ }
           } catch (err) {
             console.warn('[predictNow] request failed', err && err.message ? err.message : err);
+            try { if (onUpdateWidget) onUpdateWidget({ data: { ...(widget.data || {}), prediction: null, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload, lastError: err && (err.message || String(err)) } } }); } catch (e) { /* ignore */ }
+            try { window.dispatchEvent(new CustomEvent('predictDone', { detail: { widgetId: widget.id, prediction: null, error: true, payload, source: 'client' } })); } catch (e) { /* ignore */ }
           }
         })();
       } catch (e) { console.error('[predictNow] handler error', e); }
@@ -839,6 +1000,29 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
     window.addEventListener('predictNow', onPredictNow as EventListener);
     return () => window.removeEventListener('predictNow', onPredictNow as EventListener);
   }, [widget.id, widget.type, widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast]);
+
+  // Listen for requests to open the Line Chart modal with arbitrary preview data
+  useEffect(() => {
+    const onOpenLineChart = (ev: any) => {
+      try {
+        const d = ev?.detail?.data || ev?.detail?.tableData || null;
+        const sourceWidgetId = ev?.detail?.widgetId || null;
+        console.debug('[openLineChart] event received. sourceWidgetId:', sourceWidgetId, 'dataLength:', d && Array.isArray(d) ? d.length : 'none');
+        // If a widgetId is provided, only the matching CanvasWidget should respond
+        if (sourceWidgetId && sourceWidgetId !== widget.id) {
+          return; // not for this widget
+        }
+        if (!d || !Array.isArray(d) || d.length === 0) {
+          console.warn('[openLineChart] no valid data provided for widget:', widget.id);
+          return;
+        }
+        setModalPreviewData(d);
+        openLineChartSafely(sourceWidgetId ? `openLineChart event (widget ${sourceWidgetId})` : 'openLineChart event');
+      } catch (e) { console.error('[openLineChart] handler error', e); }
+    };
+    window.addEventListener('openLineChart', onOpenLineChart as EventListener);
+    return () => window.removeEventListener('openLineChart', onOpenLineChart as EventListener);
+  }, []);
 
   // Connection handlers are provided by Canvas via props (onStartConnection/onEndConnection)
 
@@ -860,8 +1044,8 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                       (widget.data?.parsedData && widget.data.parsedData.length > 0);
       
       // Always get the latest data regardless of timing issues
-      // Prefer explicit `tableData`, then `tableDataProcessed` (from processing steps), then `parsedData` (file uploads)
-      const displayData = widget.data?.tableData || widget.data?.tableDataProcessed || widget.data?.parsedData || [];
+      // Prefer processed data first (tableDataProcessed), then raw `tableData`, then `parsedData`
+      const displayData = widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || [];
 
       console.log('[CanvasWidget] data-table renderWidgetContent debug:', {
         widgetId: widget.id,
@@ -965,6 +1149,46 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           {showTableModal && (() => {
             const canvasEl = document.querySelector('.orange-canvas') as HTMLElement | null;
             console.log('[CanvasWidget] Rendering data table modal, showTableModal:', showTableModal, 'canvas found:', !!canvasEl, 'widget:', widget.id);
+            console.log('[CanvasWidget] displayData length:', displayData.length);
+            // Merge any nested __raw into top-level for display so original metadata appears
+            let modalRows = (displayData || []).map((r: any) => {
+              try {
+                if (r && typeof r === 'object' && r.__raw && typeof r.__raw === 'object' && !Array.isArray(r.__raw)) {
+                  const merged = { ...(r.__raw || {}), ...r };
+                  delete merged.__raw;
+                  return merged;
+                }
+              } catch (e) { /* ignore */ }
+              return r;
+            });
+            // Attempt to preserve natural table ordering by sorting on a numeric serial column
+            // Common column names: "S.No", "S.No.", "sno", "id", "S No"
+            if (modalRows.length > 0) {
+              const firstKeys = Object.keys(modalRows[0] || {});
+              const normalize = (k: string) => k.toLowerCase().replace(/[^a-z0-9]/g, '');
+              const keyCandidates = firstKeys.filter(k => {
+                const n = normalize(k);
+                return n === 'sno' || n === 'id' || n === 'sno.' || n === 'sno' || n === 'serial' || n === 'index' || n === 'sno';
+              });
+              if (keyCandidates.length > 0) {
+                const sortKey = keyCandidates[0];
+                try {
+                  modalRows = modalRows.slice().sort((a: any, b: any) => {
+                    const va = a && a[sortKey] !== undefined && a[sortKey] !== null ? Number(a[sortKey]) : NaN;
+                    const vb = b && b[sortKey] !== undefined && b[sortKey] !== null ? Number(b[sortKey]) : NaN;
+                    if (Number.isFinite(va) && Number.isFinite(vb)) return va - vb;
+                    if (Number.isFinite(va)) return -1;
+                    if (Number.isFinite(vb)) return 1;
+                    return 0;
+                  });
+                  console.debug('[CanvasWidget] Sorted modalRows by key:', sortKey);
+                } catch (e) { /* ignore sort errors */ }
+              }
+            }
+            if (modalRows.length > 0) {
+              try { console.log('[CanvasWidget] modalRows[0]:', modalRows[0]); } catch (e) { /* ignore */ }
+              try { console.log('[CanvasWidget] modalRows[0] keys:', Object.keys(modalRows[0] || {})); } catch (e) { /* ignore */ }
+            }
             if (!canvasEl) {
               console.warn('[CanvasWidget] canvas container (.orange-canvas) not found for data-table modal, falling back to body');
             } else {
@@ -1028,9 +1252,9 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                       color: '#1F2937',
                       margin: 0
                     }}>
-                      Data Table ({displayData.length} rows)
+                      Data Table ({modalRows.length} rows)
                     </h2>
-                    <button 
+                    <button
                       onClick={() => {
                         console.log('Close button clicked - closing table modal');
                         guardedCloseTableModal({ setJustClosed: true });
@@ -1039,22 +1263,20 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                         backgroundColor: '#EF4444',
                         border: 'none',
                         color: '#FFFFFF',
-                        fontSize: '20px',
-                        fontWeight: 'bold',
+                        fontSize: '14px',
+                        fontWeight: '600',
                         cursor: 'pointer',
                         padding: '8px 12px',
-                        borderRadius: '50%',
+                        borderRadius: '6px',
                         lineHeight: '1',
                         transition: 'all 0.2s',
-                        width: '40px',
-                        height: '40px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = '#DC2626';
-                        e.currentTarget.style.transform = 'scale(1.1)';
+                        e.currentTarget.style.transform = 'scale(1.02)';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = '#EF4444';
@@ -1062,9 +1284,10 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                       }}
                       title="Close table"
                     >
-                      ×
+                      Close
                     </button>
                   </div>
+                  {/* Removed single-row preview; show full table below */}
                   {displayData.length > 0 ? (
                   <div style={{ 
                     flex: 1, 
@@ -1076,7 +1299,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead style={{ position: 'sticky', top: 0, backgroundColor: '#F9FAFB' }}>
                         <tr>
-                          {Object.keys(displayData[0] || {}).map((header, idx) => (
+                          {Object.keys(modalRows[0] || {}).map((header, idx) => (
                             <th key={idx} style={{
                               border: '1px solid #D1D5DB',
                               padding: '12px 16px',
@@ -1092,7 +1315,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                         </tr>
                       </thead>
                       <tbody>
-                        {displayData.map((row, rowIdx) => (
+                        {modalRows.map((row, rowIdx) => (
                           <tr key={rowIdx} style={{
                             backgroundColor: rowIdx % 2 === 0 ? '#FFFFFF' : '#F9FAFB'
                           }}
@@ -1106,10 +1329,11 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                               <td key={cellIdx} style={{
                                 border: '1px solid #D1D5DB',
                                 padding: '8px 16px',
-                                color: '#374151',
-                                fontSize: '14px'
+                                color: '#111111',
+                                fontSize: '14px',
+                                whiteSpace: 'pre-wrap'
                               }}>
-                                {typeof cell === 'object' ? JSON.stringify(cell) : String(cell)}
+                                {(cell === null || cell === undefined || String(cell).trim() === '') ? '(empty)' : (typeof cell === 'object' ? JSON.stringify(cell) : String(cell))}
                               </td>
                             ))}
                           </tr>
@@ -1211,7 +1435,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       const [targetMax, setTargetMax] = useState<number>(1);
       const [hasNormalized, setHasNormalized] = useState<boolean>(false);
 
-      const runNormalization = () => {
+      const runNormalization = async () => {
         // Use processed data from previous widget (Noise Filter, Baseline, etc.)
         // Priority: tableDataProcessed (filtered/processed) > tableData (raw) > parsedData
         const tableData: Record<string, any>[] = 
@@ -1435,7 +1659,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
         }
         
         console.log('[Normalization View] Opening modal with processed data...');
-        setShowLineChartModal(true);
+        openLineChartSafely('Normalization View');
         console.log('[Normalization View] ============ END ============');
       };
 
@@ -1506,16 +1730,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                   <div className="mt-2 text-sm space-y-1">
                     <div><strong>Std Dev:</strong> {typeof computedMetrics.std === 'number' ? computedMetrics.std.toFixed(4) : String(computedMetrics.std)}</div>
                     <div><strong>AUC:</strong> {typeof computedMetrics.auc === 'number' ? computedMetrics.auc.toFixed(4) : String(computedMetrics.auc)}</div>
-                    <div><strong>Peaks:</strong></div>
-                    <div className="text-xs text-gray-600">
-                      {computedMetrics.peaks && computedMetrics.peaks.length ? (
-                        computedMetrics.peaks.map((p: any, i: number) => (
-                          <div key={i}>#{i + 1}: pos={Number(p.position).toFixed(3)} val={Number(p.value).toFixed(3)} {p.fwhm ? `(fwhm=${Number(p.fwhm).toFixed(3)})` : ''}</div>
-                        ))
-                      ) : (
-                        <div>No peaks detected</div>
-                      )}
-                    </div>
+                    {/* Peaks display removed from Predict widget per user request */}
                     {/* Raw debug JSON for computed metrics (helps inspect AUC, fwhm values) */}
                     <div className="mt-2">
                       <details>
@@ -1543,12 +1758,18 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                 </button>
                 <button 
                   type="button" 
-                  onClick={(e) => { 
+                  onClick={async (e) => { 
                     e.preventDefault();
                     e.stopPropagation();
                     console.log('[Normalization] Apply & Close clicked');
-                    runNormalization(); 
-                    setShowParameters(false); 
+                    try {
+                      await runNormalization();
+                      setShowParameters(false);
+                      openLineChartSafely('Normalization - apply');
+                    } catch (err) {
+                      console.error('[Normalization] Apply & Close failed', err);
+                      setShowParameters(false);
+                    }
                   }} 
                   className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 cursor-pointer"
                   style={{ pointerEvents: 'auto' }}
@@ -1608,8 +1829,9 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       const [horizon, setHorizon] = useState<number>(10);
       const [lookback, setLookback] = useState<number>(20);
       const [alpha, setAlpha] = useState<number>(0.3);
-      const [minDistance, setMinDistance] = useState<number>(5);
-      const [threshold, setThreshold] = useState<number>(0.3);
+      // Make peak detection slightly more sensitive by default for common spectra (e.g., ethanol)
+      const [minDistance, setMinDistance] = useState<number>(3);
+      const [threshold, setThreshold] = useState<number>(0.1);
       const [numPeaks, setNumPeaks] = useState<number>(5);
       const [computedMetrics, setComputedMetrics] = useState<any>(widget.data?.featureExtractionMetrics ?? null);
       // Auto-compute metrics when modal opens or parameters that affect detection change
@@ -1869,17 +2091,37 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                 const dataMax = numeric.length > 0 ? Math.max(...numeric) : 0;
                 const dataMin = numeric.length > 0 ? Math.min(...numeric) : 0;
                 const suggestedThreshold = dataMax > 10 ? (dataMax * 0.1).toFixed(2) : '0.3';
-                    alert(`⚠️ No peaks found!\n\n` +
-                      `Current Settings:\n` +
-                      `• Threshold: ${threshold}\n` +
-                      `• Min Distance: ${minDistance}\n\n` +
-                      `Data Info:\n` +
-                      `• Range: ${dataMin.toFixed(2)} to ${dataMax.toFixed(2)}\n` +
-                      `• Data points: ${intensities.length}\n\n` +
-                      `💡 SUGGESTIONS:\n` +
-                      (dataMax > 10 ? ('• Your data appears to be raw (not normalized)\n• Try threshold: ' + suggestedThreshold) : '• Lower threshold or minDistance'));
-                return;
-              }
+                    // Fallback: try computeSignalMetrics (shared detector) with relaxed prominence
+                    try {
+                      const xArr: number[] = [];
+                      const yArr: number[] = [];
+                      for (let i = 0; i < intensities.length; i++) {
+                        const v = Number(intensities[i]);
+                        if (!isNaN(v)) { xArr.push(shifts[i]); yArr.push(v); }
+                      }
+                      const relaxedProm = (dataMax > 0) ? (dataMax * (typeof threshold === 'number' && threshold > 0 && threshold <= 1 ? threshold * 0.5 : 0.05)) : undefined;
+                      const metrics = computeSignalMetrics(xArr, yArr, { minDistance: minDistance, minProminence: relaxedProm });
+                      if (metrics && metrics.peaks && metrics.peaks.length > 0) {
+                        console.log('[Peak Detection] Fallback computeSignalMetrics found', metrics.peaks.length, 'peaks');
+                        resultData = metrics.peaks.map((p, i) => ({ peak_number: i + 1, position: p.position, intensity: p.value, index: p.index }));
+                      }
+                    } catch (e) {
+                      console.warn('[Peak Detection] fallback computeSignalMetrics failed', e);
+                    }
+
+                    if (resultData.length === 0) {
+                      alert(`⚠️ No peaks found!\n\n` +
+                        `Current Settings:\n` +
+                        `• Threshold: ${threshold}\n` +
+                        `• Min Distance: ${minDistance}\n\n` +
+                        `Data Info:\n` +
+                        `• Range: ${dataMin.toFixed(2)} to ${dataMax.toFixed(2)}\n` +
+                        `• Data points: ${intensities.length}\n\n` +
+                        `💡 SUGGESTIONS:\n` +
+                        (dataMax > 10 ? ('• Your data appears to be raw (not normalized)\n• Try threshold: ' + suggestedThreshold) : '• Lower threshold or minDistance'));
+                      return;
+                    }
+                }
               // Build extra details if metrics present
               let extraDetails = '';
               try {
@@ -2000,7 +2242,19 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
               }
               const dataMaxLog = yArr.length > 0 ? Math.max(...yArr) : 0;
               const effectiveThreshold = (threshold > 0 && threshold <= 1) ? (dataMaxLog * threshold) : threshold;
-              const metrics = computeSignalMetrics(xArr, yArr, { minDistance: minDistance, minProminence: effectiveThreshold });
+              let metrics = computeSignalMetrics(xArr, yArr, { minDistance: minDistance, minProminence: effectiveThreshold });
+              // If too few peaks found, try a relaxed prominence (helps when thresholding is aggressive)
+              try {
+                if (!metrics.peaks || metrics.peaks.length < 3) {
+                  const relaxedProm = (dataMaxLog > 0) ? Math.max(effectiveThreshold * 0.5, dataMaxLog * 0.05) : effectiveThreshold * 0.5;
+                  const metricsRelaxed = computeSignalMetrics(xArr, yArr, { minDistance: Math.max(1, Math.floor(minDistance/2)), minProminence: relaxedProm });
+                  if (metricsRelaxed && metricsRelaxed.peaks && metricsRelaxed.peaks.length > metrics.peaks.length) {
+                    metrics = metricsRelaxed;
+                  }
+                }
+              } catch (e) {
+                console.warn('[Statistical Features] relaxed peak recompute failed', e);
+              }
               if (typeof metrics.auc === 'number') statsExtra += `\nAUC: ${metrics.auc.toFixed(4)}`;
               if (metrics.peaks && metrics.peaks.length > 0) {
                 const top = metrics.peaks[0];
@@ -2300,7 +2554,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       // Preview statistics for the Parameters modal when Statistical Features is selected
       const getBestTableData = () => {
         const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
-        let best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.parsedData || widget.data?.tableData || widget.data?.tableDataProcessed || widget.data?.tableDataForecast || []);
+        let best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || widget.data?.tableDataForecast || []);
         return Array.isArray(best) ? best : [];
       };
 
@@ -2537,8 +2791,9 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                     setHorizon(10); 
                     setLookback(20); 
                     setAlpha(0.3);
-                    setThreshold(0);
-                    setMinDistance(5);
+                    // Reset to improved defaults (more sensitive)
+                    setThreshold(0.1);
+                    setMinDistance(3);
                     setNumPeaks(5);
                   }} 
                   className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 cursor-pointer"
@@ -2835,7 +3090,8 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
 
       // Prepare small datasets for inline mini-charts
       const pcaLocal = widget.data?.pcaResults || null;
-      const screeData = (pcaLocal?.explained_variance_ratio || []).map((v: any, i: number) => ({ name: `${i + 1}`, value: Number(v) }));
+      // Use percentage values (0-100) so inline and fullscreen charts use the same scale
+      const screeData = (pcaLocal?.explained_variance_ratio || []).map((v: any, i: number) => ({ name: `${i + 1}`, value: Number(v) * 100 }));
       const scatterData = (pcaLocal?.transformed || []).map((row: any) => {
         const vals = Object.values(row).map((x: any) => Number(x));
         return { x: vals[0] ?? 0, y: vals[1] ?? 0 };
@@ -2860,6 +3116,25 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
               mainColor={colors.main}
               lightColor={colors.light}
               bgColor={colors.bg}
+              iconRef={iconRef}
+              portElements={(
+                <>
+                  <div
+                    role="button"
+                    aria-label="Start connection from left port"
+                    className="absolute rounded-full bg-white border-2 pointer-events-auto"
+                    onPointerDown={(e) => { try { e.stopPropagation(); e.preventDefault(); const tgt = e.currentTarget as HTMLElement; const r = tgt.getBoundingClientRect(); onStartConnection && onStartConnection({ clientX: Math.round(r.left + r.width / 2), clientY: Math.round(r.top + r.height / 2), portCenter: true }); } catch (err) {} }}
+                    style={{ width: 8, height: 8, left: 14, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }}
+                  />
+                  <div
+                    role="button"
+                    aria-label="Start connection from right port"
+                    className="absolute rounded-full bg-white border-2 pointer-events-auto"
+                    onPointerDown={(e) => { try { e.stopPropagation(); e.preventDefault(); const tgt = e.currentTarget as HTMLElement; const r = tgt.getBoundingClientRect(); onStartConnection && onStartConnection({ clientX: Math.round(r.left + r.width / 2), clientY: Math.round(r.top + r.height / 2), portCenter: true }); } catch (err) {} }}
+                    style={{ width: 8, height: 8, right: 14, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }}
+                  />
+                </>
+              )}
             >
               {/* Controls section - shown on hover */}
               <div className="mt-2 flex flex-col items-center gap-2">
@@ -2895,7 +3170,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                       e.stopPropagation();
                       console.log('[PCA] View Data clicked');
                       setModalPreviewData(widget.data?.pcaResults?.transformed || widget.data?.tableDataProcessed || []);
-                      setShowLineChartModal(true);
+                      openLineChartSafely('Normalization View - View Data');
                     }}
                     className="px-3 py-1.5 text-xs font-medium rounded transition-colors text-white"
                     style={{ backgroundColor: colors.main }}
@@ -3015,8 +3290,9 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                     applyPCASettings();
                     setShowParameters(false);
                   }}
-                  className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 cursor-pointer"
-                  style={{ pointerEvents: 'auto' }}
+                  disabled={!hasResults}
+                  className={`px-3 py-1 rounded text-sm ${hasResults ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
+                  style={{ pointerEvents: hasResults ? 'auto' : 'none' }}
                 >
                   Apply & Close
                 </button>
@@ -3026,12 +3302,14 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      console.log('[PCA] View Results (from params modal) clicked');
-                      console.log('[PCA] Results data:', widget.data?.pcaResults);
-                      setShowParameters(false); // Close parameters modal first
-                      setTimeout(() => {
-                        setShowInlineResults(true); // Then open inline results panel
-                      }, 100);
+                        console.log('[PCA] View Results (from params modal) clicked');
+                        console.log('[PCA] Results data:', widget.data?.pcaResults);
+                        setShowParameters(false); // Close parameters modal first
+                        // Open fullscreen PCA results modal centered on the canvas
+                        setTimeout(() => {
+                          setShowInlineResults(false);
+                          setShowPCAResults(true);
+                        }, 100);
                     }}
                     className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 cursor-pointer"
                     style={{ pointerEvents: 'auto' }}
@@ -3080,7 +3358,9 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                         e.stopPropagation();
                         e.preventDefault();
                         console.log('[PCA] Open Fullscreen clicked');
-                        setShowPCAResults(true);
+                        // ensure inline panel is hidden before opening fullscreen modal
+                        setShowInlineResults(false);
+                        setTimeout(() => setShowPCAResults(true), 50);
                       }}
                       className="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer"
                     >
@@ -3096,7 +3376,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                         <BarChart data={screeData}>
                           <XAxis dataKey="name" hide />
                           <YAxis hide domain={[0, 'dataMax']} />
-                          <Tooltip formatter={(val: any) => `${(val * 100).toFixed(1)}%`} />
+                          <Tooltip formatter={(val: any) => `${Number(val).toFixed(1)}%`} />
                           <Bar dataKey="value" fill="#2563eb" />
                         </BarChart>
                       </ResponsiveContainer>
@@ -3195,27 +3475,38 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           bgColor={colors.bg}
           alwaysShowControls={true}
         >
-          <div className="mt-2 flex flex-col items-center gap-2">
+          <div className="mt-2 flex flex-col items-stretch gap-2">
             {/* Show inputs when no data or when explicitly editing */}
             {!hasData && (
               <>
-                <input 
-                  className="w-full rounded px-2 py-1.5 text-xs border border-gray-200 focus:border-orange-400 focus:outline-none text-center bg-white text-gray-700 placeholder-gray-400" 
-                  value={sbTableName} 
-                  onChange={(e) => setSbTableName(e.target.value)} 
-                  placeholder="raman_data" 
-                />
-                <input 
-                  className="w-full rounded px-2 py-1.5 text-xs border border-gray-200 focus:border-orange-400 focus:outline-none text-center bg-white text-gray-700 placeholder-gray-400" 
-                  value={sbSampleFilter} 
-                  onChange={(e) => setSbSampleFilter(e.target.value)} 
-                  placeholder="Sample" 
-                />
+                {/* Simplified: table name input, sample name input, and Load button */}
+                <div className="w-full">
+                  <input
+                    autoComplete="off"
+                    spellCheck={false}
+                    name="supabase-table-name"
+                    className="w-full rounded px-2 py-1.5 text-xs border border-gray-200 focus:border-orange-400 focus:outline-none text-center bg-white text-gray-700 placeholder-gray-400"
+                    value={sbTableName}
+                    onChange={(e) => setSbTableName(e.target.value)}
+                    placeholder="Table name"
+                  />
+                </div>
+                <div className="w-full">
+                  <input
+                    autoComplete="off"
+                    spellCheck={false}
+                    name="supabase-sample-name"
+                    className="w-full mt-2 rounded px-2 py-1.5 text-xs border border-gray-200 focus:border-orange-400 focus:outline-none text-center bg-white text-gray-700 placeholder-gray-400"
+                    value={sbSampleFilter}
+                    onChange={(e) => setSbSampleFilter(e.target.value)}
+                    placeholder="Sample name (optional)"
+                  />
+                </div>
                 <div className="w-full flex flex-col items-center gap-2">
-                  <button 
-                    className="w-full px-2 py-1.5 rounded text-white text-xs font-medium hover:bg-opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors" 
+                  <button
+                    className="w-full px-2 py-1.5 rounded text-white text-xs font-medium hover:bg-opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                     style={{ backgroundColor: colors.main }}
-                    onClick={(e) => { e.stopPropagation(); fetchSupabaseData(); }} 
+                    onClick={(e) => { e.stopPropagation(); fetchSupabaseData(); }}
                     disabled={sbFetching || !sbTableName}
                   >
                     {sbFetching ? 'Loading...' : 'Load'}
@@ -3248,6 +3539,12 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                   } catch (err) {
                     console.warn('[Supabase] triggerDataForward failed', err);
                   }
+                  try {
+                    // Also open the data table modal for immediate viewing
+                    openTableModal();
+                  } catch (err) {
+                    console.warn('[Supabase] openTableModal failed', err);
+                  }
                   // Note: Modal removed - connect Supabase to Data Table widget to view data
                   console.log('[Supabase] Data forwarding triggered. Connect to Data Table widget to view data.');
                 }}
@@ -3270,7 +3567,30 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
     }
     if (widget.type === 'mean-average') {
       const colors = getWidgetColors('mean-average');
-      
+      // Render left/right port elements so connections visibly attach to the Mean/Average widget
+      const meanPorts = (
+        <>
+          <div
+            role="button"
+            aria-label="Start connection from left port"
+            className="absolute rounded-full bg-white border-2 pointer-events-auto"
+            onPointerDown={(e) => {
+              try { e.stopPropagation(); e.preventDefault(); const tgt = e.currentTarget as HTMLElement; const r = tgt.getBoundingClientRect(); onStartConnection && onStartConnection({ clientX: Math.round(r.left + r.width / 2), clientY: Math.round(r.top + r.height / 2), portCenter: true }); } catch (err) { /* swallow */ }
+            }}
+            style={{ width: 8, height: 8, left: 14, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }}
+          />
+          <div
+            role="button"
+            aria-label="Start connection from right port"
+            className="absolute rounded-full bg-white border-2 pointer-events-auto"
+            onPointerDown={(e) => {
+              try { e.stopPropagation(); e.preventDefault(); const tgt = e.currentTarget as HTMLElement; const r = tgt.getBoundingClientRect(); onStartConnection && onStartConnection({ clientX: Math.round(r.left + r.width / 2), clientY: Math.round(r.top + r.height / 2), portCenter: true }); } catch (err) { /* swallow */ }
+            }}
+            style={{ width: 8, height: 8, right: 14, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }}
+          />
+        </>
+      );
+
       return (
         <OrangeStyleWidget
           icon={Calculator}
@@ -3278,6 +3598,8 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           mainColor={colors.main}
           lightColor={colors.light}
           bgColor={colors.bg}
+          iconRef={iconRef}
+          portElements={meanPorts}
         >
           <div className="mt-2 flex flex-col items-center gap-2">
             <button 
@@ -3314,54 +3636,77 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
 
       const runPrediction = () => {
         const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
-        const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.parsedData || widget.data?.tableData || widget.data?.tableDataProcessed || widget.data?.tableDataForecast || []);
+        const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || widget.data?.tableDataForecast || []);
         const tableData = Array.isArray(best) ? best : [];
         if (!tableData || tableData.length === 0) { alert('No data available to predict'); return; }
 
         // find intensity column
         const cols = Object.keys(tableData[0] || {});
-        let intensityKey = cols.find(c => /raman.*intens|intens.*raman|intensity/i.test(c)) || cols.find(c => !isNaN(Number(tableData[0][c])));
+        let intensityKey = normalizeIntensityKey(cols, tableData[0]);
         if (!intensityKey) { alert('No numeric intensity column found'); return; }
         const vals = tableData.map(r => Number(r[intensityKey])).filter(v => !isNaN(v));
         const mx = vals.length ? Math.max(...vals) : 0;
-        // detect peaks simple
-        const peaksIdx: number[] = [];
-        for (let i = 1; i < vals.length-1; i++) if (vals[i] > vals[i-1] && vals[i] > vals[i+1]) peaksIdx.push(i);
-
-        let label = 'Normal';
-        if (rule === 'max_threshold') {
-          if (mx > maxThreshold) label = 'Abnormal';
-        } else {
-          if (peaksIdx.length >= minPeaks) label = 'Abnormal';
+        // detect peaks using the shared signal metrics (use index as x)
+        let peaksIdx: number[] = [];
+        try {
+          const xs = vals.map((_, i) => i);
+          const std = calcStd(vals);
+          const minProminence = std * 0.5;
+          const metrics = computeSignalMetrics(xs, vals, { minProminence, minDistance: 5 });
+          if (metrics && Array.isArray(metrics.peaks)) peaksIdx = metrics.peaks.map(p => p.index);
+        } catch (e) {
+          // fallback to simple local maxima if anything goes wrong
+          peaksIdx = [];
+          for (let i = 1; i < vals.length - 1; i++) if (vals[i] > vals[i - 1] && vals[i] > vals[i + 1]) peaksIdx.push(i);
         }
 
+        // don't overwrite with a local heuristic — show a temporary indicator while server predicts
+        let label = 'Predicting…';
         const avg = vals.length ? (vals.reduce((a,b) => a + b, 0) / vals.length) : 0;
         setPredictionResult(label);
         const meta = { rule, maxThreshold, minPeaks, maxValue: mx, numPeaks: peaksIdx.length, avg };
         if (onUpdateWidget) onUpdateWidget({ data: { ...(widget.data || {}), prediction: label, predictionMeta: meta } });
         // Send prediction to backend (peaks/max/avg) and update widget with response
         (async () => {
+          const payload = { signal: vals, peaks: peaksIdx.length, max: mx, avg };
           try {
-            const payload = { peaks: peaksIdx.length, max: mx, avg };
             const resp = await fetchToBackend('/api/predict', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
             });
-            if (!resp.ok) {
-              console.warn('[Predict] backend returned error', resp.status);
+            if (!resp || !resp.ok) {
+              const status = resp ? resp.status : 'no-response';
+              console.warn('[Predict] backend returned error', status);
+              // clear predicting state and record error
+              setPredictionResult(null);
+              if (onUpdateWidget) onUpdateWidget({ data: { ...(widget.data || {}), prediction: null, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload, lastErrorStatus: status } } });
+              try { window.dispatchEvent(new CustomEvent('predictDone', { detail: { widgetId: widget.id, prediction: null, error: true, status, payload } })); } catch (e) { /* ignore */ }
+              return;
             }
+
             const j = await resp.json().catch(() => null);
-            console.log('[Predict] backend response:', resp.status, j);
+            console.debug('[Predict] backend response:', resp.status, j);
             const serverPred = j?.prediction || null;
             if (serverPred) {
               setPredictionResult(serverPred);
               try { setShowPredictParams(false); } catch (e) { /* ignore */ }
+              // prefer server-computed peaks if provided
+              if (j && typeof j.peaks === 'number') payload.peaks = j.peaks;
               if (onUpdateWidget) onUpdateWidget({ data: { ...(widget.data || {}), prediction: serverPred, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload, lastResponse: j } } });
               try { window.dispatchEvent(new CustomEvent('predictDone', { detail: { widgetId: widget.id, prediction: serverPred, raw: j, payload } })); } catch (e) { /* ignore */ }
+            } else {
+              // no prediction returned
+              setPredictionResult(null);
+              if (onUpdateWidget) onUpdateWidget({ data: { ...(widget.data || {}), prediction: null, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload, lastResponse: j } } });
+              try { window.dispatchEvent(new CustomEvent('predictDone', { detail: { widgetId: widget.id, prediction: null, raw: j, payload } })); } catch (e) { /* ignore */ }
             }
           } catch (err) {
             console.warn('[Predict] failed to POST prediction to backend:', err && err.message ? err.message : err);
+            // ensure predicting state cleared on errors
+            setPredictionResult(null);
+            if (onUpdateWidget) onUpdateWidget({ data: { ...(widget.data || {}), prediction: null, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload, lastError: err && (err.message || String(err)) } } });
+            try { window.dispatchEvent(new CustomEvent('predictDone', { detail: { widgetId: widget.id, prediction: null, error: true, errorMessage: err && (err.message || String(err)), payload } })); } catch (e) { /* ignore */ }
           }
         })();
         try { setShowPredictParams(false); } catch (e) { /* ignore */ }
@@ -3426,6 +3771,25 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
         <OrangeStyleWidget
           icon={LineChart}
           label="Line Chart"
+          iconRef={iconRef}
+          portElements={(
+            <>
+              <div
+                role="button"
+                aria-label="Start connection from left port"
+                className="absolute rounded-full bg-white border-2 pointer-events-auto"
+                onPointerDown={(e) => { try { e.stopPropagation(); e.preventDefault(); const tgt = e.currentTarget as HTMLElement; const r = tgt.getBoundingClientRect(); onStartConnection && onStartConnection({ clientX: Math.round(r.left + r.width / 2), clientY: Math.round(r.top + r.height / 2), portCenter: true }); } catch (err) {} }}
+                style={{ width: 8, height: 8, left: 14, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }}
+              />
+              <div
+                role="button"
+                aria-label="Start connection from right port"
+                className="absolute rounded-full bg-white border-2 pointer-events-auto"
+                onPointerDown={(e) => { try { e.stopPropagation(); e.preventDefault(); const tgt = e.currentTarget as HTMLElement; const r = tgt.getBoundingClientRect(); onStartConnection && onStartConnection({ clientX: Math.round(r.left + r.width / 2), clientY: Math.round(r.top + r.height / 2), portCenter: true }); } catch (err) {} }}
+                style={{ width: 8, height: 8, right: 14, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }}
+              />
+            </>
+          )}
           mainColor={colors.main}
           lightColor={colors.light}
           bgColor={colors.bg}
@@ -3434,7 +3798,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
             <button 
               onClick={(e) => { 
                 e.stopPropagation(); 
-                setShowLineChartModal(true); 
+                openLineChartSafely('Open Chart button'); 
               }} 
               className="px-3 py-1.5 text-xs font-medium rounded transition-colors text-white"
               style={{ backgroundColor: colors.main }}
@@ -3452,6 +3816,25 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
         <OrangeStyleWidget
           icon={Scatter3D}
           label="Scatter Plot"
+          iconRef={iconRef}
+          portElements={(
+            <>
+              <div
+                role="button"
+                aria-label="Start connection from left port"
+                className="absolute rounded-full bg-white border-2 pointer-events-auto"
+                onPointerDown={(e) => { try { e.stopPropagation(); e.preventDefault(); const tgt = e.currentTarget as HTMLElement; const r = tgt.getBoundingClientRect(); onStartConnection && onStartConnection({ clientX: Math.round(r.left + r.width / 2), clientY: Math.round(r.top + r.height / 2), portCenter: true }); } catch (err) {} }}
+                style={{ width: 8, height: 8, left: 14, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }}
+              />
+              <div
+                role="button"
+                aria-label="Start connection from right port"
+                className="absolute rounded-full bg-white border-2 pointer-events-auto"
+                onPointerDown={(e) => { try { e.stopPropagation(); e.preventDefault(); const tgt = e.currentTarget as HTMLElement; const r = tgt.getBoundingClientRect(); onStartConnection && onStartConnection({ clientX: Math.round(r.left + r.width / 2), clientY: Math.round(r.top + r.height / 2), portCenter: true }); } catch (err) {} }}
+                style={{ width: 8, height: 8, right: 14, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }}
+              />
+            </>
+          )}
           mainColor={colors.main}
           lightColor={colors.light}
           bgColor={colors.bg}
@@ -3478,6 +3861,25 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
         <OrangeStyleWidget
           icon={Box}
           label="Box Plot"
+          iconRef={iconRef}
+          portElements={(
+            <>
+              <div
+                role="button"
+                aria-label="Start connection from left port"
+                className="absolute rounded-full bg-white border-2 pointer-events-auto"
+                onPointerDown={(e) => { try { e.stopPropagation(); e.preventDefault(); const tgt = e.currentTarget as HTMLElement; const r = tgt.getBoundingClientRect(); onStartConnection && onStartConnection({ clientX: Math.round(r.left + r.width / 2), clientY: Math.round(r.top + r.height / 2), portCenter: true }); } catch (err) {} }}
+                style={{ width: 8, height: 8, left: 14, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }}
+              />
+              <div
+                role="button"
+                aria-label="Start connection from right port"
+                className="absolute rounded-full bg-white border-2 pointer-events-auto"
+                onPointerDown={(e) => { try { e.stopPropagation(); e.preventDefault(); const tgt = e.currentTarget as HTMLElement; const r = tgt.getBoundingClientRect(); onStartConnection && onStartConnection({ clientX: Math.round(r.left + r.width / 2), clientY: Math.round(r.top + r.height / 2), portCenter: true }); } catch (err) {} }}
+                style={{ width: 8, height: 8, right: 14, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }}
+              />
+            </>
+          )}
           mainColor={colors.main}
           lightColor={colors.light}
           bgColor={colors.bg}
@@ -3504,6 +3906,25 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
         <OrangeStyleWidget
           icon={BarChart3}
           label="Bar Chart"
+          iconRef={iconRef}
+          portElements={(
+            <>
+              <div
+                role="button"
+                aria-label="Start connection from left port"
+                className="absolute rounded-full bg-white border-2 pointer-events-auto"
+                onPointerDown={(e) => { try { e.stopPropagation(); e.preventDefault(); const tgt = e.currentTarget as HTMLElement; const r = tgt.getBoundingClientRect(); onStartConnection && onStartConnection({ clientX: Math.round(r.left + r.width / 2), clientY: Math.round(r.top + r.height / 2), portCenter: true }); } catch (err) {} }}
+                style={{ width: 8, height: 8, left: 14, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }}
+              />
+              <div
+                role="button"
+                aria-label="Start connection from right port"
+                className="absolute rounded-full bg-white border-2 pointer-events-auto"
+                onPointerDown={(e) => { try { e.stopPropagation(); e.preventDefault(); const tgt = e.currentTarget as HTMLElement; const r = tgt.getBoundingClientRect(); onStartConnection && onStartConnection({ clientX: Math.round(r.left + r.width / 2), clientY: Math.round(r.top + r.height / 2), portCenter: true }); } catch (err) {} }}
+                style={{ width: 8, height: 8, right: 14, top: '50%', transform: 'translateY(-50%)', borderColor: colors.main, boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }}
+              />
+            </>
+          )}
           mainColor={colors.main}
           lightColor={colors.light}
           bgColor={colors.bg}
@@ -3842,7 +4263,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           </ParametersModal>
 
           {/* Hierarchical parameters modal */}
-          {widget.type === 'hierarchical-clustering' && (
+          { (widget.type === 'hierarchical-clustering' || widget.type === 'hierarchical') && (
             <ParametersModal isOpen={showParameters} onClose={() => setShowParameters(false)} title="Hierarchical Parameters">
               <div className="space-y-4">
                 <div>
@@ -3881,16 +4302,14 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                   <button
                     onClick={async (e) => {
                       e.preventDefault(); e.stopPropagation();
-                      // close the modal then run clustering locally
+                      // Apply & Close: close modal, compute, show inline results
                       try { setShowParameters(false); } catch (err) {}
                       await new Promise(res => setTimeout(res, 60));
 
-                      // local agglomerative clustering (simple single-linkage fallback)
                       const rows: any[] = widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || [];
                       if (!rows || rows.length === 0) { alert('No data available for Hierarchical Clustering'); return; }
                       const k = widget.data?.hier_k || 3;
 
-                      // Extract 2D features similarly to other widgets (prefer common names)
                       const sample = rows[0] || {};
                       const keys = Object.keys(sample);
                       const numericKeys = keys.filter((kn) => rows.some(r => !isNaN(Number(r[kn]))));
@@ -3901,7 +4320,6 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                       const featKeys = [xKey, yKey].filter(Boolean) as string[];
                       const features = rows.map(r => featKeys.map(k2 => { const v = Number(r[k2]); return Number.isFinite(v) ? v : 0; }));
 
-                      // very small linkage implementation (single-linkage)
                       const euclid = (a: number[], b: number[]) => { let s = 0; for (let i=0;i<a.length;i++) s += (a[i]-b[i])**2; return Math.sqrt(s); };
                       let clusters: number[][] = []; for (let i=0;i<features.length;i++) clusters.push([i]);
                       const linkage: Array<[number,number,number,number]> = [];
@@ -3915,7 +4333,61 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                         clusters.push(merged);
                       }
 
-                      // cut linkage to k clusters (naive)
+                      let cutClusters: number[][] = []; for (let i=0;i<features.length;i++) cutClusters.push([i]);
+                      for (let m=0; m<linkage.length && cutClusters.length > k; m++) {
+                        const [i,j] = linkage[m];
+                        if (i<0||j<0||i>=cutClusters.length||j>=cutClusters.length) break;
+                        const merged = cutClusters[i].concat(cutClusters[j]);
+                        if (j>i) { cutClusters.splice(j,1); cutClusters.splice(i,1); } else { cutClusters.splice(i,1); cutClusters.splice(j,1); }
+                        cutClusters.push(merged);
+                      }
+                      const labels = new Array(features.length).fill(0);
+                      for (let ci=0; ci<cutClusters.length; ci++) for (const idx of cutClusters[ci]) labels[idx] = ci;
+
+                      const result = { linkage, labels, featKeys, features };
+                      onUpdateWidget && onUpdateWidget({ data: { ...(widget.data||{}), hierarchicalResults: result, hier_k: k } });
+                      try { positionInlineBelowWidget(); } catch (e) { /* ignore */ }
+                      setShowInlineResults(true);
+                    }}
+                    className="px-3 py-1 rounded text-white bg-green-600"
+                  >
+                    Apply & Close
+                  </button>
+
+                  <button
+                    onClick={async (e) => {
+                      e.preventDefault(); e.stopPropagation();
+                      // close the modal then run clustering locally
+                      try { setShowParameters(false); } catch (err) {}
+                      await new Promise(res => setTimeout(res, 60));
+
+                      const rows: any[] = widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || [];
+                      if (!rows || rows.length === 0) { alert('No data available for Hierarchical Clustering'); return; }
+                      const k = widget.data?.hier_k || 3;
+
+                      const sample = rows[0] || {};
+                      const keys = Object.keys(sample);
+                      const numericKeys = keys.filter((kn) => rows.some(r => !isNaN(Number(r[kn]))));
+                      const lower = numericKeys.map(k => k.toLowerCase());
+                      const pick = (cands: string[]) => { for (const c of cands) { const idx = lower.findIndex(l => l.includes(c)); if (idx >= 0) return numericKeys[idx]; } return numericKeys[0] || null; };
+                      const xKey = pick(['shift','wavenumber','raman','x']);
+                      const yKey = pick(['intensity','counts','value','y']);
+                      const featKeys = [xKey, yKey].filter(Boolean) as string[];
+                      const features = rows.map(r => featKeys.map(k2 => { const v = Number(r[k2]); return Number.isFinite(v) ? v : 0; }));
+
+                      const euclid = (a: number[], b: number[]) => { let s = 0; for (let i=0;i<a.length;i++) s += (a[i]-b[i])**2; return Math.sqrt(s); };
+                      let clusters: number[][] = []; for (let i=0;i<features.length;i++) clusters.push([i]);
+                      const linkage: Array<[number,number,number,number]> = [];
+                      const clusterDist = (c1:number[], c2:number[]) => { let best = Infinity; for (const i of c1) for (const j of c2) { const d = euclid(features[i], features[j]); if (d < best) best = d; } return best; };
+                      while (clusters.length > 1) {
+                        let bestI=0,bestJ=1,bestD=Infinity;
+                        for (let i=0;i<clusters.length;i++) for (let j=i+1;j<clusters.length;j++){ const d = clusterDist(clusters[i], clusters[j]); if (d < bestD){ bestD=d; bestI=i; bestJ=j; } }
+                        linkage.push([bestI,bestJ,bestD, clusters[bestI].length+clusters[bestJ].length]);
+                        const merged = clusters[bestI].concat(clusters[bestJ]);
+                        if (bestJ > bestI) { clusters.splice(bestJ,1); clusters.splice(bestI,1); } else { clusters.splice(bestI,1); clusters.splice(bestJ,1); }
+                        clusters.push(merged);
+                      }
+
                       let cutClusters: number[][] = []; for (let i=0;i<features.length;i++) cutClusters.push([i]);
                       for (let m=0; m<linkage.length && cutClusters.length > k; m++) {
                         const [i,j] = linkage[m];
@@ -4076,7 +4548,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
         }
         
         setModalPreviewData(processed);
-        setShowLineChartModal(true);
+        openLineChartSafely('Noise Filter - View Data');
       };
 
       const colors = getWidgetColors('noise-filter');
@@ -4176,7 +4648,19 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                 </button>
                 <button 
                   type="button" 
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); console.log('[Noise] Apply & Close clicked'); runNoiseFilter(); setShowParameters(false); }} 
+                  onClick={async (e) => { 
+                    e.preventDefault(); 
+                    e.stopPropagation(); 
+                    console.log('[Noise] Apply & Close clicked'); 
+                    try {
+                      await runNoiseFilter();
+                      setShowParameters(false);
+                      openLineChartSafely('Noise Filter - apply');
+                    } catch (err) {
+                      console.error('[Noise] Apply & Close failed', err);
+                      setShowParameters(false);
+                    }
+                  }} 
                   className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 cursor-pointer"
                   title="Apply and close"
                   style={{ pointerEvents: 'auto' }}
@@ -4213,7 +4697,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           return kernel.map((k) => k / sum);
         };
 
-        const runSmoothing = () => {
+        const runSmoothing = async () => {
           const tableData: Record<string, any>[] = widget.data?.tableData || widget.data?.parsedData || [];
           if (!tableData || tableData.length === 0) {
             console.debug('[Baseline] no input tableData - nothing to process', tableData && tableData.length);
@@ -4302,12 +4786,18 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
                   </button>
                   <button 
                     type="button" 
-                    onClick={(e) => { 
+                    onClick={async (e) => { 
                       e.preventDefault();
                       e.stopPropagation();
                       console.log('[Smoothing] Apply & Close clicked');
-                      runSmoothing(); 
-                      setShowParameters(false); 
+                      try {
+                        await runSmoothing();
+                        setShowParameters(false);
+                        openLineChartSafely('Smoothing - apply');
+                      } catch (err) {
+                        console.error('[Smoothing] Apply & Close failed', err);
+                        setShowParameters(false);
+                      }
                     }} 
                     className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 cursor-pointer"
                     style={{ pointerEvents: 'auto' }}
@@ -4424,7 +4914,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
             const preview = buildPreview(corrected);
             setModalPreviewData(preview);
             console.debug('[Baseline] modalPreviewData set (server)', corrected && corrected.slice(0,3));
-            setShowLineChartModal(true);
+            openLineChartSafely('Baseline - server');
             return;
           } catch (err) {
             console.warn('Server baseline correction failed, falling back to client-side:', err);
@@ -4475,7 +4965,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           const preview = (xKey && yKey) ? corrected.map((r) => ({ shift: r[xKey], intensity: Number(r[yKey]) })) : corrected;
           setModalPreviewData(preview);
           console.debug('[Baseline] modalPreviewData set (js)', corrected && corrected.slice(0,3));
-          setShowLineChartModal(true);
+          openLineChartSafely('Baseline - client');
         };
 
         const colors = getWidgetColors('baseline-correction');
@@ -5077,10 +5567,10 @@ else:
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowCodeEditor(false); }}
-                        className="w-8 h-8 flex items-center justify-center bg-white text-purple-600 rounded hover:bg-gray-100 transition-colors font-bold text-lg"
+                        className="px-3 py-1.5 text-sm font-semibold bg-white text-purple-600 rounded hover:bg-gray-100 transition-colors"
                         title="Close"
                       >
-                        ×
+                        Close
                       </button>
                     </div>
                   </div>
@@ -5667,10 +6157,13 @@ else:
         >
           <div className="w-48 rounded bg-white shadow-lg dark:bg-gray-800 text-sm overflow-hidden">
             {[
-              { key: 'open', label: 'Open', shortcut: 'Enter', action: () => {
-                  // Special case: PCA with results - show inline results modal
-                  if (widget.type === 'pca-analysis' && widget.data?.pcaResults) {
-                    setShowInlineResults(true);
+                { key: 'open', label: 'Open', shortcut: 'Enter', action: () => {
+                  console.log('[CanvasWidget] Context menu Open action invoked for widget', widget.id, 'type', widget.type);
+                  // Special case: PCA - open Parameters modal (even if results exist)
+                  if (widget.type === 'pca-analysis') {
+                    setShowParameters(true);
+                    // if results exist, the user can then click View Results from parameters/inline
+                    // do not auto-open inline results here to avoid duplicate UI
                   }
                   // KMeans: if results exist, open data table, otherwise open parameters
                   else if (widget.type === 'kmeans-analysis') {
@@ -5681,7 +6174,7 @@ else:
                   else if (['noise-filter', 'baseline-correction', 'smoothing', 'normalization', 'blank-remover', 'spectral-segmentation', 'future-extraction', 'custom-code', 'pca-analysis'].includes(widget.type)) {
                     setShowParameters(true);
                   }
-                  else if (widget.type === 'hierarchical-clustering') {
+                  else if (widget.type === 'hierarchical-clustering' || widget.type === 'hierarchical') {
                     // If this widget already has data or results, ask it to open its combined outputs.
                     // Otherwise open the Parameters pane so the user can connect/configure a data source.
                     const hasData = (
@@ -5690,23 +6183,19 @@ else:
                       (widget.data?.parsedData && widget.data.parsedData.length > 0) ||
                       (widget.data?.hierarchicalResults)
                     );
-                    if (hasData) {
-                      try {
-                        console.debug('[CanvasWidget] dispatching openHierarchicalOutput(all) for', widget.id);
-                        window.dispatchEvent(new CustomEvent('openHierarchicalOutput', { detail: { widgetId: widget.id, view: 'all' } }));
-                      } catch (err) {
-                        console.debug('[CanvasWidget] openHierarchicalOutput dispatch failed', err);
-                      }
-                    } else {
-                      // No data yet - open parameters so user can configure
-                      try {
-                        console.debug('[CanvasWidget] No data - dispatching openWidgetParameters for', widget.id);
-                        window.dispatchEvent(new CustomEvent('openWidgetParameters', { detail: { widgetId: widget.id } }));
-                      } catch (err) {
-                        console.debug('[CanvasWidget] dispatch failed, falling back to local setShowParameters', err);
-                      }
-                      setShowParameters(true);
+                    // Always open the Parameters modal when user clicks Open for Hierarchical widget.
+                    // This keeps behavior consistent with Noise Filter: Open should only surface parameters,
+                    // not automatically open table/graph outputs.
+                    try {
+                      console.log('[CanvasWidget] dispatching openWidgetParameters for', widget.id);
+                      window.dispatchEvent(new CustomEvent('openWidgetParameters', { detail: { widgetId: widget.id } }));
+                    } catch (err) {
+                      console.log('[CanvasWidget] dispatch failed, falling back to local setShowParameters', err);
                     }
+                    console.log('[CanvasWidget] About to set showParameters=true for hierarchical widget', widget.id);
+                    setShowParameters(true);
+                    try { window.dispatchEvent(new CustomEvent('openWidgetLocalParameters', { detail: { widgetId: widget.id } })); console.log('[CanvasWidget] dispatched openWidgetLocalParameters for', widget.id); } catch (err) { console.log('openWidgetLocalParameters dispatch failed', err); }
+                    console.log('[CanvasWidget] setShowParameters(true) called for', widget.id);
                   }
                   // Open the appropriate modal depending on widget type
                   else if (widget.type === 'data-table') {
@@ -5731,7 +6220,7 @@ else:
                         console.warn('[CanvasWidget] Open ignored: data-table has no data for widget:', widget.id);
                       }
                     } else if (widget.type === 'line-chart') {
-                    setShowLineChartModal(true);
+                      openLineChartSafely('context-menu open');
                   } else if (widget.type === 'scatter-plot') {
                     setShowScatterModal(true);
                   } else if (widget.type === 'box-plot') {
@@ -5792,6 +6281,8 @@ else:
           <LineChartModal
             isOpen={showLineChartModal}
             onClose={() => {
+              console.log('[CanvasWidget] LineChartModal onClose called — closing modal');
+              try { justClosedRef.current = true; setTimeout(() => { try { justClosedRef.current = false; } catch (e) { /* ignore */ } }, 600); } catch (e) { /* ignore */ }
               setShowLineChartModal(false);
               setModalPreviewData(null);
             }}
@@ -5806,8 +6297,8 @@ else:
         <ScatterPlotModal
           isOpen={showScatterModal}
           onClose={() => setShowScatterModal(false)}
-          data={widget.data?.tableData || []}
-          columns={widget.data?.tableData && widget.data.tableData.length > 0 ? Object.keys(widget.data.tableData[0]) : []}
+          data={widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || []}
+          columns={(widget.data?.tableDataProcessed && widget.data.tableDataProcessed.length > 0 ? Object.keys(widget.data.tableDataProcessed[0]) : (widget.data?.tableData && widget.data.tableData.length > 0 ? Object.keys(widget.data.tableData[0]) : []))}
         />
       )}
 
@@ -5816,8 +6307,8 @@ else:
         <BoxPlotModal
           isOpen={showBoxPlotModal}
           onClose={() => setShowBoxPlotModal(false)}
-          data={widget.data?.tableData || []}
-          columns={widget.data?.tableData && widget.data.tableData.length > 0 ? Object.keys(widget.data.tableData[0]) : []}
+          data={widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || []}
+          columns={(widget.data?.tableDataProcessed && widget.data.tableDataProcessed.length > 0 ? Object.keys(widget.data.tableDataProcessed[0]) : (widget.data?.tableData && widget.data.tableData.length > 0 ? Object.keys(widget.data.tableData[0]) : []))}
         />
       )}
 
@@ -5826,8 +6317,8 @@ else:
         <BarChartModal
           isOpen={showBarChartModal}
           onClose={() => setShowBarChartModal(false)}
-          data={widget.data?.tableData || []}
-          columns={widget.data?.tableData && widget.data.tableData.length > 0 ? Object.keys(widget.data.tableData[0]) : []}
+          data={widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || []}
+          columns={(widget.data?.tableDataProcessed && widget.data.tableDataProcessed.length > 0 ? Object.keys(widget.data.tableDataProcessed[0]) : (widget.data?.tableData && widget.data.tableData.length > 0 ? Object.keys(widget.data.tableData[0]) : []))}
         />
       )}
 

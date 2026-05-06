@@ -37,21 +37,76 @@ const ScatterPlotModal = React.memo<ScatterPlotModalProps>(({
   }, [onClose]);
 
   // Pre-process data to avoid re-mapping on every render - always call hooks
-  const scatterData = React.useMemo(() => {
-    if (!data || data.length === 0) return [];
-    
-    // Data is already in the format { x, y, index, cluster }
-    // Just ensure numbers are properly formatted
-    const processed = data.map((row, i) => {
-      const point = {
-        x: Number(row.x ?? 0),
-        y: Number(row.y ?? 0),
-        cluster: row.cluster ?? 0,
-        index: row.index ?? i
-      };
-      return point;
-    });
-    return processed;
+  const { points: scatterData, xKey: chosenXKey, yKey: chosenYKey } = React.useMemo(() => {
+    if (!data || data.length === 0) return { points: [], xKey: 'x', yKey: 'y' };
+
+    // If rows already include `x`/`y`, use them. Otherwise infer two numeric columns
+    const firstRow = data[0] || {};
+    const availableKeys = (columns && columns.length > 0) ? columns : Object.keys(firstRow);
+
+    // Prefer common spectral names first (match BarChartModal logic)
+    const prefer = (keys: string[]) => {
+      for (const k of keys) {
+        const idx = availableKeys.findIndex(a => a.toLowerCase() === k.toLowerCase());
+        if (idx >= 0) return availableKeys[idx];
+      }
+      return null;
+    };
+
+    const spectralX = prefer(['wavenumber', 'raman shift', 'position', 'shift', 'x']);
+    const spectralY = prefer(['intensity', 'y', 'value', 'counts']);
+
+    let xKey = 'x';
+    let yKey = 'y';
+
+    if (spectralX && spectralY) {
+      xKey = spectralX;
+      yKey = spectralY;
+    } else {
+      const hasX = Object.prototype.hasOwnProperty.call(firstRow, 'x');
+      const hasY = Object.prototype.hasOwnProperty.call(firstRow, 'y');
+      if (hasX && hasY) {
+        xKey = 'x';
+        yKey = 'y';
+      } else {
+        // pick two numeric-like keys from availableKeys (based on first row values)
+        const numericCandidates = availableKeys.filter((k) => {
+          const v = firstRow[k];
+          return v !== undefined && v !== null && !Number.isNaN(Number(v));
+        });
+        if (numericCandidates.length >= 2) {
+          xKey = numericCandidates[0];
+          yKey = numericCandidates[1];
+        } else if (numericCandidates.length === 1) {
+          xKey = numericCandidates[0];
+          yKey = numericCandidates[0];
+        } else {
+          // fallback to first two keys or keep x/y
+          xKey = availableKeys[0] ?? 'x';
+          yKey = availableKeys[1] ?? availableKeys[0] ?? 'y';
+        }
+      }
+    }
+
+    // Normalize numeric parsing and drop invalid points
+    const processedRaw = data.map((row, i) => ({
+      rawX: row[xKey] ?? row.x,
+      rawY: row[yKey] ?? row.y,
+      cluster: row.cluster ?? row.cluster_id ?? 0,
+      index: row.index ?? i,
+    }));
+
+    const processed = processedRaw.map((r) => ({
+      x: Number(r.rawX),
+      y: Number(r.rawY),
+      cluster: r.cluster ?? 0,
+      index: r.index
+    })).filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
+
+    // Log chosen keys and a small sample of values for debugging
+    console.debug('[ScatterPlotModal] chosen keys:', { xKey, yKey, points: processed.length });
+    console.debug('[ScatterPlotModal] sample points:', processed.slice(0, 10));
+    return { points: processed, xKey, yKey };
   }, [data, columns]);
 
   // Calculate stable axis domains once - ROUND ALL VALUES to prevent floating point drift - always call hooks
@@ -212,9 +267,31 @@ const ScatterPlotModal = React.memo<ScatterPlotModalProps>(({
                   </g>
                 ))}
                 
+                {/* Tick marks and labels (X) */}
+                {xTicks && xTicks.map((tx, i) => {
+                  const px = scaleX(tx);
+                  return (
+                    <g key={`xtick-${i}`}>
+                      <line x1={px} y1={height - padding} x2={px} y2={height - padding + 6} stroke="#333" strokeWidth={1} />
+                      <text x={px} y={height - padding + 20} textAnchor="middle" fontSize={12} fill="#333">{tickFormatter(tx)}</text>
+                    </g>
+                  );
+                })}
+
+                {/* Tick marks and labels (Y) */}
+                {yTicks && yTicks.map((ty, i) => {
+                  const py = scaleY(ty);
+                  return (
+                    <g key={`ytick-${i}`}>
+                      <line x1={padding - 6} y1={py} x2={padding} y2={py} stroke="#333" strokeWidth={1} />
+                      <text x={padding - 10} y={py + 4} textAnchor="end" fontSize={12} fill="#333">{tickFormatter(ty)}</text>
+                    </g>
+                  );
+                })}
+
                 {/* Axis labels */}
-                <text x={width / 2} y={height - 20} textAnchor="middle" fontSize="14" fontWeight="600" fill="#333">PC1</text>
-                <text x={25} y={height / 2} textAnchor="middle" fontSize="14" fontWeight="600" fill="#333" transform={`rotate(-90 25 ${height / 2})`}>PC2</text>
+                <text x={width / 2} y={height - 20} textAnchor="middle" fontSize="14" fontWeight="600" fill="#333">{(typeof chosenXKey === 'string' && chosenXKey.length > 0) ? chosenXKey : 'X'}</text>
+                <text x={25} y={height / 2} textAnchor="middle" fontSize="14" fontWeight="600" fill="#333" transform={`rotate(-90 25 ${height / 2})`}>{(typeof chosenYKey === 'string' && chosenYKey.length > 0) ? chosenYKey : 'Y'}</text>
                 
                 {/* Legend */}
                 <g transform={`translate(${width - 100}, 20)`}>
