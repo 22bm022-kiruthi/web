@@ -76,6 +76,22 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
 
+// Temporary permissive preflight handler: respond to OPTIONS early with the
+// appropriate Access-Control headers. This helps Vercel-hosted frontends that
+// run preflight checks to succeed while CORS rules are still being validated.
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    const origin = req.headers.origin || '*';
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    const reqHeaders = req.headers['access-control-request-headers'] || 'Content-Type,Authorization';
+    res.setHeader('Access-Control-Allow-Headers', reqHeaders);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    return res.sendStatus(204);
+  }
+  next();
+});
+
 // Simple request logger for debugging
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} ${req.method} ${req.originalUrl}`);
@@ -102,6 +118,11 @@ app.use('/api/pca', pcaRouter);
 app.use('/api/analytics', kmeansRouter);
 // Python extraction proxy: POST /api/extract -> forwarded to Python service
 app.use('/api/extract', pyExtractRouter);
+
+// Compatibility aliases: accept non-/api routes as well so deployed frontends
+// that call `/upload` or `/health` continue to work.
+app.use('/upload', uploadRouter);
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // Prediction router (forwards to Python service)
 const predictRouter = require('./routes/predict');
