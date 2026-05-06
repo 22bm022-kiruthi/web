@@ -20,7 +20,7 @@ const FilesModal: React.FC<{ isOpen: boolean; onClose: () => void; onUseFile?: (
     if (!isOpen) return;
     setLoading(true);
     setError(null);
-    fetch('/api/upload')
+   fetch('https://spectral-api-jji3.onrender.com/api/upload')
       .then(async (r) => {
         const text = await r.text();
         if (!r.ok) throw new Error(text || `Failed to load files (status ${r.status})`);

@@ -26,4 +26,5 @@ def extract_features():
 if __name__ == "__main__":
     # Bind to localhost and disable debug/reloader to avoid the interactive
     # debugger popping up when the service is started programmatically.
-    app.run(host='127.0.0.1', port=6005, debug=False, use_reloader=False)
+    # Use port 6003 to match the Express `py_extract` proxy at 127.0.0.1:6003
+    app.run(host='127.0.0.1', port=6003, debug=False, use_reloader=False)
