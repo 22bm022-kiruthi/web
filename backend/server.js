@@ -58,6 +58,8 @@ const corsOptions = {
     if (!origin) return callback(null, true); // allow non-browser requests
     // Allow any localhost origin (dev servers often run on varying ports)
     if (origin && origin.startsWith('http://localhost')) return callback(null, true);
+    // Allow Vercel preview/deploy URLs (example: my-app.vercel.app)
+    if (origin && origin.endsWith('.vercel.app')) return callback(null, true);
     if (
       allowedOrigins.includes(origin) ||
       /^https:\/\/[a-z0-9-]+--spectraldataanalysis\.netlify\.app$/.test(origin) ||
