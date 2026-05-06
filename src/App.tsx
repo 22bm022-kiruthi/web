@@ -639,7 +639,7 @@ const App: React.FC = () => {
     autoAttachRef.current = true;
     (async () => {
         try {
-          const resp = await fetch('https://spectral-api-jji3.onrender.com/api/upload');
+          const resp = await fetch("https://spectral-api-jji3.onrender.com/upload")
           if (!resp.ok) return;
           const json = await resp.json();
           // Support both shapes: server may return an object `{ files: [...] }`
@@ -651,8 +651,8 @@ const App: React.FC = () => {
         parsedRows = normalizeParsedRows(parsedRows);
         if (!Array.isArray(parsedRows) || parsedRows.length === 0) {
           const id = active._id || active.id || active.fileId || active.file;
-          if (id) {
-            const r = await fetch('https://spectral-api-jji3.onrender.com/api/upload/' + encodeURIComponent(id));
+            if (id) {
+            const r = await fetch('https://spectral-api-jji3.onrender.com/upload/' + encodeURIComponent(id));
             if (r.ok) {
               const body = await r.json();
               parsedRows = body.parsedData || body.data?.parsedData || body.parsed || [];

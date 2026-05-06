@@ -59,10 +59,10 @@ export function useBackendHealth(checkInterval: number = 30000) {
       const candidates: string[] = [];
       if (envApi) {
         const base = envApi.replace(/\/$/, '');
-        candidates.push(`${base}/api/health`);
+        candidates.push(`${base}/health`);
       }
       // Relative first (lets dev proxy handle it), then direct IPv4/localhost
-      candidates.push('/api/health', 'http://127.0.0.1:5003/api/health', 'http://localhost:5003/api/health');
+      candidates.push('/health', 'http://127.0.0.1:5003/health', 'http://localhost:5003/health');
 
       let lastMsg: string | null = null;
       for (const url of candidates) {

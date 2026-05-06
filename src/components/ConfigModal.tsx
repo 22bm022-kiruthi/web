@@ -113,7 +113,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, widget, onClose, onUp
     try {
       // Use VITE_API_URL if available
       const apiUrl = import.meta.env.VITE_API_URL || '';
-      const uploadUrl = apiUrl ? `${apiUrl}/upload` : '/api/upload';
+      const uploadUrl = apiUrl ? `${apiUrl}/upload` : '/upload';
       const response = await fetch(uploadUrl, {
         method: 'POST',
         body: formData,
