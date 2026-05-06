@@ -20,7 +20,7 @@ const FilesModal: React.FC<{ isOpen: boolean; onClose: () => void; onUseFile?: (
     if (!isOpen) return;
     setLoading(true);
     setError(null);
-   fetch("https://spectral-api-jji3.onrender.com/extract")
+  fetch('https://spectral-api-jji3.onrender.com/api/upload')
       .then(async (r) => {
         const text = await r.text();
         if (!r.ok) throw new Error(text || `Failed to load files (status ${r.status})`);
@@ -39,7 +39,7 @@ const FilesModal: React.FC<{ isOpen: boolean; onClose: () => void; onUseFile?: (
   const activate = async (id: string) => {
     try {
       setLoading(true);
-      const res = await fetch(`/upload/${id}/activate`, { method: 'POST' });
+      const res = await fetch(`/api/upload/${id}/activate`, { method: 'POST' });
       if (!res.ok) throw new Error('Activation failed');
       await res.json();
       // update list locally
@@ -47,7 +47,7 @@ const FilesModal: React.FC<{ isOpen: boolean; onClose: () => void; onUseFile?: (
       // fetch full file and optionally pass to caller
       if (onUseFile) {
         try {
-          const r2 = await fetch(`/upload/${id}`);
+          const r2 = await fetch(`/api/upload/${id}`);
           if (!r2.ok) throw new Error('Failed to fetch file');
           const j2 = await r2.json();
           onUseFile(j2.file);
@@ -91,7 +91,7 @@ const FilesModal: React.FC<{ isOpen: boolean; onClose: () => void; onUseFile?: (
                     setLoading(true);
                     setError(null);
                     try {
-                      const r = await fetch(`/upload/${f._id}`);
+                      const r = await fetch(`/api/upload/${f._id}`);
                       if (!r.ok) throw new Error('Failed to fetch file');
                       const j = await r.json();
                       setPreviewData(j.file?.parsedData || j.parsedData || []);

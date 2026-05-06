@@ -599,7 +599,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       // Use fetchToBackend helper which retries the Vite proxy and direct backend hosts
       const fd = new FormData();
       fd.append('file', file);
-      const res = await fetchToBackend('/upload', { method: 'POST', body: fd });
+      const res = await fetchToBackend('/api/upload', { method: 'POST', body: fd });
       if (!res.ok) {
         const txt = await res.text().catch(() => `status ${res.status}`);
         setUploadErrorLocal(`Upload failed (${txt})`);
