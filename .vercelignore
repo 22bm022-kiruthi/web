@@ -1,0 +1,12 @@
+/backend/
+/backend/**
+/dataset/
+/wheels/
+/samples/
+/requirements.txt
+*.py
+.venv/
+.env
+__pycache__/
+*.sqlite
+*.db
