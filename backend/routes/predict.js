@@ -81,17 +81,32 @@ router.post('/', async (req, res) => {
     }
     if (!resp) return res.status(502).json({ error: 'No response from Python service' });
 
+    // If Python returned non-200, surface it
+    if (resp.status !== 200) {
+      console.error('[routes/predict] Python service returned status', resp.status, 'body:', resp.data);
+      return res.status(502).json({ error: 'Python service error', status: resp.status, python: resp.data });
+    }
+
     // Attach computed peaks if available
     const d = resp.data;
+    if (!d) return res.status(502).json({ error: 'Empty response from Python service' });
+
+    // If prediction field missing/null, return diagnostics to caller
+    if (typeof d === 'object' && (d.prediction === null || d.prediction === undefined) && (d.result === null || d.result === undefined)) {
+      console.warn('[routes/predict] Python returned no prediction:', JSON.stringify(d).slice(0,1000));
+      return res.status(502).json({ error: 'Prediction missing from Python service response', python: d, peaks: computedPeaks });
+    }
+
     if (d && typeof d === 'object') {
       const out = Object.assign({}, d, { peaks: computedPeaks });
-      if (out.prediction || out.result) return res.json({ prediction: out.prediction || out.result, ...out });
-      return res.json(out);
+      return res.json({ prediction: out.prediction || out.result, ...out });
     }
+
     if (typeof d === 'string') {
       return res.json({ prediction: d, raw: d, peaks: computedPeaks });
     }
-    return res.status(502).json({ error: 'Empty response from Python service' });
+
+    return res.status(502).json({ error: 'Unexpected response from Python service', python: d });
   } catch (err) {
     try {
       console.error('[routes/predict] error forwarding to Python service:', err && err.message ? err.message : err);
