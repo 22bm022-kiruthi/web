@@ -60,6 +60,11 @@ const corsOptions = {
     if (origin && origin.startsWith('http://localhost')) return callback(null, true);
     // Allow Vercel preview/deploy URLs (example: my-app.vercel.app)
     if (origin && origin.endsWith('.vercel.app')) return callback(null, true);
+    // Also allow specific deployed frontend hostnames if set via env (convenience)
+    try {
+      const extra = (process.env.ALLOWED_FRONTEND_HOSTS || '').split(',').map(s => s.trim()).filter(Boolean);
+      if (extra.length && extra.includes(origin)) return callback(null, true);
+    } catch (e) { /* ignore */ }
     if (
       allowedOrigins.includes(origin) ||
       /^https:\/\/[a-z0-9-]+--spectraldataanalysis\.netlify\.app$/.test(origin) ||

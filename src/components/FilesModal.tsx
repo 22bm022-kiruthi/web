@@ -20,7 +20,8 @@ const FilesModal: React.FC<{ isOpen: boolean; onClose: () => void; onUseFile?: (
     if (!isOpen) return;
     setLoading(true);
     setError(null);
-  fetch('https://spectral-api-jji3.onrender.com/api/upload')
+    // Use local backend upload listing endpoint so FilesModal is consistent with app backend
+    fetch('/api/upload')
       .then(async (r) => {
         const text = await r.text();
         if (!r.ok) throw new Error(text || `Failed to load files (status ${r.status})`);
