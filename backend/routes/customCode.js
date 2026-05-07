@@ -6,9 +6,28 @@ const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
 // Initialize Supabase client with SERVICE_KEY for admin operations
-const supabaseUrl = process.env.SUPABASE_URL || 'https://zatafiglyptbujqzsohc.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphdGFmaWdseXB0YnVqcXpzb2hjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTE5MjY2NywiZXhwIjoyMDc2NzY4NjY3fQ.9Fb2TCZ7L0sD3kAUXotQhiLu3zg0lgPGCb5CotbQ9fA';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || '';
+let supabase = null;
+try {
+  if (typeof supabaseUrl === 'string' && supabaseUrl.match(/^https?:\/\//) && supabaseKey) {
+    supabase = createClient(supabaseUrl, supabaseKey);
+  } else {
+    console.warn('[Supabase] SUPABASE_URL or key missing or malformed — Supabase client not initialized');
+    supabase = null;
+  }
+} catch (err) {
+  console.warn('[Supabase] Failed to initialize Supabase client:', err.message);
+  supabase = null;
+}
+
+function ensureSupabaseConfigured(res) {
+  if (!supabase) {
+    res.status(503).json({ error: 'Supabase not configured on this server' });
+    return false;
+  }
+  return true;
+}
 
 /**
  * Execute custom Python code directly via child_process
@@ -173,6 +192,8 @@ router.post('/save', async (req, res) => {
       return res.status(400).json({ error: 'Name and code are required' });
     }
 
+    if (!ensureSupabaseConfigured(res)) return;
+
     // Insert into Supabase
     const { data, error } = await supabase
       .from('custom_widgets')
@@ -226,6 +247,8 @@ router.get('/list', async (req, res) => {
       query = query.eq('author', author);
     }
 
+    if (!ensureSupabaseConfigured(res)) return;
+
     const { data, error } = await query;
 
     if (error) {
@@ -251,6 +274,8 @@ router.get('/list', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!ensureSupabaseConfigured(res)) return;
 
     const { data, error } = await supabase
       .from('custom_widgets')
@@ -297,6 +322,8 @@ router.put('/:id', async (req, res) => {
     if (tags) updates.tags = tags;
     updates.updated_at = new Date().toISOString();
 
+    if (!ensureSupabaseConfigured(res)) return;
+
     const { data, error } = await supabase
       .from('custom_widgets')
       .update(updates)
@@ -329,6 +356,8 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!ensureSupabaseConfigured(res)) return;
 
     const { error } = await supabase
       .from('custom_widgets')
