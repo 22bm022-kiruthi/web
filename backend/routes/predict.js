@@ -122,4 +122,29 @@ router.post('/', async (req, res) => {
   }
 });
 
+// GET /api/predict/diagnostics - report PY_PREDICT_URL and attempt a short POST
+router.get('/diagnostics', async (req, res) => {
+  try {
+    const pyUrl = process.env.PY_PREDICT_URL || 'http://127.0.0.1:6004/predict';
+    const info = { pyUrl, reachable: false };
+    try {
+      const sanity = { signal: [0,1,2] };
+      const resp = await axios.post(pyUrl, sanity, { timeout: 5000 }).catch(e => { throw e; });
+      info.reachable = true;
+      info.status = resp.status;
+      info.pythonResponse = resp.data;
+      return res.json({ ok: true, info });
+    } catch (errPing) {
+      info.error = String(errPing && (errPing.message || errPing));
+      if (errPing && errPing.response) {
+        info.status = errPing.response.status;
+        info.pythonResponse = errPing.response.data;
+      }
+      return res.status(502).json({ ok: false, info });
+    }
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
 module.exports = router;
