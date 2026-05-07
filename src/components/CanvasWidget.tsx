@@ -980,13 +980,16 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
             }
             const body = await resp.json().catch(() => null);
             console.debug('[predictNow] backend body:', body);
-            const pred = body?.prediction || body?.result || null;
+            const pred = body?.prediction || body?.result || (body?.python && (body.python.prediction || body.python.result)) || null;
             // ensure we update the widget with the backend's `prediction` key
             if (pred !== null && onUpdateWidget) {
               onUpdateWidget({ data: { ...(widget.data || {}), prediction: pred, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload, lastResponse: body } } });
             } else {
-              // no prediction returned — clear temporary indicator
-              try { if (onUpdateWidget) onUpdateWidget({ data: { ...(widget.data || {}), prediction: null, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload, lastResponse: body } } }); } catch (e) { /* ignore */ }
+              // no prediction returned — store diagnostics so the UI can show useful info
+              const diag = body?.error || (body?.python && (body.python.error || body.python.message)) || (typeof body === 'string' ? body : null) || (body ? JSON.stringify(body).slice(0,500) : 'no response');
+              try {
+                if (onUpdateWidget) onUpdateWidget({ data: { ...(widget.data || {}), prediction: null, predictionDiagnostic: diag, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload, lastResponse: body, lastResponseError: diag } } });
+              } catch (e) { /* ignore */ }
             }
             try { window.dispatchEvent(new CustomEvent('predictDone', { detail: { widgetId: widget.id, prediction: pred, raw: body, payload, source: 'server' } })); } catch (e) { /* ignore */ }
           } catch (err) {
