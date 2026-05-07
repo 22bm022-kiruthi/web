@@ -4,21 +4,22 @@ import numpy as np
 import pandas as pd
 from sklearn.neighbors import KNeighborsClassifier
 import joblib
-import firebase_admin
-from firebase_admin import credentials, firestore
 
 app = Flask(__name__)
 
 # ---------------- FIREBASE ----------------
 db = None
 try:
+    # Make Firebase optional: import only if credentials/path present
+    import firebase_admin
+    from firebase_admin import credentials, firestore
     cred_path = os.environ.get("FIREBASE_CRED_PATH", "serviceAccountKey.json")
     if os.path.exists(cred_path):
         cred = credentials.Certificate(cred_path)
         firebase_admin.initialize_app(cred)
         db = firestore.client()
         print("Firebase Connected ✔")
-except:
+except Exception:
     print("Firebase not connected")
 
 # ---------------- MODEL LOADING / TRAINING ----------------
@@ -141,7 +142,8 @@ def predict():
 
 # ---------------- RUN ----------------
 if __name__ == "__main__":
-    # Run the Python prediction service bound to localhost and
-    # disable the Flask debugger and reloader so it doesn't open
-    # interactive debugger windows when spawned by the Node server.
-    app.run(host='127.0.0.1', port=6004, debug=False, use_reloader=False)
+    # Bind to host/port provided by the environment (Render sets PORT).
+    port = int(os.environ.get("PORT", os.environ.get("PY_PREDICT_PORT", 6004)))
+    host = os.environ.get("HOST", "0.0.0.0")
+    # Disable debugger and reloader for production use and when spawned.
+    app.run(host=host, port=port, debug=False, use_reloader=False)

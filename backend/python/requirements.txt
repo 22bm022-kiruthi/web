@@ -1,6 +1,3 @@
-flask
-numpy
-scipy
 Flask==2.3.2
 Flask-Cors==4.0.0
 numpy==1.26.4
@@ -8,3 +5,5 @@ scipy==1.12.1
 openpyxl==3.1.2
 scikit-learn==1.3.2
 pandas==2.2.2
+gunicorn==21.2.0
+joblib==1.3.2
