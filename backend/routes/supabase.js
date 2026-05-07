@@ -21,16 +21,34 @@ if (!allowedTables.includes('data')) {
 }
 
 const getSupabaseHeaders = () => {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY;
+  let url = process.env.SUPABASE_URL || '';
+  const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || '';
   const headers = { 'Content-Type': 'application/json' };
   if (key) headers['apikey'] = key;
   if (key) headers['Authorization'] = `Bearer ${key}`;
   // For debugging: do not log the full key, only show which kind is used and a short redacted prefix
   const keyType = process.env.SUPABASE_SERVICE_KEY ? 'service_role' : (process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY) ? 'anon/publishable' : 'none';
   const keyRedacted = key ? `${String(key).slice(0, 8)}...[REDACTED]` : null;
-  console.log(`Supabase headers prepared. URL present: ${!!url}, keyType: ${keyType}, keyPrefix: ${keyRedacted}`);
-  return { url, headers, keyType };
+
+  // Normalize URL: if provided without scheme, assume https
+  let normalized = url;
+  if (normalized && !/^https?:\/\//i.test(normalized)) {
+    normalized = `https://${normalized.replace(/^\/+/, '')}`;
+    console.log('[Supabase] Normalized SUPABASE_URL by prepending https://');
+  }
+
+  // Quick validation: try constructing a URL object
+  let valid = false;
+  try {
+    if (normalized) new URL(normalized);
+    valid = !!normalized;
+  } catch (e) {
+    console.warn('[Supabase] SUPABASE_URL appears malformed:', normalized, e && e.message ? e.message : e);
+    valid = false;
+  }
+
+  console.log(`Supabase headers prepared. URL present: ${!!normalized}, keyType: ${keyType}, keyPrefix: ${keyRedacted}`);
+  return { url: normalized, headers, keyType, valid };
 };
 
 // GET /api/supabase/fetch?table=raman_data&limit=10&filter=Sample name.eq.Polystyrene (PS)
@@ -55,10 +73,10 @@ router.get('/fetch', async (req, res) => {
     }
     const limitParam = req.query.limit;
     
-    const { url, headers, keyType } = getSupabaseHeaders();
+    const { url, headers, keyType, valid } = getSupabaseHeaders();
     console.log('Supabase URL:', url);
-    console.log('Supabase fetch requested for table:', table, 'using keyType:', keyType);
-    if (!url) return res.status(500).json({ error: 'SUPABASE_URL not configured on server' });
+    console.log('Supabase fetch requested for table:', table, 'using keyType:', keyType, 'urlValid:', valid);
+    if (!valid) return res.status(503).json({ error: 'SUPABASE_URL not configured or malformed on server' });
 
     // Build fetch URL with proper PostgREST query syntax
     let fetchUrl = `${url.replace(/\/$/, '')}/rest/v1/${encodeURIComponent(table)}?`;
@@ -160,8 +178,8 @@ router.post('/insert', express.json(), async (req, res) => {
   try {
     const { table, rows } = req.body;
     if (!table || !rows) return res.status(400).json({ error: 'table and rows are required' });
-    const { url, headers } = getSupabaseHeaders();
-    if (!url) return res.status(500).json({ error: 'SUPABASE_URL not configured on server' });
+    const { url, headers, valid } = getSupabaseHeaders();
+    if (!valid) return res.status(503).json({ error: 'SUPABASE_URL not configured or malformed on server' });
 
     const fetchUrl = `${url.replace(/\/$/, '')}/rest/v1/${encodeURIComponent(table)}`;
     const resp = await axios.post(fetchUrl, rows, { headers });
