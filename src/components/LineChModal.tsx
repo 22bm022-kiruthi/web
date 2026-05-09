@@ -60,6 +60,25 @@ const LineChartModal: React.FC<LineChartModalProps> = ({
   console.log('[LineChart] Available columns:', procColumns);
   console.log('[LineChart] Data sample:', processedData[0]);
 
+  // Quick heuristic: if the data looks like a feature/statistics table
+  // (columns: feature, value, category) prefer plotting `feature` vs `value`.
+  const hasFeatureValue = procColumns.some(c => c.toLowerCase() === 'feature') && procColumns.some(c => c.toLowerCase() === 'value');
+  if (hasFeatureValue) {
+    console.debug('[LineChart] Detected feature/value table — defaulting X=feature Y=value');
+    const featureCol = procColumns.find(c => c.toLowerCase() === 'feature') as string;
+    const valueCol = procColumns.find(c => c.toLowerCase() === 'value') as string;
+    // allow early-return path: render simple chart using these columns
+    const [selectedXQuick, selectedYQuick] = [featureCol, valueCol];
+    // ensure numeric coercion for value column
+    const quickChartData = processedData.map((row, idx) => ({ [selectedXQuick]: row[selectedXQuick], [selectedYQuick]: Number(row[selectedYQuick]) }));
+    // Render fallback modal quickly if only feature/value present
+    // This avoids confusing automatic detection when the app passes stats instead of spectra
+    // Continue to full selection below but prefer these defaults
+    // fall through to normal flow but set defaults
+    var quickDefaultX = selectedXQuick;
+    var quickDefaultY = selectedYQuick;
+  }
+
   // Prefer an explicit "x"-like column if present
   // For Raman spectroscopy, prioritize shift/wavenumber columns
   const lowerCols = procColumns.map((c) => (c || '').toLowerCase());
@@ -165,6 +184,14 @@ const LineChartModal: React.FC<LineChartModalProps> = ({
   if (!yKey) {
     const others = procColumns.filter((c) => c !== xKey);
     yKey = others.length ? others[0] : null;
+  }
+  // If this looks like a feature/value table, prefer value over category
+  if (yKey && yKey.toLowerCase() === 'category' && procColumns.some(c => c.toLowerCase() === 'value')) {
+    const vf = procColumns.find(c => c.toLowerCase() === 'value');
+    if (vf) {
+      console.debug(`[LineChart] Replacing Y='${yKey}' with numeric 'value' column '${vf}'`);
+      yKey = vf;
+    }
   }
   // Ensure the chosen Y column is numeric; if not, prefer the first numeric column available
   if (yKey && processedData && processedData.length > 0) {
