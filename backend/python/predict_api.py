@@ -140,6 +140,28 @@ def predict():
         "prediction": prediction
     })
 
+
+# ---------------- HEALTHCHECK ----------------
+@app.route("/health", methods=["GET"])
+def health():
+    try:
+        return jsonify({
+            "ok": True,
+            "model_loaded": model is not None,
+            "min_len": min_len
+        })
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+
+
+# ---------------- RUN ----------------
+if __name__ == "__main__":
+    # Bind to host/port provided by the environment (Render sets PORT).
+    port = int(os.environ.get("PORT", os.environ.get("PY_PREDICT_PORT", 6004)))
+    host = os.environ.get("HOST", "0.0.0.0")
+    # Disable debugger and reloader for production use and when spawned.
+    app.run(host=host, port=port, debug=False, use_reloader=False)
+
 # ---------------- RUN ----------------
 if __name__ == "__main__":
     # Bind to host/port provided by the environment (Render sets PORT).
