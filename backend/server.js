@@ -107,7 +107,7 @@ app.use((req, res, next) => {
 // Supabase-first mode: if you have a Mongo URI you can re-add mongoose connection,
 // otherwise the server will use Supabase (configured by SUPABASE_URL/SUPABASE_SERVICE_KEY)
 if (!process.env.MONGO_URI) {
-  console.warn('WARN: MONGO_URI not set — running in Supabase-only / local-fallback mode');
+  console.warn('WARN: MONGO_URI not set — running in Supabase-only / local-fallback mode. To enable MongoDB set the MONGO_URI env variable (or add it to backend/.env). See README.md for setup instructions.');
 } else {
   // Optional: if a MONGO_URI is provided, you may add mongoose connection logic here.
   console.log('MONGO_URI provided — but mongoose connection is currently disabled in Supabase-only mode');
@@ -154,6 +154,28 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
 });
+
+// Debug: log configured PY_PREDICT_URL and list registered routes to aid deployments
+function listRegisteredRoutes() {
+  try {
+    const routes = [];
+    if (app && app._router && app._router.stack) {
+      app._router.stack.forEach(layer => {
+        if (layer.route && layer.route.path) {
+          const methods = Object.keys(layer.route.methods || {}).map(m => m.toUpperCase()).join(',');
+          routes.push(`${methods} ${layer.route.path}`);
+        } else if (layer.name === 'router' && layer.regexp) {
+          // show a hint for nested routers
+          routes.push(`<router> ${layer.regexp}`);
+        }
+      });
+    }
+    console.log('PY_PREDICT_URL:', process.env.PY_PREDICT_URL);
+    console.log('Registered routes:', routes);
+  } catch (e) {
+    console.warn('Failed to list registered routes', e && e.message ? e.message : e);
+  }
+}
 
 // Explicitly bind to 0.0.0.0 (IPv4) to ensure local IPv4 clients (127.0.0.1) can connect reliably on Windows
 app.listen(PORT, '0.0.0.0', () => {

@@ -7,7 +7,19 @@ const { spawn } = require('child_process');
 router.post('/', async (req, res) => {
   try {
     console.debug('[routes/predict] incoming request body:', JSON.stringify(req.body).slice(0, 200));
-    const pyUrl = process.env.PY_PREDICT_URL || 'http://127.0.0.1:6004/predict';
+    // Normalize PY_PREDICT_URL: allow values like 'https://host' or full 'https://host/predict'
+    const pyUrlEnv = process.env.PY_PREDICT_URL || 'http://127.0.0.1:6004/predict';
+    let pyUrl = pyUrlEnv;
+    try {
+      const u = new URL(pyUrlEnv);
+      if (!u.pathname || u.pathname === '/') {
+        pyUrl = pyUrlEnv.replace(/\/+$/, '') + '/predict';
+      }
+    } catch (e) {
+      // If URL parse fails, fall back to raw env value
+      pyUrl = pyUrlEnv;
+    }
+    console.debug('[routes/predict] resolved PY_PREDICT_URL ->', pyUrl);
 
     // Try to compute an authoritative peak count using the Python feature_extraction script
     const incomingSignal = req.body && req.body.signal ? req.body.signal : null;
@@ -125,7 +137,17 @@ router.post('/', async (req, res) => {
 // GET /api/predict/diagnostics - report PY_PREDICT_URL and attempt a short POST
 router.get('/diagnostics', async (req, res) => {
   try {
-    const pyUrl = process.env.PY_PREDICT_URL || 'http://127.0.0.1:6004/predict';
+    const pyUrlEnv = process.env.PY_PREDICT_URL || 'http://127.0.0.1:6004/predict';
+    let pyUrl = pyUrlEnv;
+    try {
+      const u = new URL(pyUrlEnv);
+      if (!u.pathname || u.pathname === '/') {
+        pyUrl = pyUrlEnv.replace(/\/+$/, '') + '/predict';
+      }
+    } catch (e) {
+      pyUrl = pyUrlEnv;
+    }
+    console.debug('[routes/predict] diagnostics using PY_PREDICT_URL ->', pyUrl);
     const info = { pyUrl, reachable: false };
     try {
       const sanity = { signal: [0,1,2] };
