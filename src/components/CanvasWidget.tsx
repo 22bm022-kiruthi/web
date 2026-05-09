@@ -472,7 +472,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
     console.debug('[CanvasWidget] showParameters changed for', widget.id, '->', showParameters);
   }, [showParameters, widget.id]);
 
-  // Helper to try multiple backend endpoints (relative -> 127.0.0.1:5003 -> localhost:5003)
+  // Helper to try multiple backend endpoints (relative -> production backend)
   const fetchToBackend = async (path: string, options?: RequestInit) => {
     // Try the relative path first so Vite dev server proxy (if configured) can forward the request.
     // Fallback candidates include IPv4 localhost and hostname. Increase timeout slightly for local services.
@@ -489,8 +489,9 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
       const base = envApi.replace(/\/$/, '');
       candidates.push(`${base}${path}`);
     }
-    // Prefer direct local backend endpoints first to avoid proxy timing issues
-    candidates.push(`http://127.0.0.1:5003${path}`, `http://localhost:5003${path}`, path);
+    // Prefer production backend endpoint and fall back to relative path
+    // Replace default localhost candidates with the deployed backend URL
+    candidates.push(`https://spectral-api-jji3.onrender.com${path}`, path);
     console.debug('[CanvasWidget] fetchToBackend candidate order:', candidates);
     let lastError: any = null;
     for (const url of candidates) {
@@ -4024,7 +4025,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
         const original = tableData || [];
         try {
           // Prefer calling the Node backend proxy so client doesn't need to reach the Python service directly.
-          // fetchToBackend will try http://127.0.0.1:5003 first, then fall back to relative path.
+          // fetchToBackend will try the production backend first, then fall back to relative path.
           const resp = await fetchToBackend('/api/analytics/kmeans', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
