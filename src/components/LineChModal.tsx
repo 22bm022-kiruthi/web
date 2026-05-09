@@ -166,6 +166,17 @@ const LineChartModal: React.FC<LineChartModalProps> = ({
     const others = procColumns.filter((c) => c !== xKey);
     yKey = others.length ? others[0] : null;
   }
+  // Ensure the chosen Y column is numeric; if not, prefer the first numeric column available
+  if (yKey && processedData && processedData.length > 0) {
+    const sampleVal = processedData[0][yKey];
+    if (sampleVal === undefined || sampleVal === null || isNaN(Number(sampleVal))) {
+      const numericFallback = procColumns.find((c) => c !== xKey && processedData[0] && processedData[0][c] !== undefined && processedData[0][c] !== null && !isNaN(Number(processedData[0][c])));
+      if (numericFallback) {
+        console.debug(`[LineChart] Auto-selected Y column '${yKey}' is non-numeric — switching to numeric column '${numericFallback}'`);
+        yKey = numericFallback;
+      }
+    }
+  }
   const yKeys = yKey ? [yKey] : [];
 
   // allow the user to override which columns are used for X and Y in the modal
