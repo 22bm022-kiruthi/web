@@ -174,11 +174,42 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, widget, onClose, onUp
           const normalizeIntensityKeyLocal = (cols: string[], firstRow: any) => {
             const intensityPattern = /raman.*intens|intens.*raman|intensity|^value$|^y$/i;
             const positionPattern = /pos|shift|position|x|wavenumber|raman shift/i;
+            // 1) explicit name match
             let key = cols.find(c => intensityPattern.test(c));
             if (key) return key;
-            key = cols.find(c => !positionPattern.test(c) && !isNaN(Number(firstRow?.[c])));
-            if (key) return key;
-            return cols.find(c => !isNaN(Number(firstRow?.[c]))) || null;
+
+            // 2) find all numeric columns
+            const numericCols = cols.filter(c => !isNaN(Number(firstRow?.[c])));
+            if (numericCols.length === 0) return null;
+
+            // 3) prefer numeric column that is NOT a position-like column
+            const nonPos = numericCols.filter(c => !positionPattern.test(c));
+            const candidates = nonPos.length ? nonPos : numericCols;
+
+            // 4) pick the column with largest variance (most signal-like) or one that's not strictly monotonic
+            try {
+              const arrays = candidates.map(c => ({
+                col: c,
+                vals: (Array.isArray(tableData) ? tableData : []).map((r: any) => Number(r[c])).filter(v => !isNaN(v))
+              })).filter(a => a.vals.length > 2);
+              if (arrays.length === 0) return candidates[0] || null;
+
+              // compute variance and monotonicity
+              const scored = arrays.map(a => {
+                const vals = a.vals;
+                const mean = vals.reduce((s: number, v: number) => s + v, 0) / vals.length;
+                const variance = vals.reduce((s: number, v: number) => s + (v - mean) ** 2, 0) / vals.length;
+                // monotonic check: count sign changes in differences
+                let diffs = 0;
+                for (let i = 2; i < vals.length; i++) if (Math.sign(vals[i] - vals[i - 1]) !== Math.sign(vals[i - 1] - vals[i - 2])) diffs++;
+                // fallback score: prefer higher variance and more local changes
+                return { col: a.col, score: variance + diffs };
+              });
+              scored.sort((a, b) => b.score - a.score);
+              return scored[0].col;
+            } catch (e) {
+              return candidates[0] || null;
+            }
           };
           let intensityKey = normalizeIntensityKeyLocal(cols, tableData[0]);
           if (!intensityKey) { alert('Could not determine intensity column to compute features.'); onClose(); return; }
@@ -208,11 +239,41 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, widget, onClose, onUp
         const normalizeIntensityKeyLocal = (cols: string[], firstRow: any) => {
           const intensityPattern = /raman.*intens|intens.*raman|intensity|^value$|^y$/i;
           const positionPattern = /pos|shift|position|x|wavenumber|raman shift/i;
+          // 1) explicit name match
           let key = cols.find(c => intensityPattern.test(c));
           if (key) return key;
-          key = cols.find(c => !positionPattern.test(c) && !isNaN(Number(firstRow?.[c])));
-          if (key) return key;
-          return cols.find(c => !isNaN(Number(firstRow?.[c]))) || null;
+
+          // 2) find all numeric columns
+          const numericCols = cols.filter(c => !isNaN(Number(firstRow?.[c])));
+          if (numericCols.length === 0) return null;
+
+          // 3) prefer numeric column that is NOT a position-like column
+          const nonPos = numericCols.filter(c => !positionPattern.test(c));
+          const candidates = nonPos.length ? nonPos : numericCols;
+
+          // 4) pick the column with largest variance (most signal-like) or one that's not strictly monotonic
+          try {
+            const arrays = candidates.map(c => ({
+              col: c,
+              vals: (Array.isArray(tableData) ? tableData : []).map((r: any) => Number(r[c])).filter(v => !isNaN(v))
+            })).filter(a => a.vals.length > 2);
+            if (arrays.length === 0) return candidates[0] || null;
+
+            // compute variance and monotonicity
+            const scored = arrays.map(a => {
+              const vals = a.vals;
+              const mean = vals.reduce((s: number, v: number) => s + v, 0) / vals.length;
+              const variance = vals.reduce((s: number, v: number) => s + (v - mean) ** 2, 0) / vals.length;
+              // monotonic check: count sign changes in second differences
+              let diffs = 0;
+              for (let i = 2; i < vals.length; i++) if (Math.sign(vals[i] - vals[i - 1]) !== Math.sign(vals[i - 1] - vals[i - 2])) diffs++;
+              return { col: a.col, score: variance + diffs };
+            });
+            scored.sort((a, b) => b.score - a.score);
+            return scored[0].col;
+          } catch (e) {
+            return candidates[0] || null;
+          }
         };
         let intensityKey = normalizeIntensityKeyLocal(cols, tableData[0]);
         if (!intensityKey) { alert('Could not determine intensity column to extract peaks.'); onClose(); return; }
