@@ -412,11 +412,27 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, widget, onClose, onUp
           </button>
           <button onClick={() => {
             try {
-              const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
-              const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || widget.data?.tableDataForecast || []);
-              const tableData = Array.isArray(best) ? best : [];
+              // Prefer raw parsed spectral data (`parsedData` or `tableData`) for plotting.
+              // If `tableDataProcessed` looks like a feature/value summary (columns `feature`/`value`),
+              // avoid plotting that and fall back to the raw spectral arrays.
+              const parsed = widget.data?.parsedData;
+              const table = widget.data?.tableData;
+              const proc = widget.data?.tableDataProcessed;
+
+              const looksLikeFeatureValue = Array.isArray(proc) && proc.length > 0 && typeof proc[0] === 'object' &&
+                Object.keys(proc[0]).some(k => /feature/i.test(k)) && Object.keys(proc[0]).some(k => /value/i.test(k));
+
+              let tableData: any[] = [];
+              if (Array.isArray(parsed) && parsed.length > 0) tableData = parsed;
+              else if (Array.isArray(table) && table.length > 0) tableData = table;
+              else if (Array.isArray(proc) && proc.length > 0 && !looksLikeFeatureValue) tableData = proc;
+              else if (Array.isArray(proc) && proc.length > 0 && looksLikeFeatureValue) {
+                // prefer parsed/table even if empty; in this case proc is a summary so we consider it not usable for spectral plot
+                tableData = [];
+              } else tableData = widget.data?.tableDataForecast || [];
+
               if (!tableData || tableData.length === 0) { alert('No input data available to plot. Connect a data source first.'); return; }
-              console.debug('[ConfigModal] dispatching openLineChart for widget', widget.id, 'rows:', tableData.length);
+              console.debug('[ConfigModal] dispatching openLineChart for widget', widget.id, 'rows:', tableData.length, 'source:', Array.isArray(parsed) && parsed.length > 0 ? 'parsedData' : Array.isArray(table) && table.length > 0 ? 'tableData' : 'tableDataProcessed');
               try { window.dispatchEvent(new CustomEvent('openLineChart', { detail: { widgetId: widget.id, data: tableData } })); } catch (e) { console.error(e); }
             } catch (e) { console.error(e); }
           }} className="px-4 py-2 rounded-lg btn-outline">
