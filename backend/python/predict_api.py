@@ -123,6 +123,23 @@ def predict():
 
         prediction = model.predict(vals)[0]
 
+        # Explainability: return class probabilities (if available), top-3 candidates,
+        # and the processed vector that was fed to the model.
+        processed_vector = vals.flatten().tolist()
+        probabilities = None
+        top3 = None
+        try:
+            if hasattr(model, 'predict_proba'):
+                prob_arr = model.predict_proba(vals)[0]
+                classes = list(model.classes_)
+                probabilities = {str(c): float(p) for c, p in zip(classes, prob_arr)}
+                # top-3
+                idx = prob_arr.argsort()[::-1][:3]
+                top3 = [{"class": str(classes[i]), "prob": float(prob_arr[i])} for i in idx]
+        except Exception:
+            probabilities = None
+            top3 = None
+
     except Exception as e:
         return jsonify({"error": str(e)})
 
@@ -136,9 +153,16 @@ def predict():
     except:
         pass
 
-    return jsonify({
-        "prediction": prediction
-    })
+    resp = {"prediction": prediction}
+    try:
+        if probabilities is not None:
+            resp['probabilities'] = probabilities
+        if top3 is not None:
+            resp['top3'] = top3
+        resp['processed_vector'] = processed_vector
+    except Exception:
+        pass
+    return jsonify(resp)
 
 
 # ---------------- HEALTHCHECK ----------------
