@@ -35,14 +35,44 @@ import ParametersModal from './ParametersModal';
 import { computeSignalMetrics, calcStd } from '../utils/signalMetrics';
 
 // Choose the most likely intensity column from parsed table columns.
-const normalizeIntensityKey = (cols: string[], firstRow: any) => {
+// Accepts optional `rows` (array of table rows) to score candidates by variance/changes.
+const normalizeIntensityKey = (cols: string[], firstRow: any, rows?: any[]) => {
   const intensityPattern = /raman.*intens|intens.*raman|intensity|^value$|^y$/i;
   const positionPattern = /pos|shift|position|x|wavenumber|raman shift/i;
+  // explicit name match
   let key = cols.find(c => intensityPattern.test(c));
   if (key) return key;
-  key = cols.find(c => !positionPattern.test(c) && !isNaN(Number(firstRow?.[c])));
-  if (key) return key;
-  return cols.find(c => !isNaN(Number(firstRow?.[c]))) || null;
+
+  // collect numeric candidate columns
+  const numericCols = cols.filter(c => !isNaN(Number(firstRow?.[c])));
+  if (numericCols.length === 0) return null;
+
+  // prefer non-position numeric columns
+  const nonPos = numericCols.filter(c => !positionPattern.test(c));
+  const candidates = nonPos.length ? nonPos : numericCols;
+
+  // If we have rows, score columns by variance + number of local changes to avoid picking monotonic position columns
+  try {
+    if (Array.isArray(rows) && rows.length > 2) {
+      const arrays = candidates.map(c => ({ col: c, vals: rows.map((r: any) => Number(r[c])).filter((v: any) => !isNaN(v)) })).filter(a => a.vals.length > 2);
+      if (arrays.length > 0) {
+        const scored = arrays.map(a => {
+          const vals = a.vals;
+          const mean = vals.reduce((s: number, v: number) => s + v, 0) / vals.length;
+          const variance = vals.reduce((s: number, v: number) => s + (v - mean) ** 2, 0) / vals.length;
+          let diffs = 0;
+          for (let i = 2; i < vals.length; i++) if (Math.sign(vals[i] - vals[i - 1]) !== Math.sign(vals[i - 1] - vals[i - 2])) diffs++;
+          return { col: a.col, score: variance + diffs };
+        });
+        scored.sort((a, b) => b.score - a.score);
+        return scored[0].col;
+      }
+    }
+  } catch (e) {
+    // ignore and fallback
+  }
+
+  return candidates[0] || null;
 };
 
 const iconMap: Record<string, React.ComponentType<any>> = {

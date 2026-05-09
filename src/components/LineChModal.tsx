@@ -162,13 +162,13 @@ const LineChartModal: React.FC<LineChartModalProps> = ({
     for (const name of preferYNames) {
       // match exact lower-case keys or substring
       const exact = lowerColsMap[name];
-      if (exact) { yKey = exact; break; }
+      if (exact && exact !== xKey) { yKey = exact; break; }
     }
     if (!yKey) {
       // try substring match
       for (const col of procColumns) {
         const lc = col.toLowerCase();
-        if (preferYNames.some((p) => lc.includes(p))) { yKey = col; break; }
+        if (preferYNames.some((p) => lc.includes(p)) && col !== xKey) { yKey = col; break; }
       }
     }
   }
