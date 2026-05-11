@@ -149,9 +149,28 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, widget, onClose, onUp
   const handleSave = async () => {
     // Attempt to save prediction or extraction results to backend which may forward to Firebase
     try {
-      const apiBase = (import.meta.env.VITE_API_URL || '').toString().replace(/\/$/, '') || '';
-      const postTo = async (path: string, body: any) => {
-        const url = apiBase ? `${apiBase}${path}` : path;
+      const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5001";
+
+const postTo = async (path: string, body: any) => {
+  const url = `${API_URL}${path}`;
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!resp.ok) {
+    const txt = await resp.text().catch(() => String(resp.status));
+    throw new Error(txt || `Request failed ${resp.status}`);
+  }
+
+  return await resp.json().catch(() => ({}));
+};
+};
         const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         if (!resp.ok) {
           const txt = await resp.text().catch(() => String(resp.status));
