@@ -21,6 +21,7 @@ services:
     region: oregon
     # Install Python dependencies (use repo-level requirements.txt).
     # Render often sets the service root to `backend/python`, so install from the parent path.
-    buildCommand: pip install -r ../requirements.txt
+    # service root is backend/python, so go up two levels to repo root for requirements.txt
+    buildCommand: pip install -r ../../requirements.txt
     startCommand: gunicorn predict_api:app --bind 0.0.0.0:$PORT
     envVars: []
