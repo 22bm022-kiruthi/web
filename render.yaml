@@ -14,3 +14,12 @@ services:
         sync: false
       - key: SUPABASE_ANON_KEY
         value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphdGFmaWdseXB0YnVqcXpzb2hjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExOTI2NjcsImV4cCI6MjA3Njc2ODY2N30.a7L-z0BNjZqMEo4dMYGPWH1hQXfg5o_2zL3T-vEaT0s
+
+  - type: web
+    name: raman-predictor
+    runtime: python
+    region: oregon
+    # Install Python dependencies and start the Flask app with Gunicorn
+    buildCommand: cd backend/python && pip install -r requirements.txt
+    startCommand: cd backend/python && gunicorn predict_api:app --bind 0.0.0.0:$PORT
+    envVars: []
