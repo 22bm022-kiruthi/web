@@ -19,7 +19,7 @@ services:
     name: raman-predictor
     runtime: python
     region: oregon
-    # Install Python dependencies and start the Flask app with Gunicorn
-    buildCommand: cd backend/python && pip install -r requirements.txt
+    # Install Python dependencies (use repo-level requirements.txt) and start the Flask app with Gunicorn
+    buildCommand: cd backend && pip install -r requirements.txt
     startCommand: cd backend/python && gunicorn predict_api:app --bind 0.0.0.0:$PORT
     envVars: []
