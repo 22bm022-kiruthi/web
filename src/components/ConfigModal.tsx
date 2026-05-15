@@ -185,7 +185,10 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, widget, onClose, onUp
         if (!finalPayload) {
           // derive simple features from available table data
           const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
-          const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || widget.data?.tableDataForecast || []);
+          // Prefer original parsed data / raw table data over any processed variants so
+          // prediction receives the full spectral signal the model expects. Use
+          // parsedData first as the initial candidate when available.
+          const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.parsedData || widget.data?.tableData || widget.data?.tableDataProcessed || widget.data?.tableDataForecast || []);
           const tableData = Array.isArray(best) ? best : [];
           if (!tableData || tableData.length === 0) { alert('No input data available to save prediction.'); onClose(); return; }
           const cols = Object.keys(tableData[0] || {});
@@ -250,7 +253,9 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, widget, onClose, onUp
       // Future-extraction (forecast) or other extraction-like widgets: send the raw signal to /api/extract
       if (widget.type === 'future-extraction' || widget.type === 'extract' || widget.type === 'peak-extraction') {
         const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
-        const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || widget.data?.tableDataForecast || []);
+        // Prefer raw parsed/table data when extracting peaks so we don't run
+        // extraction on previously written processed/feature objects.
+        const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.parsedData || widget.data?.tableData || widget.data?.tableDataProcessed || widget.data?.tableDataForecast || []);
         const tableData = Array.isArray(best) ? best : [];
         if (!tableData || tableData.length === 0) { alert('No input data available to save extraction.'); onClose(); return; }
         const cols = Object.keys(tableData[0] || {});
