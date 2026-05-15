@@ -21,6 +21,9 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, widget, onClose, onUp
   const [lastResponseState, setLastResponseState] = useState<any>(widget?.data?.predictionMeta?.lastResponse || null);
   const [showPredictParams, setShowPredictParams] = useState(false);
 
+  // lastResp is used in multiple places (inside render and footer buttons)
+  const lastResp = lastResponseState || widget?.data?.predictionMeta?.lastResponse || null;
+
   useEffect(() => {
     // prefer canvas mount when available
     const canvasEl = document.querySelector('.orange-canvas');
@@ -34,10 +37,15 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, widget, onClose, onUp
         const wid = ev?.detail?.widgetId;
         if (!wid) return;
         if (widget && widget.id === wid) {
-          const pred = ev?.detail?.prediction || ev?.detail?.raw?.prediction || null;
           const raw = ev?.detail?.raw || null;
+          // robustly extract prediction from multiple possible response shapes
+          const pred = ev?.detail?.prediction
+            || (raw && (raw.prediction || raw.result || raw?.python?.prediction || raw?.python?.result))
+            || null;
           const payload = ev?.detail?.payload || widget.data?.predictionMeta?.lastPayload || null;
-          setCurrentPredState(pred || widget.data?.prediction || null);
+          // If we got an explicit prediction, show it. If not but we have raw response, show a diagnostic marker.
+          const displayPred = pred !== null ? pred : (raw ? 'No prediction returned — see details' : null);
+          setCurrentPredState(displayPred || widget.data?.prediction || null);
           setLastResponseState(raw || widget.data?.predictionMeta?.lastResponse || null);
           setRunning(false);
           try {
@@ -349,12 +357,26 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, widget, onClose, onUp
         case 'predict':
           {
             const currentPred = currentPredState || widget.data?.prediction || null;
-            const lastResp = lastResponseState || widget.data?.predictionMeta?.lastResponse || null;
             return (
               <div className="space-y-4">
                 <div className="px-2 py-2 rounded border bg-gray-50">
                   <div className="text-sm font-medium">Result</div>
                   <div className="text-lg font-semibold mt-1">{currentPred ? String(currentPred) : '—'}</div>
+                  {lastResp?.probabilities && (
+                    <div className="text-xs text-gray-600 mt-2">
+                      <div className="font-medium">Top candidates</div>
+                      <div className="flex gap-2 mt-1">
+                        {Object.entries(lastResp.probabilities).sort((a: any,b: any)=>b[1]-a[1]).slice(0,3).map(([k,v])=> (
+                          <span key={k} className="px-2 py-1 bg-gray-100 rounded text-xs">{k}: {(v*100).toFixed(1)}%</span>
+                        ))}
+                      </div>
+                      <ul className="mt-2">
+                        {Object.entries(lastResp.probabilities).sort((a: any,b: any)=>b[1]-a[1]).slice(0,5).map(([k,v])=> (
+                          <li key={k}>{k}: {(v*100).toFixed(1)}%</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   {lastResp?.test_output && (
                     <div className="text-xs text-gray-500 mt-1">Test: {String(lastResp.test_output)}</div>
                   )}
@@ -509,6 +531,19 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, widget, onClose, onUp
           }} className="px-4 py-2 rounded-lg btn-outline">
             Plot
           </button>
+          {lastResp && lastResp.processed_vector && (
+            <button onClick={() => {
+              try {
+                // build table rows for plotting from processed_vector
+                const vec = Array.isArray(lastResp.processed_vector) ? lastResp.processed_vector : null;
+                if (!vec || vec.length === 0) { alert('No processed vector available to plot'); return; }
+                const rows = vec.map((v: any, i: number) => ({ value: Number(v), index: i }));
+                window.dispatchEvent(new CustomEvent('openLineChart', { detail: { widgetId: widget.id, data: rows } }));
+              } catch (e) { console.error(e); }
+            }} className="px-4 py-2 rounded-lg btn-outline">
+              Plot Prediction
+            </button>
+          )}
         </div>
       </div>
     </div>

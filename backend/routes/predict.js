@@ -2,6 +2,8 @@ const express = require('express');
 const axios = require('axios');
 const router = express.Router();
 const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 // POST /api/predict -> forward to Python service at 127.0.0.1:6004/predict
 router.post('/', async (req, res) => {
@@ -111,6 +113,18 @@ router.post('/', async (req, res) => {
 
     if (d && typeof d === 'object') {
       const out = Object.assign({}, d, { peaks: computedPeaks });
+      // Audit: persist incoming request and python response for debugging
+      try {
+        const logsDir = path.join(__dirname, '..', 'uploads', 'predict-logs');
+        if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
+        const now = new Date().toISOString().replace(/[:.]/g, '-');
+        const id = req.body && req.body.widgetId ? String(req.body.widgetId) : now;
+        const outObj = { timestamp: new Date().toISOString(), widgetId: id, request: req.body, python: out, pyUrl };
+        const filePath = path.join(logsDir, `pred-${now}.json`);
+        try { fs.writeFileSync(filePath, JSON.stringify(outObj, null, 2), 'utf8'); console.debug('[routes/predict] saved audit log ->', filePath); } catch (e) { console.warn('[routes/predict] failed to write predict audit log', e); }
+      } catch (e) {
+        console.warn('[routes/predict] audit logging failed', e && (e.message || e));
+      }
       return res.json({ prediction: out.prediction || out.result, ...out });
     }
 

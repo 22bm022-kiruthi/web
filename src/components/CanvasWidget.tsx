@@ -508,21 +508,26 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
     // Fallback candidates include IPv4 localhost and hostname. Increase timeout slightly for local services.
     const perCandidateTimeout = 5000; // ms
     // Build candidate backend endpoints.
-    // Priority order:
-    // 1) Explicit production backend from `VITE_API_URL` (set at build time)
-    // 2) Relative path (allows Vite dev proxy to forward requests locally)
-    // 3) Direct IPv4/localhost fallbacks (useful for local dev without proxy)
+    // Behavior:
+    // - In dev (`import.meta.env.DEV`) prefer the Vite dev proxy (`path`) and local host first.
+    // - In production prefer `VITE_API_URL` and the deployed backend.
     const envApi = (import.meta.env.VITE_API_URL || '').toString().trim();
+    const isDev = Boolean((import.meta.env as any).DEV);
     const candidates = [] as string[];
-    if (envApi) {
-      // allow either a base URL (e.g. https://api.example.com) or already include /api
-      const base = envApi.replace(/\/$/, '');
-      candidates.push(`${base}${path}`);
+    if (isDev) {
+      // Dev: try proxy-relative path, then explicit local host, then any envApi, then deployed URL
+      candidates.push(path);
+      // For direct backend candidate, strip leading `/api` so it matches Flask route paths (which are defined like `/predict`).
+      const backendPath = path.replace(/^\/api/, '') || '/';
+      candidates.push(`http://127.0.0.1:6004${backendPath}`);
+      if (envApi) candidates.push(`${envApi.replace(/\/$/, '')}${path}`);
+      candidates.push(`https://spectral-api-jji3.onrender.com${path}`);
+    } else {
+      // Prod: prefer envApi then deployed then relative
+      if (envApi) candidates.push(`${envApi.replace(/\/$/, '')}${path}`);
+      candidates.push(`https://spectral-api-jji3.onrender.com${path}`, path);
     }
-    // Prefer production backend endpoint and fall back to relative path
-    // Replace default localhost candidates with the deployed backend URL
-    candidates.push(`https://spectral-api-jji3.onrender.com${path}`, path);
-    console.debug('[CanvasWidget] fetchToBackend candidate order:', candidates);
+    console.debug('[CanvasWidget] fetchToBackend DEV=', isDev, 'candidate order:', candidates);
     let lastError: any = null;
     for (const url of candidates) {
       // use AbortController to avoid long hanging fetches
@@ -720,18 +725,24 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
     const payload = { signal: vals, max: mx, avg };
     (async () => {
       try {
+        if ((import.meta.env as any).DEV) console.debug('[Predict auto] payload ->', payload, 'widgetId:', widget.id);
         const resp = await fetchToBackend('/api/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         if (!resp.ok) {
           console.warn('[Predict auto] backend returned error', resp.status);
+          const txt = await resp.text().catch(() => null);
+          try { window.dispatchEvent(new CustomEvent('predictDone', { detail: { widgetId: widget.id, payload, raw: txt, source: 'server', status: resp.status } })); } catch (e) { /* ignore */ }
           return;
         }
         const body = await resp.json().catch(() => null);
+        if ((import.meta.env as any).DEV) console.debug('[Predict auto] response <-', body, 'widgetId:', widget.id);
         const pred = body?.prediction || body?.result || null;
-        if (pred && onUpdateWidget) {
-          onUpdateWidget({ data: { ...(widget.data || {}), prediction: pred, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload, lastResponse: body } } });
+        if (onUpdateWidget) {
+          try { onUpdateWidget({ data: { ...(widget.data || {}), prediction: pred, predictionMeta: { ...(widget.data?.predictionMeta || {}), lastPayload: payload, lastResponse: body } } }); } catch (e) { console.error(e); }
         }
+        try { window.dispatchEvent(new CustomEvent('predictDone', { detail: { widgetId: widget.id, payload, raw: body, prediction: pred, source: 'server' } })); } catch (e) { /* ignore */ }
       } catch (err) {
         console.warn('[Predict auto] error calling /api/predict', err && err.message ? err.message : err);
+        try { window.dispatchEvent(new CustomEvent('predictDone', { detail: { widgetId: widget.id, payload, raw: String(err), source: 'client-error' } })); } catch (e) { /* ignore */ }
       }
     })();
   }, [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast]);
@@ -973,7 +984,8 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
 
         // compute same payload as auto-predict
         const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
-        const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || widget.data?.tableDataForecast || []);
+        // Prefer raw `parsedData` when available to ensure uploaded signals are used for prediction
+        const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.parsedData || widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.tableDataForecast || []);
         const tableData = Array.isArray(best) ? best : [];
         if (!tableData || tableData.length === 0) {
           console.warn('[predictNow] no data available for prediction for widget', widget.id);

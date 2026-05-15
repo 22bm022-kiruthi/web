@@ -59,13 +59,17 @@ export function useBackendHealth(checkInterval: number = 30000) {
       } catch {}
 
       const envApi = (import.meta.env.VITE_API_URL || '').toString().trim();
+      const isDev = Boolean((import.meta.env as any).DEV);
       const candidates: string[] = [];
-      if (envApi) {
-        const base = envApi.replace(/\/$/, '');
-        candidates.push(`${base}/api/health`);
+      if (isDev) {
+        // In dev prefer relative path so Vite proxy handles CORS, then explicit local backend
+        candidates.push('/api/health');
+        if (envApi) candidates.push(`${envApi.replace(/\/$/, '')}/api/health`);
+        candidates.push('https://spectral-api-jji3.onrender.com/api/health');
+      } else {
+        if (envApi) candidates.push(`${envApi.replace(/\/$/, '')}/api/health`);
+        candidates.push('https://spectral-api-jji3.onrender.com/api/health', '/api/health');
       }
-      // Relative first (lets dev proxy handle it), then production backend
-      candidates.push('/api/health', 'https://spectral-api-jji3.onrender.com/api/health');
 
       let lastMsg: string | null = null;
       for (const url of candidates) {

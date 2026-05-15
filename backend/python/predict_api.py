@@ -2,10 +2,17 @@ from flask import Flask, request, jsonify
 import os
 import numpy as np
 import pandas as pd
+from flask_cors import CORS
 from sklearn.neighbors import KNeighborsClassifier
 import joblib
 
 app = Flask(__name__)
+# enable CORS for direct browser calls during development
+try:
+    CORS(app)
+    print('CORS enabled')
+except Exception:
+    print('flask_cors not available; CORS not enabled')
 
 # ---------------- FIREBASE ----------------
 db = None
@@ -21,6 +28,12 @@ try:
         print("Firebase Connected ✔")
 except Exception:
     print("Firebase not connected")
+
+try:
+    # enable CORS for direct browser calls during development
+    cors_available = True
+except Exception:
+    cors_available = False
 
 # ---------------- MODEL LOADING / TRAINING ----------------
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -90,7 +103,12 @@ if model is None:
 
 # ---------------- PREDICT API ----------------
 @app.route("/predict", methods=["POST"])
+@app.route("/api/predict", methods=["POST", "OPTIONS"])
 def predict():
+    # Handle CORS preflight quickly
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
+
     data = request.json or {}
 
     signal = data.get("signal", [])
@@ -162,12 +180,32 @@ def predict():
         resp['processed_vector'] = processed_vector
     except Exception:
         pass
+    # Audit: persist incoming request and response so devs can replay exact payloads
+    try:
+        logs_dir = os.path.normpath(os.path.join(script_dir, '..', 'uploads', 'predict-logs'))
+        os.makedirs(logs_dir, exist_ok=True)
+        now = datetime = __import__('datetime').datetime.utcnow().isoformat().replace(':', '-').replace('.', '-')
+        fname = f'pred-{now}.json'
+        fpath = os.path.join(logs_dir, fname)
+        audit = {'timestamp': __import__('datetime').datetime.utcnow().isoformat(), 'request': data, 'response': resp}
+        try:
+            with open(fpath, 'w', encoding='utf-8') as af:
+                import json as _json
+                _json.dump(audit, af, indent=2)
+            print('[predict_api] saved audit log ->', fpath)
+        except Exception as _e:
+            print('[predict_api] failed to write audit log', _e)
+    except Exception:
+        pass
     return jsonify(resp)
 
 
 # ---------------- HEALTHCHECK ----------------
 @app.route("/health", methods=["GET"])
 def health():
+    # Support CORS preflight for `/api/health` as well when frontend calls `/api/health`.
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
     try:
         return jsonify({
             "ok": True,
@@ -176,6 +214,14 @@ def health():
         })
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)})
+
+
+# Alias so dev-server proxy requests to `/api/health` are handled (preflight + GET)
+@app.route("/api/health", methods=["GET", "OPTIONS"])
+def api_health():
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
+    return health()
 
 
 # ---------------- RUN ----------------
