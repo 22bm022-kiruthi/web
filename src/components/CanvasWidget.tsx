@@ -708,8 +708,10 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
   useEffect(() => {
     // Only run for Predict widgets and when there's data
     if (widget.type !== 'predict') return;
-    const sources = [widget.data?.tableDataProcessed, widget.data?.tableData, widget.data?.parsedData, widget.data?.tableDataForecast];
-    const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.tableDataProcessed || widget.data?.tableData || widget.data?.parsedData || widget.data?.tableDataForecast || []);
+    const sources = [widget.data?.parsedData, widget.data?.tableData, widget.data?.tableDataProcessed, widget.data?.tableDataForecast];
+    // Prefer raw parsed/table data first so automatic predictions use the full spectral
+    // signal rather than any processed/feature-derived rows.
+    const best = sources.reduce((b, s) => (Array.isArray(s) && s.length > (Array.isArray(b) ? b.length : 0)) ? s : b, widget.data?.parsedData || widget.data?.tableData || widget.data?.tableDataProcessed || widget.data?.tableDataForecast || []);
     const tableData = Array.isArray(best) ? best : [];
     if (!tableData || tableData.length === 0) return;
 
